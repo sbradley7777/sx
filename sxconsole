@@ -1,0 +1,938 @@
+#!/usr/bin/env python
+"""
+This is the main script that will extract reports and then run various
+plugins on them.
+
+All reports have to be a a compressed tarfile of type bzip2/gunzip.
+
+@author    :  Shane Bradley
+@contact   :  sbradley@redhat.com
+@version   :  2.08
+@copyright :  GPLv2
+"""
+import sys
+import string
+import os
+import os.path
+import shutil
+from optparse import OptionParser, Option
+import logging
+
+import sx
+from sx.logwriter import LogWriter
+from sx.tools import ConsoleUtil
+from sx.tools import FileUtil
+from sx import SXConfigurationFiles
+
+from sx import ArchiveLayout
+from sx import ArchivedLayout
+from sx import ModifiedArchiveLayout
+from sx import ModifiedArchivedLayout
+from sx.extractors import Extractor
+from sx.reports import Report
+from sx.reports import ReportsHelper
+from sx.plugins import PluginsHelper
+from sx.modulesloader import ReportsLoader
+from sx.modulesloader import ExtractorsLoader
+
+"""
+@cvar VERSION_NUMBER: The current version number of sxconsole.
+@type VERSION_NUMBER: String
+"""
+VERSION_NUMBER = "2.08-0.0"
+
+def getArchiveLayout(caseNumber, pathToArchiveDirectory, pathToExtractedReports,
+                     isModifiedArchiveLayoutEnabled) :
+    """
+    This function is what will take the user options and do the action
+    that user has specified.
+
+    @return: Returns a ReportExtractor Object after the extraction or
+    loading of reports.
+    @rtype: ReportExtractor
+
+    """
+    # #######################################################################
+    # Create the reportextractor class to begin extraction or loading
+    # #######################################################################
+    # The layout object
+    al = None
+    if (len(pathToExtractedReports) > 0) :
+        # This will load an archive and not extracted the archive
+        # since archive has already been extracted.
+        al = ArchivedLayout(pathToExtractedReports)
+        if (isModifiedArchiveLayoutEnabled):
+            message = "The Modified Layout is ignored since archive layout is autodetected and cannot be modified once extracted."
+            logging.getLogger(sx.MAIN_LOGGER_NAME).debug(message)
+        if (not pathToExtractedReports.find("ereports") > 0):
+            message = "Enabling the Modified Archive Layout since Default layout was not detected."
+            logging.getLogger(sx.MAIN_LOGGER_NAME).debug(message)
+            al = ModifiedArchivedLayout(pathToExtractedReports)
+    else:
+        # This will extracted a list of reports since they have not
+        # been extracted.
+        al = ArchiveLayout(pathToArchiveDirectory, caseNumber)
+        if (isModifiedArchiveLayoutEnabled):
+            message = "Enabling the Modified Archive Layout."
+            logging.getLogger(sx.MAIN_LOGGER_NAME).info(message)
+            al = ModifiedArchiveLayout(pathToArchiveDirectory, caseNumber)
+    return al
+
+def extractReports(caseNumber, al, pathToExtractedReports, listOfReports,
+                   pathToReportsDirectory, includeUserDefinedModules) :
+
+    # Create the reporter object based on layout of the paths
+    if (al == None):
+        message = "The archive layout format could not be determine and application will exit."
+        logging.getLogger(sx.MAIN_LOGGER_NAME).error(message)
+        sys.exit(1)
+
+    # Since layout was detected then we will proceed.
+    if (not __initializeDirStructure(al.getPathToCompressedReports(), al.getPathToExtractedReports())):
+        message = "The archive directories do not exist. The application will exit."
+        logging.getLogger(sx.MAIN_LOGGER_NAME).error(message)
+        sys.exit(1)
+
+    # #######################################################################
+    # Extract or load the reports
+    # #######################################################################
+    if (len(pathToExtractedReports) > 0) :
+        # Load reports that were already extracted.
+        reportsExtracted = __load(pathToExtractedReports, includeUserDefinedModules)
+        message = "There was %d reports found and loaded." %(len(reportsExtracted))
+        logging.getLogger(sx.MAIN_LOGGER_NAME).info(message)
+    else:
+        # Extract reports that have not been archived from the list of reports
+        listOfReports = __getListOfReports(listOfReports, pathToReportsDirectory)
+        message = "The list of files are being processed to see if they contain any know report types that can be extracted. This could take a while are large reports."
+        logging.getLogger(sx.MAIN_LOGGER_NAME).log(LogWriter.STATUS_LEVEL, message)
+        reportsExtracted = __extract(listOfReports, al.getPathToCompressedReports(),
+                                     al.getPathToExtractedReports(), includeUserDefinedModules)
+        message = "There was %d reports extracted." %(len(reportsExtracted))
+        logging.getLogger(sx.MAIN_LOGGER_NAME).info(message)
+    return reportsExtracted
+
+# ##############################################################################
+# Extract/Load Helper Functions
+# ##############################################################################
+def __load(pathToExtractedReports, includeUserDefinedModules):
+    """
+    Returns the list of report paths that have already been
+    extracted based on the path of pathToExtractedReports pass to
+    init.
+
+    @return: Returns the list of report paths that have already
+    been extracted based on the path of pathToExtractedReports pass
+    to init.
+    @rtype: Array
+
+    @param includeUserDefinedModules: If True then user defined
+    reports/plugins are enabled.
+    @type includeUserDefinedModules: Boolean
+    """
+    message = "Loading all the known report types for previously extracted reports."
+    logging.getLogger(sx.MAIN_LOGGER_NAME).log(LogWriter.STATUS_LEVEL, message)
+    # Zero out the list because this is new load of reports
+    listOfReports = []
+    reportsLoader = ReportsLoader()
+    for filename in os.listdir(pathToExtractedReports):
+        if (filename == "reports"):
+            continue
+        elif (filename.startswith(".")):
+            continue
+        else:
+            pathToFilename = os.path.join(pathToExtractedReports, filename)
+            report = reportsLoader.getReport(pathToFilename, includeUserDefinedModules)
+            if (not report == None) :
+                report.setPathToExtractedReport(pathToFilename)
+                listOfReports.append(report)
+    return listOfReports
+
+def __extract(listOfUnextractedReports, pathToCompressedReports,
+              pathToExtractedReports, includeUserDefinedModules) :
+    """
+    This function will extract all the reports in the array if
+    they are a known type. It will return a list of report objects.
+
+    This function also uses recursion in case a report contains
+    other reports. For example a RHEV report contains
+    sosreports. The sosreports that are in the RHEV report will be
+    extracted as well.
+
+    @return: Returns a list of all the report objects that were
+    successfully extracted.
+    @rtype: Array
+
+    @param listOfUnextractedReports: An array of all the reports to attempt
+    extract. If there is not a known type then the report will not
+    be extracted and moved to archive location.
+    @type listOfUnextractedReports: List
+    @param includeUserDefinedModules: If True then user defined
+    reports/plugins are enabled.
+    @type includeUserDefinedModules: Boolean
+    """
+    # Zero out the list because this is new load of reports
+    listOfReports = []
+
+    # If the report contains reports then they need to be analyzed
+    # like a RHEV report.
+    reportsWithinReportList = []
+
+    # Various loaders that are required.
+    extractorsLoader = ExtractorsLoader()
+    reportsLoader = ReportsLoader()
+
+    for pathToFilename in listOfUnextractedReports:
+        report = reportsLoader.getReport(pathToFilename, includeUserDefinedModules)
+        if (not report == None):
+            # The reason I have to find extractor again is because I
+            # moved the file from orginal location so I dont want an
+            # extractor in object if the file it extracts no longer
+            # exists.
+            extractor = extractorsLoader.getExtractor(pathToFilename, includeUserDefinedModules)
+            if (report.extract(extractor, pathToExtractedReports)):
+                # Add the report to the list of valid reports that were found.
+                listOfReports.append(report)
+                # Move the file if it was extracted correctly.
+                pathToNewFilename = os.path.join(pathToCompressedReports, os.path.basename(pathToFilename))
+                if (not __moveReport(pathToFilename, pathToNewFilename)):
+                    message = "There was an error moving the file: %s\n\t  to %s." %(pathToFilename, pathToNewFilename)
+                    logging.getLogger(sx.MAIN_LOGGER_NAME).error(message)
+                # If the report contains or could contain other
+                # known report types then we will see if any of
+                # the files within that report can be added to the
+                # list of reports that need to be extracted.
+                if (report.includesOtherReports()):
+                    pathToExtractedReport = report.getPathToExtractedReport()
+                    # List of full path to files within the report
+                    # that was extracted. Just top dir for now,
+                    # will not goto deep it for now. I also moving
+                    # these out which might be desired.
+                    listOfFilesInExtractedReports = []
+                    for currentFilename in os.listdir(pathToExtractedReport):
+                        listOfFilesInExtractedReports.append(os.path.join(pathToExtractedReport, currentFilename))
+                    if (len(listOfFilesInExtractedReports) > 0):
+                        message =  "The %s report contains %d files and the %s report will be analyzed " %(report.getName(),
+                                                                                                           len(listOfUnextractedReports),
+                                                                                                           report.getName())
+                        message += "to see if contain any other known report types."
+                        logging.getLogger(sx.MAIN_LOGGER_NAME).log(LogWriter.STATUS_LEVEL, message)
+                        # Now do a little recursion
+                        reportsWithinReportList += __extract(listOfFilesInExtractedReports, pathToCompressedReports,
+                                                             pathToExtractedReports, includeUserDefinedModules)
+            else:
+                message = "There was an error extracting the report: %s." %(str(extractor))
+                logging.getLogger(sx.MAIN_LOGGER_NAME).error(message)
+
+
+    # Add reports extracted that were in other reports
+    listOfReports += reportsWithinReportList
+    return listOfReports
+# ##############################################################################
+# Commandline Helper Functions
+# ##############################################################################
+def __validateOptions(caseNumber, pathToExtractedReports) :
+    """
+    This function validates that options that is given. It will exit
+    if invalid args and return True if no errors.
+
+    @return: Returns True if no validation errors on user options.
+    @rtype: Boolean
+
+    @param caseNumber: The case number.
+    @type caseNumber: String
+    @param pathToExtractedReports: Path to the root directory for an
+    extracted reports.
+    @type pathToExtractedReports: String
+    """
+    # #######################################################################
+    # Validate that either a uid or extracted path was given.
+    # #######################################################################
+    if ((not len(caseNumber) > 0) and (not len(pathToExtractedReports) > 0)):
+        # No uid or path args are given
+        message =  "No args given. A unique idenification number as an argument or a path to extracted reports with -p option is required."
+        logging.getLogger(sx.MAIN_LOGGER_NAME).error(message)
+        sys.exit(2)
+    elif ((len(caseNumber) > 0) and (len(pathToExtractedReports) > 0)):
+        # Both options were given
+        message =  "A uid and path (-p option) was given. Please choose only 1 option."
+        logging.getLogger(sx.MAIN_LOGGER_NAME).error(message)
+        sys.exit(2)
+    elif ((len(pathToExtractedReports) > 0) and (not os.path.exists(pathToExtractedReports))):
+        # If path has greater length than zero and path does not exist
+        message = "The path passed with -p option is not a valid path of archived reports."
+        logging.getLogger(sx.MAIN_LOGGER_NAME).error(message)
+        sys.exit(2)
+    elif (len(caseNumber) > 0):
+        if (not caseNumber.isalnum()):
+            # If no path was given and caseNumber is greater than zero and is not alphanumeric uid
+            message = "Only numeric ticket numbers  are valid."
+            logging.getLogger(sx.MAIN_LOGGER_NAME).error(message)
+            sys.exit(2)
+    # Since we did not exit then can proceed to run.
+    return True
+
+def __getListOfReports(cmdLineListOfReports, cmdLineReportPath):
+    """
+    This function returns a list of paths to reports based on
+    arguments given. The function takes params that is a list of
+    reports or path to where reports could be located to add to list.
+
+    @return: Returns a list of paths to reports based on
+    arguments given.
+
+    @param cmdLineListOfReports: A list of paths to reports that will
+    be extracted.
+    @type cmdLineListOfReports: Array
+    @param cmdLineReportPath: A path to a directory that contains
+    reports.
+    @type cmdLineReportPath: String
+    """
+    # Temporary list of reports that have not been validated
+    listOfReports = []
+    # Create a list of all possible reports.
+    if (len (cmdLineListOfReports) > 0):
+        for pathToFilename in cmdLineListOfReports:
+            try:
+                if (not os.path.exists(pathToFilename)):
+                    message = "The path to the report does not exist: %s" %(pathToFilename)
+                    logging.getLogger(sx.MAIN_LOGGER_NAME).error(message)
+                elif (os.path.isfile(pathToFilename)):
+                    listOfReports.append(pathToFilename)
+                elif (os.path.isdir(pathToFilename)):
+                    message = "The directory will be skipped: %s" %(pathToFilename)
+                    logging.getLogger(sx.MAIN_LOGGER_NAME).debug(message)
+                else:
+                    message = "The file will not be added: %s" %(pathToFilename)
+                    logging.getLogger(sx.MAIN_LOGGER_NAME).debug(message)
+            except OSError:
+                message = "There was an error evaluating the file: %s." %(pathToFilename)
+                logging.getLogger(sx.MAIN_LOGGER_NAME).warn(message)
+    elif (os.path.isdir(cmdLineReportPath)):
+        try:
+            # Add all files in this directory to the list and sort later.
+            dirList = os.listdir(cmdLineReportPath)
+            for filename in dirList:
+                pathToFilename = os.path.join(cmdLineReportPath, filename)
+                if (not os.path.exists(pathToFilename)):
+                    message = "The path to the report does not exist: %s" %(pathToFilename)
+                    logging.getLogger(sx.MAIN_LOGGER_NAME).error(message)
+                elif (os.path.isfile(pathToFilename)):
+                    listOfReports.append(pathToFilename)
+                elif (os.path.isdir(pathToFilename)):
+                    message = "The directory will be skipped: %s" %(pathToFilename)
+                    logging.getLogger(sx.MAIN_LOGGER_NAME).debug(message)
+                else:
+                    message = "The file will not be added: %s" %(pathToFilename)
+                    logging.getLogger(sx.MAIN_LOGGER_NAME).debug(message)
+        except OSError:
+            message = "There was an error getting a directory list for reports: %s." %(cmdLineReportPath)
+            logging.getLogger(sx.MAIN_LOGGER_NAME).warn(message)
+    return listOfReports
+
+def __getPluginOptions(cmdLineListOfPluginOptions) :
+    """
+    Check if plugin has an option in list of plugin options and if so enable
+    it.Returns a dictionary of dictionaries.
+
+    Example:
+    {'cluster': {'locks_check': 'on'}, 'Opensosreport': {'filebrowser': 'konqueror', 'browser': 'firefox'}}
+
+    @return: Returns a dictionary of dictionaries.
+    @rtype: Dictionary
+
+    @param cmdLineListOfPluginOptions: This is a list of options for various
+    plugins.
+    @type cmdLineListOfPluginOptions: Array
+    """
+    pluginOptionsMap = {}
+    for option in cmdLineListOfPluginOptions :
+        keyEqualSplit = option.split("=")
+        peroidEqualSplit = option.split(".")
+        if ((len(keyEqualSplit) == 2) and (len(peroidEqualSplit) == 2)) :
+            pluginName = peroidEqualSplit[0].lower()
+            pluginOptionName = keyEqualSplit[0].split(".")[1]
+            pluginOptionValue = keyEqualSplit[1]
+            if (pluginOptionsMap.has_key(pluginName)) :
+                optionMap = pluginOptionsMap.get(pluginName)
+                optionMap[pluginOptionName] = pluginOptionValue
+            else:
+                pluginOptionsMap[pluginName] = {pluginOptionName:pluginOptionValue}
+    return pluginOptionsMap
+
+# ##############################################################################
+# Helper functions
+# ##############################################################################
+def __initializeDirStructure(pathToCompressedReports, pathToExtractedReports):
+    """
+    Returns True if the directories created exists.
+    """
+    dirPaths = [pathToCompressedReports, pathToExtractedReports]
+    for dirPath in dirPaths:
+            try:
+                if (not os.access(dirPath, os.F_OK)):
+                    os.makedirs(dirPath)
+                if (not os.access(dirPath, os.F_OK)):
+                    message = "The directory does not exists after it was created: %s." % (dirPath)
+                    logging.getLogger(sx.MAIN_LOGGER_NAME).error(message)
+                    return False
+            except IOError:
+                message = "Could not create the directory: %s." % (dirPath)
+                logging.getLogger(sx.MAIN_LOGGER_NAME).error(message)
+                return False
+    return True
+
+def __moveReport(src, dst):
+    """
+    This function will move the file file that will be extracted
+    to a new location. If there is a file that already exists for
+    that path then then the file will not be moved or overwrite
+    the existing file.
+
+    @return: Returns True if a file exists for the provided dst
+    path. Returns False if file does not exist.
+    @rtype: String
+
+    @param dst: Path to location where the extractor file will be
+    moved to.
+    @type dst: String
+    """
+    # The directories should be created before moving.
+    if (not os.path.exists(src)):
+        message = "The file does not exist: %s." %(src)
+        logging.getLogger(sx.MAIN_LOGGER_NAME).error(message)
+        return False
+    elif (os.path.exists(dst)):
+        message = "The file already exists and will not overwrite the existing file: %s." %(dst)
+        logging.getLogger(sx.MAIN_LOGGER_NAME).debug(message)
+    else:
+        try:
+            shutil.move(src, dst)
+        except (IOError, os.error):
+            message = "Cannot move the file %s to %s." %(src, dst)
+            logging.getLogger(sx.MAIN_LOGGER_NAME).error(message)
+    # If the file exists then return True and set the new path to file.
+    if (os.path.isfile(dst)):
+        return True
+    return False
+
+def __moveNonReportFiles(nonReportFilesPath, filePathArray) :
+    """
+    This function will move all nonreports files that were specified
+    on commandline.
+
+    @return: Returns an array of files that were moved.
+    @rtype: Array
+
+    @param nonReportFilesPath: Path to location where the paths in array should be
+    moved to.
+    @type nonReportFilesPath: String
+    @param filePathArray: An array of paths to files.
+    @type filePathArray: Array
+    """
+    filePathsAdded = []
+    if (not os.access(nonReportFilesPath, os.F_OK)):
+        try:
+            os.makedirs(nonReportFilesPath)
+        except (IOError, os.error):
+            message = "Could not create the directory: %s" %(nonReportFilesPath)
+            logging.getLogger(sx.MAIN_LOGGER_NAME).error(message)
+            return filePathsAdded
+
+    for src in filePathArray:
+        if (os.path.exists(src)):
+            (head, tail) = os.path.split(src)
+            dst_filename = os.path.join(nonReportFilesPath, tail)
+            message = "Moving the file to the archive directory: %s." %(tail)
+            logging.getLogger(sx.MAIN_LOGGER_NAME).log(LogWriter.STATUS_LEVEL, message)
+            try:
+                shutil.move(src, dst_filename)
+                filePathsAdded.append(dst_filename)
+            except IOError:
+                message = "Cannot move the file %s to %s " %(src, dst_filename)
+                logging.getLogger(sx.MAIN_LOGGER_NAME).error(message)
+    return filePathsAdded
+
+# ##############################################################################
+# Get user selected options
+# ##############################################################################
+def __getOptions(version) :
+    """
+    This function creates the OptionParser and returns commandline
+    option and command args(thus 2 variables are returned).
+
+    The cmdlineOpts which is the options user selected and cmdLineArgs
+    which is value passed not associated with an option.
+
+    @return: An SXOptions object that contains the options to run this
+    function.
+    @rtype: SXOptions
+
+    @param version: The version of the this script.
+    @type version: String
+    """
+    cmdParser = OptionParserExtended(version)
+    cmdParser.add_option("-d", "--debug",
+                         action="store_true",
+                         dest="enableDebugLogging",
+                         help="Enables debug logging.",
+                         default=False)
+    cmdParser.add_option("-M", "--modified_layout",
+                         action="store_true",
+                         dest="modifiedArchiveLayout",
+                         help="Enables a modified layout of the archive directory.",
+                         default=False)
+    cmdParser.add_option("-r", "--report",
+                         action="extend",
+                         dest="listOfReports",
+                         help="Full Path to report file that will be extracted by sxconsole(multiple reports can be used with -r  or comma seperated).",
+                         type="string",
+                         default=[])
+    cmdParser.add_option("-R", "--report_path",
+                         action="store",
+                         dest="reportPath",
+                         help="Path to directory where reports are located that can be ran against this tool.",
+                         type="string",
+                         default="%s" %(os.path.join(os.environ["HOME"], "tmp")))
+    cmdParser.add_option("-a", "--archive_path",
+                         action="store",
+                         dest="archivePath",
+                         help="Path that will be used to archive the extracted reports.(default: ~/sxarchive).",
+                         type="string",
+                         default="%s" %(os.path.join(os.environ["HOME"], "sxarchive")))
+    cmdParser.add_option("-p", "--path_extracted_reports",
+                         action="store",
+                         dest="pathToExtractedReports",
+                         help="Path that will run plugins on reports that have already been extracted.",
+                         type="string",
+                         default="")
+    cmdParser.add_option("-f", "--misc_files",
+                         action="extend",
+                         dest="filePathArray",
+                         help="Misc files to be add to the archived reports(non report files).",
+                         type="string",
+                         default=[])
+    cmdParser.add_option("-m", "--listmodules",
+                         action="store_true",
+                         dest="listModules",
+                         help="Display list of plugins and report types that currently installed.",
+                         default=False)
+    cmdParser.add_option("-E", "--enable_all_plugins",
+                         action="store_true",
+                         dest="enableAllPlugins",
+                         help="Enables all plugins.",
+                         default=False)
+    cmdParser.add_option("-e", "--enable_plugin",
+                         action="extend",
+                         dest="enablePlugins",
+                         help="List of plugins that will be enabled.",
+                         type="string",
+                         default=[])
+    cmdParser.add_option("-N", "--disable_all_plugins",
+                         action="store_true",
+                         dest="disableAllPlugins",
+                         help="Disables all plugins.",
+                         default=False)
+    cmdParser.add_option("-n", "--disable_plugin",
+                         action="extend",
+                         dest="disablePlugins",
+                         help="List of plugins that will be disabled.",
+                         type="string",
+                         default=[])
+    cmdParser.add_option("-U", "--disable_user_modules",
+                         action="store_true",
+                         dest="disableUserDefinedModules",
+                         help="Disables support for user defined report types and plugins(path: ~/.sx/[reports/plugins]).",
+                         default=False)
+    cmdParser.add_option("-o", "--plugin_options",
+                         action="extend",
+                         dest="pluginOptions",
+                         help="options that will be applied to plugin(s) which will over ride the defaults.",
+                         type="string",
+                         default=[])
+
+    (cmdLineOpts, cmdLineArgs) = cmdParser.parse_args()
+    return (cmdLineOpts, cmdLineArgs)
+
+# ##############################################################################
+# OptParse classes for commandline options
+# ##############################################################################
+class OptionParserExtended(OptionParser):
+    """
+    This is the class that gets the command line options the end user
+    selects.
+    """
+    def __init__(self, version) :
+        """
+        @param version: The version of the this script.
+        @type version: String
+        """
+        self.__commandName = os.path.basename(sys.argv[0])
+        versionMessage = "%s %s\n" %(self.__commandName, version)
+        versionMessage += "This program was written by Shane Bradley(sbradley@redhat.com): http://tools.gss.redhat.com/trac/sx \n"
+
+        commandDescription  ="%s will extract different report types to an "%(self.__commandName)
+        commandDescription += "archived directory and archive the report file.\n"
+        commandDescription += "Then various plugins can be enabled or disabled to run diagnostics on the reports.\n\n"
+
+        OptionParser.__init__(self, option_class=ExtendOption,
+                              version=versionMessage,
+                              description=commandDescription)
+
+    def print_help(self):
+        """
+        Print examples at the bottom of the help message.
+        """
+        self.print_version()
+        layoutDescription = "\n\nArchive Layout Description:\n\n"
+        layoutDescription += "The default layout of the archive files looks like the following:\n"
+        layoutDescription += "\tCompressed Reports Path:   ~/sxarchive/creports/15555553/2011-04-18_123703\n"
+        layoutDescription += "\tExtracted Reports Path:    ~/sxarchive/ereports/15555553/2011-04-18_123703\n"
+        layoutDescription += "\tNon-report Files Path:     ~/sxarchive/ereports/15555553/files\n"
+        layoutDescription += "\tPlugin Report Files Path:  ~/sxarchive/ereports/15555553/2011-04-18_123703/reports\n\n"
+
+        layoutDescription += "The modified layout of the archive files looks like the following(when -M option is enabled):\n"
+        layoutDescription += "\tCompressed Reports Path:   ~/sxarchive/15555553/2011-04-18_123703/.creports\n"
+        layoutDescription += "\tExtracted Reports Path:    ~/sxarchive/15555553/2011-04-18_123703\n"
+        layoutDescription += "\tNon-report Files Path:     ~/sxarchive/15555553/files\n"
+        layoutDescription += "\tPlugin Report Files Path:  ~/sxarchive/15555553/2011-04-18_123703/reports\n\n"
+
+        examplesMessage =  "Examples:\n\n"
+        examplesMessage += "To list the different plugin and report types:\n"
+        examplesMessage += "$ %s -l\n\n" %(self.__commandName)
+        examplesMessage += "To run default plugins on selected reports and disable user defined reports/plugins:\n"
+        examplesMessage += "$ %s 99999999 -r ~/tmp/rh4node1-sysreport.tar.bz2 -r ~/tmp/rh4node2-sysreport.tar.bz2 -U\n\n" %(self.__commandName)
+        examplesMessage += "To run default plugins on directory of reports(non-reports will not be processed):\n"
+        examplesMessage += "$ %s 99999999 -R ~/tmp/\n\n" %(self.__commandName)
+        examplesMessage += "To disable all plugins on selected reports:\n"
+        examplesMessage += "$ %s 99999999 -N -r ~/tmp/rh4node1-sysreport.tar.bz2 -r ~/tmp/rh4node2-sysreport.tar.bz2\n\n" %(self.__commandName)
+        examplesMessage += "To enable all plugins on directory of reports(non-reports will not be processed):\n"
+        examplesMessage += "$ %s 99999999 -E -R ~/tmp/\n\n" %(self.__commandName)
+        examplesMessage += "To disable all plugins then enable specific plugins on directory of reports(non-reports will not be processed):\n"
+        examplesMessage += "$ %s 99999999 -N -e cluster,checksysreport -R ~/tmp/\n\n" %(self.__commandName)
+        examplesMessage += "To enable all plugins then disable specific plugins on directory of reports(non-reports will not be processed):\n"
+        examplesMessage += "$ %s 99999999 -E -n cluster,checksysreport -R ~/tmp/\n\n" %(self.__commandName)
+        examplesMessage += "To add a file to the archive that is not a report that will also do action on reports:\n"
+        examplesMessage += "$ %s 99999999 -N -e cluster,checksysreport -R ~/tmp/ -f ~/tmp/tcpdump.log\n\n" %(self.__commandName)
+        examplesMessage += "To add a file to the archive that is not a report with no reports to process:\n"
+        examplesMessage += "$ %s 99999999 -f ~/tmp/tcpdump2.log\n\n" %(self.__commandName)
+        examplesMessage += "After extraction is complete then open with a fileviewer and pass the option for a particular fileviewer.\n"
+        examplesMessage += "$ %s 99999999 -e OpenSOSReport -o OpenSOSReport.fileviewer=konqueror\n\n" %(self.__commandName)
+        examplesMessage += "To run the cluster and the checksysreport plugin against a previously extracted report:\n"
+        examplesMessage += "$ %s -p /home/sbradley-devel/sxarchive/ereports/99999999/2011-01-26_160247 -e cluster,checksysreport\n\n" %(self.__commandName)
+        examplesMessage += "To run default plugins on directory of reports(non-reports will not be processed) and use the modified archived layout:\n"
+        examplesMessage += "$ %s 99999999 -R ~/tmp/ -M\n\n" %(self.__commandName)
+        examplesMessage += "To run the cluster and the checksysreport plugin against a previously extracted report that used the modified layout scheme:\n"
+        examplesMessage += "$ %s -p /home/sbradley-devel/sxarchive/ereports/99999999/2011-01-26_160247 -e cluster,checksysreport -M\n\n" %(self.__commandName)
+        OptionParser.print_help(self)
+        print layoutDescription
+        print examplesMessage
+
+class ExtendOption (Option):
+        """
+        Allow to specify comma delimited list of entries for arrays
+        and dictionaries.
+        """
+        ACTIONS = Option.ACTIONS + ("extend",)
+        STORE_ACTIONS = Option.STORE_ACTIONS + ("extend",)
+        TYPED_ACTIONS = Option.TYPED_ACTIONS + ("extend",)
+
+        def take_action(self, action, dest, opt, value, values, parser):
+            """
+            This function is a wrapper to take certain options passed
+            on command prompt and wrap them into an Array.
+
+            @param action: The type of action that will be taken. For
+            example: "store_true", "store_false", "extend".
+            @type action: String
+            @param dest: The name of the variable that will be used to
+            store the option.
+            @type dest: String/Boolean/Array
+            @param opt: The option string that triggered the action.
+            @type opt: String
+            @param value: The value of opt(option) if it takes a
+            value, if not then None.
+            @type value:
+            @param values: All the opt(options) in a dictionary.
+            @type values: Dictionary
+            @param parser: The option parser that was orginally called.
+            @type parser: OptionParser
+            """
+            if (action == "extend") :
+                valueList=[]
+                try:
+                    for v in value.split(","):
+                        if ((opt == "-r") or (opt == "--report") or
+                            (opt == "-f") or (opt == "--misc_files")) :
+                            if (v[0] == '~' and not os.path.exists(v)):
+                                v = os.path.expanduser(v)
+                            elif (not v[0] == '/' and not os.path.exists(v)):
+                                v = os.path.abspath(v)
+
+                            if (os.path.exists(v)) :
+                                # only append paths that exists.
+                                valueList.append(v)
+                            else:
+                                message = "The filepath does not exist: %s" %(v)
+                                logging.getLogger(sx.MAIN_LOGGER_NAME).error(message)
+                        elif ((opt == "-o") or (opt == "--pluginOptions")):
+                            # Verify that is the format: key=value, where key is of format parent.optionname
+                            # Example: Opensosreport.browser=konqueror
+                            keyEqualSplit = v.split("=")
+                            peroidEqualSplit = v.split(".")
+                            if ((len(keyEqualSplit) == 2) and (len(peroidEqualSplit) == 2)) :
+                                valueList.append(v)
+                            else:
+                                logging.getLogger(sx.MAIN_LOGGER_NAME).error("The plugin option has invalid syntax:" %(v))
+                        elif ((opt == "-e") or (opt == "--enable_plugin") or
+                              (opt == "-n") or (opt == "--disable_plugin")) :
+                            if ((v == "clusterha") or (v == "cluster")):
+                                valueList.append("cluster")
+                            else:
+                                valueList.append(v)
+                        else:
+                            # append everything else that does not deal with paths
+                            valueList.append(v)
+                except:
+                    pass
+                else:
+                    values.ensure_value(dest, []).extend(valueList)
+            else:
+                Option.take_action(self, action, dest, opt, value, values, parser)
+
+class ConsoleReport:
+    def __init__(self):
+        self.__pathToCompressedReports = ""
+        self.__pathToExtractedReports = ""
+        self.__pathToNonReports = ""
+        self.__listOfNonReportPaths = ""
+        self.__mapOfPluginReportPaths = {}
+
+    def printToConsole(self):
+        # Print the report archive location
+        if ((len(self.getPathToCompressedReports()) > 0) or
+            (len(self.getPathToExtractedReports()) > 0)):
+            print
+            print "%s" %(ConsoleUtil.colorText("Details of Report Extraction: ","lcyan"))
+            print "%s %s" %(ConsoleUtil.colorText("Compressed Reports Path:  ","lgreen"), self.getPathToCompressedReports())
+            print "%s %s" %(ConsoleUtil.colorText("Extracted Reports Path:   ","lgreen"), self.getPathToExtractedReports())
+            print
+
+        # Print all the paths to files created by the plugins
+        if (len(self.getMapOfPluginReportPaths().keys()) > 0):
+            print "%s" %(ConsoleUtil.colorText("List of Files Created by the Plugins: ","lcyan"))
+            for key in self.getMapOfPluginReportPaths().keys():
+                index = 1;
+                for pathToPluginReport in self.getMapOfPluginReportPaths()[key]:
+                    print "%s %s" %(ConsoleUtil.colorText("%s plugin File %d: " %(key, index),"lgreen"), pathToPluginReport)
+                    index += 1;
+                print
+
+        if (len(self.getListOfNonReportPaths()) > 0) :
+            print "%s" %(ConsoleUtil.colorText("Details for Non-Report Files: ","lcyan"))
+            index = 1;
+            for pathToNonReportFile in self.getListOfNonReportPaths():
+                print "%s %s" %(ConsoleUtil.colorText("Non-Report File %d: " %(index),"lgreen"), pathToNonReportFile)
+                index += 1;
+            print
+    def setPathToCompressedReports(self, pathToCompressedReports):
+        self.__pathToCompressedReports = pathToCompressedReports
+
+    def setPathToExtractedReports(self, pathToExtractedReports):
+        self.__pathToExtractedReports = pathToExtractedReports
+
+    def setPathToNonReports(self, pathToNonReports):
+        self.__pathToNonReports = pathToNonReports
+
+    def setListOfNonReportPaths(self, listOfNonReportPaths):
+        self.__listOfNonReportPaths = listOfNonReportPaths
+
+    def setMapOfPluginReportPaths(self, mapOfPluginReportPaths):
+        self.__mapOfPluginReportPaths = mapOfPluginReportPaths
+
+    def getPathToCompressedReports(self):
+        return self.__pathToCompressedReports
+
+    def getPathToExtractedReports(self):
+        return self.__pathToExtractedReports
+
+    def getPathToNonReports(self):
+        return self.__pathToNonReports
+
+    def getListOfNonReportPaths(self):
+        return self.__listOfNonReportPaths
+
+    def getMapOfPluginReportPaths(self):
+        return self.__mapOfPluginReportPaths
+
+# ###############################################################################
+# Main Function
+# ###############################################################################
+if __name__ == "__main__":
+    try:
+        # #######################################################################
+        # Setup the logger and create config directory
+        # #######################################################################
+        lwObjSXC = LogWriter(sx.MAIN_LOGGER_NAME,
+                             logging.INFO,
+                             sx.MAIN_LOGGER_FORMAT,
+                             disableConsoleLog=False)
+        # #######################################################################
+        # Create configuration directory if it does not exist
+        # #######################################################################
+        sxConfigFiles = SXConfigurationFiles()
+        result = sxConfigFiles.generateDefaultConfigurationDirectories()
+        if (not result):
+            message = "There was an error creating the user configuration directory. sxconsole will proceed without it."
+            logging.getLogger(sx.MAIN_LOGGER_NAME).warning(message)
+
+        # #######################################################################
+        # Get options and set the debug level
+        # #######################################################################
+        (cmdLineOpts, cmdLineArgs) = __getOptions(VERSION_NUMBER)
+
+        if (cmdLineOpts.enableDebugLogging) :
+            logging.getLogger(sx.MAIN_LOGGER_NAME).setLevel(logging.DEBUG)
+            message = "Debugging has been enabled."
+            logging.getLogger(sx.MAIN_LOGGER_NAME).debug(message)
+
+        # #######################################################################
+        # List the plugins if option enabled
+        # #######################################################################
+        # Print list of plugins if selected and exit
+        if (cmdLineOpts.listModules):
+            versionMessage = "%s %s\n" %(os.path.basename(sys.argv[0]), VERSION_NUMBER)
+            versionMessage += "This program was written by Shane Bradley(sbradley@redhat.com): http://tools.gss.redhat.com/trac/sx \n"
+            print versionMessage
+            reportsHelper = ReportsHelper()
+            reportsHelper.printReportsList(includeUserReports=(not cmdLineOpts.disableUserDefinedModules))
+            pluginsHelper = PluginsHelper()
+            pluginsHelper.printPluginsList(includeUserPlugins=(not cmdLineOpts.disableUserDefinedModules))
+            sys.exit()
+
+        # #######################################################################
+        # Exeute the main function to do the action if options are validated.
+        # #######################################################################
+        caseNumber = ""
+        if (len(cmdLineArgs) > 0):
+            caseNumber = cmdLineArgs[0]
+
+        if (__validateOptions(caseNumber, cmdLineOpts.pathToExtractedReports)):
+            # Get Layout
+            al = getArchiveLayout(caseNumber, cmdLineOpts.archivePath,
+                                  cmdLineOpts.pathToExtractedReports,
+                                  cmdLineOpts.modifiedArchiveLayout)
+
+            # message = "The archive directory layout:\n%s" %(str(al))
+            # logging.getLogger(sx.MAIN_LOGGER_NAME).debug(message)
+
+            # #######################################################################
+            # Create a ConsoleReport Object that will report all information about
+            # the execution of sxconsole such as paths to reports created.
+            # #######################################################################
+            consoleReport = ConsoleReport()
+
+            # #######################################################################
+            # Move all non-report files before extracting reports so
+            # that non-report files will not be scanned.
+            # #######################################################################
+            if (len(cmdLineOpts.filePathArray) > 0):
+                message = "Moving all the non-report files into the archive directory before extracting reports so they will not be scanned."
+                logging.getLogger(sx.MAIN_LOGGER_NAME).info(message)
+                pathToNonReports = al.getPathToNonReportFiles()
+                consoleReport.setPathToNonReports(pathToNonReports)
+                consoleReport.setListOfNonReportPaths(__moveNonReportFiles(pathToNonReports, cmdLineOpts.filePathArray))
+
+            # #######################################################################
+            # Get the list of extracted reports that were extracted or loaded.
+            # #######################################################################
+            listOfReportsExtracted = extractReports(caseNumber, al,
+                                                    cmdLineOpts.pathToExtractedReports,
+                                                    cmdLineOpts.listOfReports,
+                                                    cmdLineOpts.reportPath,
+                                                    (not cmdLineOpts.disableUserDefinedModules))
+
+            # Set archive location if there was reports load/extracted.
+            if (len(listOfReportsExtracted) > 0):
+                consoleReport.setPathToCompressedReports(al.getPathToCompressedReports())
+                consoleReport.setPathToExtractedReports(al.getPathToExtractedReports())
+
+                # #######################################################################
+                # Run the plugins on the extracted reports
+                # #######################################################################
+                # Get list of enabled plugins.
+                pluginsHelper = PluginsHelper()
+                # For now this map is empty
+                optionsForPluginsMap = __getPluginOptions(cmdLineOpts.pluginOptions)
+                listOfEnabledPlugins = pluginsHelper.getEnabledPluginsList(al.getPathToExtractedReports(),
+                                                                           cmdLineOpts.enableAllPlugins,
+                                                                           cmdLineOpts.disableAllPlugins,
+                                                                           cmdLineOpts.enablePlugins,
+                                                                           cmdLineOpts.disablePlugins,
+                                                                           optionsForPluginsMap,
+                                                                           (not cmdLineOpts.disableUserDefinedModules))
+                # Print a list of enabled plugins.
+                if (len(listOfEnabledPlugins) > 0) :
+                    message = "The following plugins will be enabled(Some plugins will required extracted reports to run):"
+                    logging.getLogger(sx.MAIN_LOGGER_NAME).info(message)
+                    for plugin in listOfEnabledPlugins:
+                        if plugin.isEnabled() :
+                            print "\t  %s" %(plugin)
+                    # Generate map of all plugins reports that were created after they run.
+                    mapOfPluginReportPaths = pluginsHelper.generatePluginReports(listOfReportsExtracted, listOfEnabledPlugins)
+                    # Set the map of plugins report files created if there was any.
+                    if (len(mapOfPluginReportPaths.keys()) > 0):
+                        consoleReport.setMapOfPluginReportPaths(mapOfPluginReportPaths)
+                else:
+                    logging.getLogger(sx.MAIN_LOGGER_NAME).warning("There are no plugins enabled.")
+            # #######################################################################
+            # Remove the compressed and extraction directory since nothing was
+            # extracted and we do not want empty directories.
+            # #######################################################################
+            # Remove the compressed directory if it is empty.
+            if ((os.path.exists(al.getPathToCompressedReports())) and (not len(listOfReportsExtracted) > 0)):
+                if (not FileUtil.dirFileCount(al.getPathToCompressedReports()) > 0):
+                    try:
+                        os.rmdir(al.getPathToCompressedReports())
+                    except OSError:
+                        message = "There was an error removing the non-empty directory: %s." %(al.getPathToCompressedReports())
+                        logging.getLogger(sx.MAIN_LOGGER_NAME).debug(message)
+
+            # Remove the extraction directory if it is empty.
+            if ((os.path.exists(al.getPathToExtractedReports())) and (not len(listOfReportsExtracted) > 0)):
+                if (not FileUtil.dirFileCount(al.getPathToExtractedReports()) > 0):
+                    try:
+                        os.rmdir(al.getPathToExtractedReports())
+                    except OSError:
+                        message = "There was an error removing the non-empty directory: %s." %(al.getPathToExtractedReports())
+                        logging.getLogger(sx.MAIN_LOGGER_NAME).debug(message)
+
+
+            # #######################################################################
+            # Remove all the temporary files created by the
+            # extraction. The temporary directory created by
+            # Extraction classes, usually directory /tmp/sx-*. All
+            # tarballs extract to here.
+            # #######################################################################
+            Extractor.clean()
+
+            # #######################################################################
+            # The plugins are done running and post-sxconsole action is done.
+            # Remove tmp files since we are done with reportExtractor object
+            # #######################################################################
+            for report in listOfReportsExtracted:
+                report.clean()
+
+            # Print console information about the ConsoleReport
+            consoleReport.printToConsole()
+        # #######################################################################
+    except KeyboardInterrupt:
+        print ""
+        message =  "This script will exit since control-c was executed by end user."
+        logging.getLogger(sx.MAIN_LOGGER_NAME).error(message)
+        sys.exit(2)
+    # #######################################################################
+    # Exit the application with zero exit code since we cleanly exited.
+    # #######################################################################
+    sys.exit()
+

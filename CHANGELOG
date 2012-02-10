@@ -1,0 +1,247 @@
+* Fri Feb 10 2012 Shane Bradley <sbradley@redhat.com>- 2.08-0.0
+- Added detection for various cluster configurations issues.
+- Added ability to detect samba/nfs exports of gfs/gfs2 fs and will report if nfs/smb are exporting same gfs/gfs2 fs.
+- Added ability to detect if noatime nodirtime are not used on gfs/gfs2 mount.
+- Added ability to detect if localflocks is not enabled on gfs/gfs2 exported via nfs.
+* Fri Jan 20 2012 Shane Bradley <sbradley@redhat.com>- 2.07-0.3
+- Added in smb.conf and etc/exports parsers.
+- Added in GFS/GFS2 nfs/smb export checks
+* Tue Jan 10 2012 Shane Bradley <sbradley@redhat.com>- 2.07-0.2
+- Removed the FetchURL class cause currently not used.
+- Added ability to summarize network aliases/bridging in network and cluster plugins.
+- Added curl output to console on downloads.
+- Fix bug on extracting items not under a root directory with tar.
+- Fix bug in checksysreport plugin if no installedrpms file is found.
+* Thu Jan 05 2012 Shane Bradley <sbradley@redhat.com>- 2.07-0
+- Fix issue with correctly parsing cluster.conf for gfs/gfs2 fs.
+* Fri Dec 02 2011 Shane Bradley <sbradley@redhat.com>- 2.06-15
+- Removed python-pycurl dependencey and now error will be printed if that library is required.
+- Added another way to detect bonding and added more info to networkmap object for proc data.
+- Fixed parsing error in device mapper parser.
+- Added ability to remove newline in installedrpms file when running checksysreport so it will not error out.
+- Fixed error where no nodeid would error out, now will try to magically guess the id.
+* Fri Dec 02 2011 Shane Bradley <sbradley@redhat.com>- 2.06-14
+- Fix bug in new cluster.conf parser
+- Added detection for bnx2/netxen module in clustering.
+* Fri Dec 02 2011 Shane Bradley <sbradley@redhat.com>- 2.06-13
+- Fix bug in adding a cluster node.
+- Removed PluginEvaluator class
+* Tue Nov 22 2011 Shane Bradley <sbradley@redhat.com>- 2.06-12
+- Removed scsierrors.py, yakuake.py, clusterhaarchreview.py plugins. They will likely go into supplement package.
+- Added option to flag cluster as a stretch cluster and run evaluation checks on it.
+- Disabled post_join_delay check in clusterha plugin.
+- Added check for clean_start in clusterha plugin.
+- Removed a bug in storage that would not error on empty lines parsing modules.
+- Added a warning if there was parsing error on installed-rpms for checksysreport plugin.
+* Tue Nov 22 2011 Shane Bradley <sbradley@redhat.com>- 2.06-11
+- Removed python-libxml2 and moved XML code to elementtree which is native.
+* Tue Oct 12 2011 Shane Bradley <sbradley@redhat.com>- 2.06-10
+- Fixed bug where empty gfs mounted fs written to file. If no fs then nothing written to file.
+- Disabled creating of copies of files that are read within the report. No hidden temp files are created on reads.
+- Changed how xml cluster.conf is read by libxml2. It is read from string and not file.
+- Fix bug in network maps.
+* Tue Oct 11 2011 Shane Bradley <sbradley@redhat.com>- 2.06-9
+- Added checks for openais and corosync being disabled at boot for clusters.
+- Fixed issue where no fence devices in a defined fenced method would return false instead of true.
+- Updated urls to be public facing.
+- Fixed parsing issue with config file reader when handling quotes.
+- Fixed issue where quotes /etc/sysconfig/network-scripts/ifcfg* values would error.
+- Change the -l option to -m for listing modules.
+- Added new table formatting functions for printing reports.
+- Cleaned up the network, storage, cluster reports so that they are now using tables.
+- Fix issue with adding files creates empty directory for extraction if no files extracted.
+- Added networking to cluster report.
+- Reworked the networking parser/object
+* Tue Oct 11 2011 Shane Bradley <sbradley@redhat.com>- 2.06-8
+- Moved cluster config checks to evaluator.
+- Fixed bug with extractors on finding a uname file.
+- Fix bug with blockdevicetree and building the tree.
+* Tue Sep 27 2011 Shane Bradley <sbradley@redhat.com>- 2.06-7
+- Fixed bug with cluster on finding gfs fs.
+* Wed Aug 3 2011 Shane Bradley <sbradley@redhat.com>- 2.06-6
+- Cleaned up sxconsole and moved the non-report code above extracting reports.
+* Wed Aug 3 2011 Shane Bradley <sbradley@redhat.com>- 2.06-5
+- Increased timeout values for FetchURL.
+- The cluster nodes will be sorted by cluster node_id.
+- Add 2 multipath checks and added mpath summmary to storage summary
+- Remove the multipath plugin and just added it to storage.py
+* Wed Aug 3 2011 Shane Bradley <sbradley@redhat.com>- 2.06-4
+- Fixed configuration files classes to work with ~/.checksysreportrc.
+- Changing cluster.py to clusterha.py and change libs as well.
+- Added new plugin for multipathing.
+* Mon Aug 1 2011 Shane Bradley <sbradley@redhat.com>- 2.06-3
+- Added GFS/GFS2 fs detection for cluster plugin cluster.py
+- Cleaned up some of the reports.
+- Fixed bug where no failed evaluation would print empty results in file.
+* Thu Jul 28 2011 Shane Bradley <sbradley@redhat.com>- 2.06-2
+- Add cluster support for bond detection mode.
+- Added networking plugins(-e networking) and libs.
+- Added modprobe.conf parser.
+* Thu Jul 14 2011 Shane Bradley <sbradley@redhat.com>- 2.06-1
+- Found the correct timeout var for fetching files.
+- Refactor some of the code so that libs will be more useful for other projects.
+- Remove some defunct code out or useless classes.
+- Extractors are now loadable modules like plugins/reports.
+- Major rewrite of libs to be more portable includeding simpler report/plugin loading.
+- Fixed bug -f option so files go in correct dir.
+* Mon Jun 17 2011 Shane Bradley <sbradley@redhat.com>- 2.05-18
+- Fixed bug with storage plugin writing to console
+- Added new function for enabled/disabled services to be more clear.
+* Mon Jun 13 2011 Shane Bradley <sbradley@redhat.com>- 2.05-17
+- Fixed bug with api change.
+* Mon Jun 13 2011 Shane Bradley <sbradley@redhat.com>- 2.05-16
+- Moved options to main functions to an object class to make calling externally easier.
+- Cleaned up the main sxconsole file to be more modular and easier to interact with.
+* Tue Apr 19 2011 Shane Bradley <sbradley@redhat.com>- 2.05-15
+- Fixed a bug in storage plugin that error with backtrace if certain data objects were None.
+- Added detection for data objects that are None being parsed to return a valid return item.
+* Mon Apr 18 2011 Shane Bradley <sbradley@redhat.com>- 2.05-14
+- Added -M option for a new archive layout of the files
+- Update help messages and examples with -h is invoked with sxconsole.
+* Wed Apr 13 2011 Shane Bradley <sbradley@redhat.com>- 2.05-13
+- Fixed error on cluster output when no chkconfig was found.
+- Tweak output for scsierrors
+- Tweak scsi errors and added support for grabbing information from remote text file.
+* Wed Mar 30 2011 Shane Bradley <sbradley@redhat.com>- 2.05-12
+- Lots of refactoring changes to make libs cleaner.
+- Fixed issue where hostname not found.
+- Added plugin that searches messages file for scsi errors
+* Wed Mar 30 2011 Shane Bradley <sbradley@redhat.com>- 2.05-11
+- Build error that did not properly build package.
+* Fri Mar 25 2011 Shane Bradley <sbradley@redhat.com>- 2.05-10
+- Forget to add in new libs
+* Fri Mar 04 2011 Shane Bradley <sbradley@redhat.com>- 2.05-09
+- Added better search for clusternode in sosreport.
+* Fri Mar 04 2011 Shane Bradley <sbradley@redhat.com>- 2.05-08
+- Fixed bug with multicast
+- Fixed logic in blockdevicetree
+- Added fence_scsi detection to cluster
+- Moved some of the checks in the cluster summary file to the evaluator file.
+* Tue Mar 01 2011 Shane Bradley <sbradley@redhat.com>- 2.05-07
+- Fixed bug with kmod-gfs2 package detection.
+* Tue Mar 01 2011 Shane Bradley <sbradley@redhat.com>- 2.05-06
+- Changed storage.py to only work with sosreports since sos_commands files are needed.
+- Added openshared-root cluster detection in the cluster plugin.
+- Fixed bug with procparser and int cast.
+* Fri Feb 28 2011 Shane Bradley <sbradley@redhat.com>- 2.05-05
+- Finished writing storage.py and the blockdevicetree that is created.
+* Fri Feb 11 2011 Shane Bradley <sbradley@redhat.com>- 2.05-04
+- Fix bug where hostname map was not being generated correctly.
+- Python 2.6.5 or greater is only supported now.
+- Fix import bug that was found in rhel6 for hashlib.
+- Added storage.py plugin to analyze storage files.
+* Thu Feb 10 2011 Shane Bradley <sbradley@redhat.com>- 2.05-03
+- Fix bug that required .checksysreport file. This is no longer needed.
+* Thu Feb 10 2011 Shane Bradley <sbradley@redhat.com>- 2.05-02
+- Add rhev plugin support
+* Thu Jan 20 2011 Shane Bradley <sbradley@redhat.com>- 2.05-01
+- Added cleaner output to console after finish running sxconsole.
+- Cleaned up logging.
+- Added support for RHEV Log Collector.
+- Added support for reports with reports automatating, if the report
+- is known to contain other reports, then it will add those reports to queue
+- for processing.
+- Added support for RHEL6 sosreport that uses .xz.
+- Added support for multiple compression/archive tools and ability to add more.
+- Added .xz and .zip support.
+- Fixed bug with archiving non-report files.
+* Tue Dec 7 2010 Shane Bradley <sbradley@redhat.com>- 2.03-13
+- Added minor tweaks
+* Tue Nov 23 2010 Shane Bradley <sbradley@redhat.com>- 2.03-12
+- Added a config file parser class
+- Added missing depends on libxml2-python
+* Wed Nov 10 2010 Shane Bradley <sbradley@redhat.com>- 2.03-11
+- Added some console util classes
+* Thu Oct 28 2010 Shane Bradley <sbradley@redhat.com>- 2.03-10
+- Added xz support for RHEL 6 sosreports
+- Remove native python tarfile and replace with all GNU
+* Thu Oct 14 2010 Shane Bradley <sbradley@redhat.com>- 2.03-9
+- Added RHEL 6 support
+* Mon Sep 13 2010 Shane Bradley <sbradley@redhat.com>- 2.03-8
+- Updated sx.spec and build procedures to be compliant with fedoraproject.org.
+- Fixed issue where archived reports could not be loaded.
+* Thu Aug 26 2010 Shane Bradley <sbradley@redhat.com>- 2.03-7
+- Changed LICENSE to GPLv2
+- Cleaned up the build process
+- Cleaned up TarBall class
+- Tweaked plugin/report classes
+- Added option to checksysreport to enable native or binary execution to gather data.
+- Removed checksysreport dependency and added error checking.
+- Updating docs
+- Minor tweaks and fixes
+* Mon Jul 19 2010 Shane Bradley <sbradley@redhat.com>- 2.03-6
+- Fix bug in generating network maps did not account for capitalized letters
+- Added options to opensosreport for choosing fileviewer
+- Added options to yakuake for choosing fileviewer and if msglogs are opened
+- Added colorized text for listing of plugins with -l option
+- Fix a few bugs
+- Added new plugin for opening sosreport html reports in browser
+- Added plugin options, so plugin can be customized
+* Thu Jul 01 2010 Shane Bradley <sbradley@redhat.com>- 2.03-5
+- Refactor out the helper functions for reports, moved them to sreport with
+- sosreport/sysreport inherit
+- Fixed bug for -R option when dir did not exist
+- Refactor cluster plugin and it libs
+- Added yakuake.py plugin into default binary for package
+- Fixed some logging issues
+* Tue Jun 22 2010 Shane Bradley <sbradley@redhat.com>- 2.03-4
+- Fixed bug in disabled/enabled plugins
+- Added better filepath handling with -f option
+- Moved cluster plugin report file to one file
+* Thu Jun 17 2010 Shane Bradley <sbradley@redhat.com>- 2.03-3
+- Fixed bug in cluster summary and edited summary for no packages installed.
+* Tue Jun 15 2010 Shane Bradley <sbradley@redhat.com>- 2.03-2
+- Added console message to list files that were created.
+- Add console message and new summary file to cluster plugin.
+- Cleaned up cluster/checksysreport plugins.
+- Added option to load previous extracted reports.
+* Fri Jun 11 2010 Shane Bradley <sbradley@redhat.com>- 2.03-1
+- Added new cluster plugin and cleaned up functions for it
+- Fix EOF error on tarballs so now those files are skipped
+* Thu Mar 17 2010 Shane Bradley <sbradley@redhat.com>- 2.02-5
+- Fixed is cluster node name in hosts file bug
+* Thu Jul 9 2009 Shane Bradley <sbradley@redhat.com>- 2.02-4
+- Factored out some code to streamline and simplify
+- Fix command option error that did not check for disable plugin option
+- Fix index error on parsing cluster.conf(via multicast section)
+* Thu Jul 9 2009 Shane Bradley <sbradley@redhat.com>- 2.02-3
+- Fix build error
+* Thu Jul 9 2009 Shane Bradley <sbradley@redhat.com>- 2.02-2
+- Added support for userdefined reports/plugins
+- Added some new rhnsat functions for package detection
+- Fixed qdisk bug where would not always find out if enabled.
+- Fixed a couple of bugs which include verifing tarfile type is correct.
+- Fixed some document information.
+- Fixed error on pulling in nonreport file types
+- Finished writing on API docs.
+* Thu Jun 25 2009 Shane Bradley <sbradley@redhat.com>- 2.01-1
+- sxconsole is not pluggable for reports and tests
+- Rewrote cluster tools and added more tests
+- Refactored and cleaned up core of code
+- Removed sxqt for now since refactoring of code will break it
+* Wed Apr 29 2009 Shane Bradley <sbradley@redhat.com>- 1.01-13
+- Fixed bug with qdisk that reported in correct result on runlevel detection.
+- Fixed changelog on release versions updates.
+* Mon Apr 27 2009 Shane Bradley <sbradley@redhat.com>- 1.01-12
+- Updated sx.spec to be fedorahosted compliant. Added qdisk support.
+- Added if statements on xml to make sure item exists
+* Thu Apr 16 2009 Shane Bradley <sbradley@redhat.com>- 1.01-11
+- Fixed bug in the list of valid sosreports that were moved.
+* Thu Apr 16 2009 Shane Bradley <sbradley@redhat.com>- 1.01-10
+- Fixed two issues: nonsosreport *.tar.bz2 will stop sx and gfs module compare would fail incorrectly
+* Mon Mar 09 2009 Shane Bradley <sbradley@redhat.com>- 1.01-9
+- Fixed the -R, so that if file does not exist it will not error out.
+* Sun Mar 01 2009 Shane Bradley <sbradley@redhat.com>- 1.01-8
+- Fixed the -R, it was not running because of nested loop
+* Sun Mar 01 2009 Shane Bradley <sbradley@redhat.com>- 1.01-7
+- Fix the gui from crashing if root directory does not exist
+* Thu Feb 26 2009 Shane Bradley <sbradley@redhat.com>- 1.01-6
+- Removed import options, added directory view on tree to import, added highlighting on search
+* Wed Feb 11 2009 Shane Bradley <sbradley@redhat.com>- 1.01-5
+- Fix add file dialog to goto last dir, fixed some warning for checking checksysreport file, fixed loop in acpi checking
+* Tue Feb 10 2009 Shane Bradley <sbradley@redhat.com>- 1.01-4
+- Added support for 7 characters that will enable support for larger ticket numbers.
+* Wed Jan 21 2009 Shane Bradley <sbradley@redhat.com>- 1.01-2
+- Fixed a few bugs, remove yakuake support, added new option to generate rhcs kernel table.
+* Wed Dec 17 2008 Shane Bradley <sbradley@redhat.com>- 1.01-1
+- First release of new version of sx with pyqt4 gui support.
