@@ -1,5 +1,4 @@
 #!/usr/bin/python
-# setup.py - distutils setup for sx
 from distutils.core import setup
 
 # Additional Files in MANIFEST.in
@@ -18,7 +17,7 @@ if __name__ == "__main__":
         version="2.08",
         author="Shane Bradley",
         author_email="sbradley@redhat.com",
-        url="http://tools.gss.redhat.com/trac/sx",
+        url="https://fedorahosted.org/sx",
         description="Tool to extract reports and run plug-ins against those extracted reports.",
         license="GPLv2",
         packages=["sx", "sx.plugins", "sx.plugins.lib",  "sx.reports", "sx.extractors",
