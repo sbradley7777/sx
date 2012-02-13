@@ -4,7 +4,7 @@ Summary: Tool to extract reports and run plug-ins against those extracted report
 Name: sx
 Version: 2.08
 Release: 0%{?dist}
-URL: http://tools.gss.redhat.com/trac/sx
+URL: https://fedorahosted.org/sx
 Source0: %{name}-%{version}.tar.gz
 License: GPLv2
 Group: Applications/Archiving

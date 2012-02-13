@@ -569,7 +569,7 @@ class OptionParserExtended(OptionParser):
         """
         self.__commandName = os.path.basename(sys.argv[0])
         versionMessage = "%s %s\n" %(self.__commandName, version)
-        versionMessage += "This program was written by Shane Bradley(sbradley@redhat.com): http://tools.gss.redhat.com/trac/sx \n"
+        versionMessage += "This program was written by Shane Bradley(sbradley@redhat.com): https://fedorahosted.org/sx\n"
 
         commandDescription  ="%s will extract different report types to an "%(self.__commandName)
         commandDescription += "archived directory and archive the report file.\n"
@@ -802,7 +802,7 @@ if __name__ == "__main__":
         # Print list of plugins if selected and exit
         if (cmdLineOpts.listModules):
             versionMessage = "%s %s\n" %(os.path.basename(sys.argv[0]), VERSION_NUMBER)
-            versionMessage += "This program was written by Shane Bradley(sbradley@redhat.com): http://tools.gss.redhat.com/trac/sx \n"
+            versionMessage += "This program was written by Shane Bradley(sbradley@redhat.com): https://fedorahosted.org/sx \n"
             print versionMessage
             reportsHelper = ReportsHelper()
             reportsHelper.printReportsList(includeUserReports=(not cmdLineOpts.disableUserDefinedModules))
