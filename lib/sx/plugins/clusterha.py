@@ -104,8 +104,10 @@ class Clusterha(sx.plugins.PluginBase):
             filename = "%s-services.txt" %(cca.getClusterName())
             clusteredServicesList = cca.getClusteredServices()
             clusteredServicesString = ""
+            index = 1
             for clusteredService in clusteredServicesList:
-                clusteredServicesString += "%s\n" %(str(clusteredService))
+                clusteredServicesString += "%d. %s\n" %(index, str(clusteredService))
+                index = index + 1
             if (len(clusteredServicesString) > 0):
                 self.writeSeperator(filename, "Cluster Services Summary");
                 self.write(filename, "There was %d clustered services.\n" %(len(clusteredServicesList)))
