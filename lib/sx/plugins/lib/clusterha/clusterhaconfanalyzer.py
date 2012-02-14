@@ -124,9 +124,9 @@ class ClusteredService():
         self.__listOfClusteredResources = listOfClusteredResources
 
     def __str__(self):
-        rString = "%s(recovery policy: %s | failover domain: %s)\n  %s\n%s" %(self.getName(), self.getRecoveryPolicy(),
-                                                                            self.getFailoverDomain().getName(), self.getFailoverDomain(),
-                                                                            self.walkServiceToString())
+        rString = " %s(recovery policy: %s | failover domain: %s)\n     %s\n%s" %(self.getName(), self.getRecoveryPolicy(),
+                                                                                  self.getFailoverDomain().getName(), self.getFailoverDomain(),
+                                                                                  self.walkServiceToString())
         return rString
 
     def __walkServiceToStringHelper(self, resource):
@@ -140,8 +140,7 @@ class ClusteredService():
         rString = ""
         for resource in self.getListOfClusterResources():
             spacer = "  " * (resource.getLevel() - 1)
-            rString +="  %s%s\n%s" %(spacer, str(resource), self.__walkServiceToStringHelper(resource))
-
+            rString +="     %s%s\n%s" %(spacer, str(resource), self.__walkServiceToStringHelper(resource))
         return rString
 
     def getName(self):

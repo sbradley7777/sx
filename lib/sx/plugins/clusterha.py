@@ -106,7 +106,10 @@ class Clusterha(sx.plugins.PluginBase):
             clusteredServicesString = ""
             index = 1
             for clusteredService in clusteredServicesList:
-                clusteredServicesString += "%d. %s\n" %(index, str(clusteredService))
+                sIndex = str(index)
+                if (index < 10):
+                    sIndex = " %d" %(index)
+                clusteredServicesString += "%s. %s\n" %(sIndex, str(clusteredService))
                 index = index + 1
             if (len(clusteredServicesString) > 0):
                 self.writeSeperator(filename, "Cluster Services Summary");
