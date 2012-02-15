@@ -475,6 +475,7 @@ class ClusterHAConfAnalyzer :
         @param fenceDeviceAgentName: The type of fenceDeviceAgentName that will be queried.
         @type fenceDeviceAgentName: String
         """
+        fenceDeviceAgentName = fenceDeviceAgentName.strip()
         cnFenceDeviceList = self.getClusterNodeFenceDevicesList(clusternodeName)
         for fd in cnFenceDeviceList:
             if (fd.getAgent() == fenceDeviceAgentName):
