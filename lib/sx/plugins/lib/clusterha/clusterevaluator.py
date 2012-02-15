@@ -145,6 +145,12 @@ class ClusterEvaluator():
                 description = "The fence device \"fence_manual\" is defined as a fence agent for this node which is an unsupported fencing method."
                 urls = ["https://access.redhat.com/kb/docs/DOC-43212"]
                 rString += StringUtil.formatBulletString(description, urls)
+            # Check to make sure that fence_vmware is not enabled on node
+            if (cca.isFenceDeviceAgentEnabledOnClusterNode(clusternode.getClusterNodeName(), "fence_vmware")):
+                description =  "The fence device \"fence_vmware\" is defined as a fence agent for this node which is an unsupported fencing method. "
+                description += "The only supported fencing method for VMWare is fence_vmware_soap and fence_scsi."
+                urls = ["https://access.redhat.com/kb/docs/DOC-46375"]
+                rString += StringUtil.formatBulletString(description, urls)
         else:
             description = "There was no fence device defined for the clusternode. A fence device is required for each clusternode."
             urls = ["https://access.redhat.com/kb/docs/DOC-62219"]
@@ -363,10 +369,29 @@ class ClusterEvaluator():
         # Check global configuration issues:
         # ###################################################################
         clusterConfigString = ""
-        if (not cca.isClusterConfFilesIdentical(self.__cnc.getPathToClusterConfFiles())):
-            description = "The /etc/cluster/cluster.conf file was not identical on all the cluster nodes."
-            urls = ["https://access.redhat.com/kb/docs/DOC-65315"]
-            clusterConfigString += StringUtil.formatBulletString(description, urls)
+        if ((not cca.isClusterConfFilesIdentical(self.__cnc.getPathToClusterConfFiles())) and
+            (len(cca.getClusterNodeNames()) > 1)):
+            if ((len(self.__cnc.getPathToClusterConfFiles()) > 2) and
+                (len(self.__cnc.getPathToClusterConfFiles()) == (len(self.__cnc.getClusterNodes())))):
+                # More than 2 nodes compared and all cluster nodes cluster.confs were compared.
+                description = "The /etc/cluster/cluster.conf file was not identical on all the cluster nodes analyzed."
+                urls = ["https://access.redhat.com/kb/docs/DOC-65315"]
+                clusterConfigString += StringUtil.formatBulletString(description, urls)
+            elif (not len(self.__cnc.getPathToClusterConfFiles()) > 1):
+                # Need more than 1 node to compare cluster.confs
+                message = "There was not more than 1 cluster.conf files found to compare for a cluster of %d cluster nodes. This evaluation will be skipped." %(len(cca.getClusterNodeNames()))
+                logging.getLogger(sx.MAIN_LOGGER_NAME).warning(message)
+            elif (not  len(cca.getClusterNodeNames()) == len(self.__cnc.getClusterNodes())):
+                # Not all the cluster.conf were compared. 
+                description  = "The /etc/cluster/cluster.conf file was not identical on all the cluster nodes analyzed."
+                description += "There was only %d cluster.conf compared for the %d node cluster." %(len(self.__cnc.getPathToClusterConfFiles()),
+                                                                                                    len(cca.getClusterNodeNames()))
+                urls = ["https://access.redhat.com/kb/docs/DOC-65315"]
+                clusterConfigString += StringUtil.formatBulletString(description, urls)
+        if (not len(cca.getClusterNodeNames()) == len(self.__cnc.getClusterNodes())):
+            message = "There was only %d cluster.conf compared for the %d node cluster." %(len(self.__cnc.getPathToClusterConfFiles()),
+                                                                                           len(cca.getClusterNodeNames()))
+            logging.getLogger(sx.MAIN_LOGGER_NAME).warning(message)
         clusterConfigString += self.__evaluateClusterGlobalConfiguration(cca)
         if (len(clusterConfigString) > 0):
             sectionHeader = "%s\nCluster Global Configuration Known Issues\n%s" %(self.__seperator, self.__seperator)
