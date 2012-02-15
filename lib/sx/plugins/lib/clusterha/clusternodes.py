@@ -106,6 +106,8 @@ class ClusterNodes:
         # found. Kind of a best guess at which interface that the
         # clusternode will communicate over.
         possibleClusterNodeNetworkMapMatch = None
+
+        # Search Hostnames
         for networkMap in networkMaps.getListOfNetworkMaps():
             if ((networkMap.getInterface() == "lo") or (networkMap.getIPv4Address() == "127.0.0.1")):
                 continue
@@ -114,8 +116,10 @@ class ClusterNodes:
             # hostname that matches clusternode name
             hostnames = networkMap.getHostnames()
             for nodeName in nodeNames:
-                if (nodeName in hostnames) :
+                if ((nodeName in hostnames) or (nodeName == networkMap.getIPv4Address())):
                     # Exact match found, so go ahead and return the NetworkMap
+                    # since we found a hostname that matches node name or node
+                    # name is the ipv4 address.
                     clusternodeNetworkMap = ClusterNodeNetworkMap(networkMap.getInterface(),
                                                                   networkMap.getHardwareAddress(),
                                                                   networkMap.getIPv4Address(),
