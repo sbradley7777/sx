@@ -67,6 +67,27 @@ class ClusterEvaluator():
             description += "%d number of cluster nodes which exceeds the supported 16 number of cluster nodes." %(clusterNodeCount)
             urls = ["https://access.redhat.com/kb/docs/DOC-40821"]
             rString += StringUtil.formatBulletString(description, urls)
+        # Compare the cluster.conf files
+        if ((not cca.isClusterConfFilesIdentical(self.__cnc.getPathToClusterConfFiles())) and (len(self.__cnc.getPathToClusterConfFiles()) > 1)):
+            description  = "The /etc/cluster/cluster.conf files were not identical on all the cluster node's cluster.conf files that were analyzed."
+            if (not  len(cca.getClusterNodeNames()) == len(self.__cnc.getClusterNodes())):
+                # More than 2 nodes compared and all cluster nodes cluster.confs
+                # were compared, but not all nodes in the cluster's cluster.conf
+                # was compared.
+                description += "There was only %d cluster.conf files compared for the %d node cluster." %(len(self.__cnc.getPathToClusterConfFiles()),
+                                                                                                          len(cca.getClusterNodeNames()))
+            urls = ["https://access.redhat.com/kb/docs/DOC-65315"]
+            rString += StringUtil.formatBulletString(description, urls)
+        # Warning messages to console
+        if ((not len(self.__cnc.getPathToClusterConfFiles()) > 1) and (clusterNodeCount > 1)):
+            # Need more than 1 node to compare cluster.confs
+            message =  "There was only 1 cluster.conf file found for a %d node cluster. " %(len(cca.getClusterNodeNames()))
+            message += "This evaluation will be skipped since there is not enough files to compare."
+            logging.getLogger(sx.MAIN_LOGGER_NAME).warning(message)
+        elif (not  len(cca.getClusterNodeNames()) == len(self.__cnc.getClusterNodes())):
+            message = "There was only %d cluster.conf compared for the %d node cluster." %(len(self.__cnc.getPathToClusterConfFiles()),
+                                                                                           len(cca.getClusterNodeNames()))
+            logging.getLogger(sx.MAIN_LOGGER_NAME).warning(message)
         return rString
 
     def __evaluateClusterNodeHeartbeatNetwork(self, hbNetworkMap):
@@ -368,31 +389,7 @@ class ClusterEvaluator():
         # ###################################################################
         # Check global configuration issues:
         # ###################################################################
-        clusterConfigString = ""
-        if ((not cca.isClusterConfFilesIdentical(self.__cnc.getPathToClusterConfFiles())) and
-            (len(cca.getClusterNodeNames()) > 1)):
-            if ((len(self.__cnc.getPathToClusterConfFiles()) > 2) and
-                (len(self.__cnc.getPathToClusterConfFiles()) == (len(self.__cnc.getClusterNodes())))):
-                # More than 2 nodes compared and all cluster nodes cluster.confs were compared.
-                description = "The /etc/cluster/cluster.conf file was not identical on all the cluster nodes analyzed."
-                urls = ["https://access.redhat.com/kb/docs/DOC-65315"]
-                clusterConfigString += StringUtil.formatBulletString(description, urls)
-            elif (not len(self.__cnc.getPathToClusterConfFiles()) > 1):
-                # Need more than 1 node to compare cluster.confs
-                message = "There was not more than 1 cluster.conf files found to compare for a cluster of %d cluster nodes. This evaluation will be skipped." %(len(cca.getClusterNodeNames()))
-                logging.getLogger(sx.MAIN_LOGGER_NAME).warning(message)
-            elif (not  len(cca.getClusterNodeNames()) == len(self.__cnc.getClusterNodes())):
-                # Not all the cluster.conf were compared. 
-                description  = "The /etc/cluster/cluster.conf file was not identical on all the cluster nodes analyzed."
-                description += "There was only %d cluster.conf compared for the %d node cluster." %(len(self.__cnc.getPathToClusterConfFiles()),
-                                                                                                    len(cca.getClusterNodeNames()))
-                urls = ["https://access.redhat.com/kb/docs/DOC-65315"]
-                clusterConfigString += StringUtil.formatBulletString(description, urls)
-        if (not len(cca.getClusterNodeNames()) == len(self.__cnc.getClusterNodes())):
-            message = "There was only %d cluster.conf compared for the %d node cluster." %(len(self.__cnc.getPathToClusterConfFiles()),
-                                                                                           len(cca.getClusterNodeNames()))
-            logging.getLogger(sx.MAIN_LOGGER_NAME).warning(message)
-        clusterConfigString += self.__evaluateClusterGlobalConfiguration(cca)
+        clusterConfigString = self.__evaluateClusterGlobalConfiguration(cca)
         if (len(clusterConfigString) > 0):
             sectionHeader = "%s\nCluster Global Configuration Known Issues\n%s" %(self.__seperator, self.__seperator)
             rstring += "%s\n%s:\n%s\n" %(sectionHeader, cca.getClusterName(), clusterConfigString)
