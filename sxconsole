@@ -601,29 +601,29 @@ class OptionParserExtended(OptionParser):
         examplesMessage += "To list the different plugin and report types:\n"
         examplesMessage += "$ %s -l\n\n" %(self.__commandName)
         examplesMessage += "To run default plugins on selected reports and disable user defined reports/plugins:\n"
-        examplesMessage += "$ %s 99999999 -r ~/tmp/rh4node1-sysreport.tar.bz2 -r ~/tmp/rh4node2-sysreport.tar.bz2 -U\n\n" %(self.__commandName)
+        examplesMessage += "$ %s 15555553 -r ~/tmp/rh4node1-sysreport.tar.bz2 -r ~/tmp/rh4node2-sysreport.tar.bz2 -U\n\n" %(self.__commandName)
         examplesMessage += "To run default plugins on directory of reports(non-reports will not be processed):\n"
-        examplesMessage += "$ %s 99999999 -R ~/tmp/\n\n" %(self.__commandName)
+        examplesMessage += "$ %s 15555553 -R ~/tmp/\n\n" %(self.__commandName)
         examplesMessage += "To disable all plugins on selected reports:\n"
-        examplesMessage += "$ %s 99999999 -N -r ~/tmp/rh4node1-sysreport.tar.bz2 -r ~/tmp/rh4node2-sysreport.tar.bz2\n\n" %(self.__commandName)
+        examplesMessage += "$ %s 15555553 -N -r ~/tmp/rh4node1-sysreport.tar.bz2 -r ~/tmp/rh4node2-sysreport.tar.bz2\n\n" %(self.__commandName)
         examplesMessage += "To enable all plugins on directory of reports(non-reports will not be processed):\n"
-        examplesMessage += "$ %s 99999999 -E -R ~/tmp/\n\n" %(self.__commandName)
+        examplesMessage += "$ %s 15555553 -E -R ~/tmp/\n\n" %(self.__commandName)
         examplesMessage += "To disable all plugins then enable specific plugins on directory of reports(non-reports will not be processed):\n"
-        examplesMessage += "$ %s 99999999 -N -e cluster,checksysreport -R ~/tmp/\n\n" %(self.__commandName)
+        examplesMessage += "$ %s 15555553 -N -e cluster,checksysreport -R ~/tmp/\n\n" %(self.__commandName)
         examplesMessage += "To enable all plugins then disable specific plugins on directory of reports(non-reports will not be processed):\n"
-        examplesMessage += "$ %s 99999999 -E -n cluster,checksysreport -R ~/tmp/\n\n" %(self.__commandName)
+        examplesMessage += "$ %s 15555553 -E -n cluster,checksysreport -R ~/tmp/\n\n" %(self.__commandName)
         examplesMessage += "To add a file to the archive that is not a report that will also do action on reports:\n"
-        examplesMessage += "$ %s 99999999 -N -e cluster,checksysreport -R ~/tmp/ -f ~/tmp/tcpdump.log\n\n" %(self.__commandName)
+        examplesMessage += "$ %s 15555553 -N -e cluster,checksysreport -R ~/tmp/ -f ~/tmp/tcpdump.log\n\n" %(self.__commandName)
         examplesMessage += "To add a file to the archive that is not a report with no reports to process:\n"
-        examplesMessage += "$ %s 99999999 -f ~/tmp/tcpdump2.log\n\n" %(self.__commandName)
+        examplesMessage += "$ %s 15555553 -f ~/tmp/tcpdump2.log\n\n" %(self.__commandName)
         examplesMessage += "After extraction is complete then open with a fileviewer and pass the option for a particular fileviewer.\n"
-        examplesMessage += "$ %s 99999999 -e OpenSOSReport -o OpenSOSReport.fileviewer=konqueror\n\n" %(self.__commandName)
+        examplesMessage += "$ %s 15555553 -e OpenSOSReport -o OpenSOSReport.fileviewer=konqueror\n\n" %(self.__commandName)
         examplesMessage += "To run the cluster and the checksysreport plugin against a previously extracted report:\n"
-        examplesMessage += "$ %s -p ~/sxarchive/ereports/99999999/2011-01-26_160247 -e cluster,checksysreport\n\n" %(self.__commandName)
+        examplesMessage += "$ %s -p ~/sxarchive/ereports/15555553/2011-01-26_160247 -e cluster,checksysreport\n\n" %(self.__commandName)
         examplesMessage += "To run default plugins on directory of reports(non-reports will not be processed) and use the modified archived layout:\n"
-        examplesMessage += "$ %s 99999999 -R ~/tmp/ -M\n\n" %(self.__commandName)
+        examplesMessage += "$ %s 15555553 -R ~/tmp/ -M\n\n" %(self.__commandName)
         examplesMessage += "To run the cluster and the checksysreport plugin against a previously extracted report that used the modified layout scheme:\n"
-        examplesMessage += "$ %s -p ~/sxarchive/ereports/99999999/2011-01-26_160247 -e cluster,checksysreport -M\n\n" %(self.__commandName)
+        examplesMessage += "$ %s -p ~/sxarchive/ereports/15555553/2011-01-26_160247 -e cluster,checksysreport -M\n\n" %(self.__commandName)
         OptionParser.print_help(self)
         print layoutDescription
         print examplesMessage
