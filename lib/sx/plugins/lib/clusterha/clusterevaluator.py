@@ -236,7 +236,6 @@ class ClusterEvaluator():
             # Analyze the Clustered Storage
             # ###################################################################
             listOfClusterStorageFilesystems = clusternode.getClusterStorageFilesystemList()
-
             stringUtil = StringUtil()
             # Check to see if the GFS/GFS2 fs has certain mount options enabled.
             fsTable = []
@@ -353,7 +352,7 @@ class ClusterEvaluator():
                         csFilesystemOptions = csFilesystem.getClusterConfMount().getMountOptions()
                         if (not csFilesystemOptions.find("localflocks") >=0):
                             fsTable.append([csFilesystem.getDeviceName(), csFilesystem.getMountPoint()])
-
+            # Write the table if it is not empty.
             if (len(fsTable) > 0):
                 tableHeader = ["device_name", "mount_point"]
                 description = "Any GFS/GFS2 filesystem that is exported with nfs should have the option \"localflocks\" set."
@@ -440,7 +439,6 @@ class ClusterEvaluator():
                     description = "The multicast tags should not be in the <clusternodes> stanzas. These tags are no longer supported in RHEL5."
                     urls = ["https://access.redhat.com/kb/docs/DOC-59392"]
                     clusterNodeEvalString += StringUtil.formatBulletString(description, urls)
-
 
             # ###################################################################
             # RHEL 5 Specific Checks

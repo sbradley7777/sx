@@ -371,7 +371,7 @@ class ClusterNodes:
         # ###############################################################
         if (distroRelease == None) :
             message = "The disto release file was either not valid or unknown type."
-            logging.getLogger(sx.MAIN_LOGGER_NAME).debug(message)
+            logging.getLogger(sx.MAIN_LOGGER_NAME).error(message)
             return False
         elif (not ((distroRelease.getDistroName() == "RHEL") and
                    ((distroRelease.getMajorVersion() == 6) or
