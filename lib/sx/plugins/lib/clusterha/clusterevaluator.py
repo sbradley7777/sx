@@ -39,19 +39,19 @@ class ClusterEvaluator():
         if (cca.isCleanStartEnabled()):
             description =  "The clean_start option in the /etc/cluster/cluster.conf was enabled and is not supported "
             description += "for production clusters. The option is for testing and debugging only."
-            urls = ["https://access.redhat.com/kb/docs/DOC-61417"]
+            urls = ["https://access.redhat.com/knowledge/solutions/23238"]
             rString += StringUtil.formatBulletString(description, urls)
 
         # Disable the post_join_delay check for now
-        #if (not int(cca.getPostJoinDelay()) > 3):
-        #    description =  "The post_join_delay option was 3 (which is the default value) in the /etc/cluster/cluster.conf file. "
-        #    description += "In some cluster environments a value of 3 for post_join_delayis to too low."
-        #    urls = ["https://access.redhat.com/kb/docs/DOC-52756", "https://access.redhat.com/kb/docs/DOC-3642"]
-        #    rString += StringUtil.formatBulletString(description, urls)
+        if (not int(cca.getPostJoinDelay()) > 3):
+            description =  "The post_join_delay option was 3 (which is the default value) in the /etc/cluster/cluster.conf file. "
+            description += "In some cluster environments a value of 3 for post_join_delayis to too low."
+            urls = ["https://access.redhat.com/knowledge/solutions/21742", "https://access.redhat.com/knowledge/solutions/3641"]
+            rString += StringUtil.formatBulletString(description, urls)
         if (not (int(cca.getPostFailDelay()) == 0)):
             description =  "The post_fail_delay option in the /etc/cluster/cluster.conf file was not zero(default). "
             description += "Most clusters should not modifiy the default value of zero."
-            urls = ["https://access.redhat.com/kb/docs/DOC-3642", "https://access.redhat.com/kb/docs/DOC-5931"]
+            urls = ["https://access.redhat.com/knowledge/solutions/3641", "https://access.redhat.com/knowledge/solutions/5929"]
             rString += StringUtil.formatBulletString(description, urls)
         # Check for single node configurations and clusters that are larger than 16 nodes.
         clusterNodeCount = len(cca.getClusterNodeNames())
@@ -59,13 +59,13 @@ class ClusterEvaluator():
             description =  "This is a single node cluster and does not meet the minimum number of cluster nodes required for "
             description += "high-availibility. Red Hat recommends that clusters always have a minimum of two nodes to protect "
             description += "against hardware failures."
-            urls = ["https://access.redhat.com/kb/docs/DOC-5893"]
+            urls = ["https://access.redhat.com/knowledge/articles/5892"]
             rString += StringUtil.formatBulletString(description, urls)
         elif (clusterNodeCount > 16):
             descriptioin = "The maximum number of cluster nodes supported by the High Availability Add-On is 16, and the same "
             description += "is true for the Resilient Storage Add-On that includes GFS2 and CLVM. This cluster currently has "
             description += "%d number of cluster nodes which exceeds the supported 16 number of cluster nodes." %(clusterNodeCount)
-            urls = ["https://access.redhat.com/kb/docs/DOC-40821"]
+            urls = ["https://access.redhat.com/knowledge/articles/40051"]
             rString += StringUtil.formatBulletString(description, urls)
         # Compare the cluster.conf files
         if ((not cca.isClusterConfFilesIdentical(self.__cnc.getPathToClusterConfFiles())) and (len(self.__cnc.getPathToClusterConfFiles()) > 1)):
@@ -76,7 +76,7 @@ class ClusterEvaluator():
                 # was compared.
                 description += "There was only %d cluster.conf files compared for the %d node cluster." %(len(self.__cnc.getPathToClusterConfFiles()),
                                                                                                           len(cca.getClusterNodeNames()))
-            urls = ["https://access.redhat.com/kb/docs/DOC-65315"]
+            urls = ["https://access.redhat.com/knowledge/solutions/19808"]
             rString += StringUtil.formatBulletString(description, urls)
         # Warning messages to console
         if ((not len(self.__cnc.getPathToClusterConfFiles()) > 1) and (clusterNodeCount > 1)):
@@ -103,7 +103,7 @@ class ClusterEvaluator():
             description += "The heartbeat network(%s) is currently using bonding mode %s(%s).\n" %(hbNetworkMap.getInterface(),
                                                                                                    hbNetworkMap.getBondedModeNumber(),
                                                                                                    hbNetworkMap.getBondedModeName())
-            urls = ["https://access.redhat.com/kb/docs/DOC-59572"]
+            urls = ["https://access.redhat.com/knowledge/solutions/27604"]
             rString += StringUtil.formatBulletString(description, urls)
         # ###################################################################
         # Check if heartbeat network interface is netxen or bnx2 network module
@@ -114,14 +114,15 @@ class ClusterEvaluator():
             urls = []
             rString += StringUtil.formatBulletString(description, urls)
         elif ((hbNetworkMap.getNetworkInterfaceModule().strip() == "netxen") or
-              (hbNetworkMap.getNetworkInterfaceModule().strip() == "nx_nic")):
+              (hbNetworkMap.getNetworkInterfaceModule().strip() == "nx_nic") or
+              (hbNetworkMap.getNetworkInterfaceModule().strip() == "netxen_nic")):
             description =  "The network interface %s that the cluster is using for communication is using the module: %s. " %(hbNetworkMap.getInterface(),
                                                                                                                                   hbNetworkMap.getNetworkInterfaceModule())
             description += "This module has had known issues with network communication."
-            urls = ["https://access.redhat.com/kb/docs/DOC-57187",
-                    "https://access.redhat.com/kb/docs/DOC-44972",
-                    "https://access.redhat.com/kb/docs/DOC-54254",
-                    "https://access.redhat.com/kb/docs/DOC-44972"]
+            urls = ["https://access.redhat.com/knowledge/solutions/44475",
+                    "https://access.redhat.com/knowledge/solutions/35299",
+                    "https://access.redhat.com/knowledge/solutions/46663",
+                    "https://access.redhat.com/knowledge/solutions/35299"]
             rString += StringUtil.formatBulletString(description, urls)
         elif (hbNetworkMap.isBondedMasterInterface()):
             # Loop over the bonded interfaces
@@ -135,11 +136,12 @@ class ClusterEvaluator():
                     urls = []
                     rString += StringUtil.formatBulletString(description, urls)
                 elif ((bondedSlaveInterface.getNetworkInterfaceModule().strip() == "netxen") or
-                      (bondedSlaveInterface.getNetworkInterfaceModule().strip() == "nx_nic")):
-                    urls = ["https://access.redhat.com/kb/docs/DOC-57187",
-                            "https://access.redhat.com/kb/docs/DOC-44972",
-                            "https://access.redhat.com/kb/docs/DOC-54254",
-                            "https://access.redhat.com/kb/docs/DOC-44972"]
+                      (bondedSlaveInterface.getNetworkInterfaceModule().strip() == "nx_nic") or
+                      (bondedSlaveInterface.getNetworkInterfaceModule().strip() == "netxen_nic")):
+                    urls = ["https://access.redhat.com/knowledge/solutions/44475",
+                            "https://access.redhat.com/knowledge/solutions/35299",
+                            "https://access.redhat.com/knowledge/solutions/46663",
+                            "https://access.redhat.com/knowledge/solutions/35299"]
                     rString += StringUtil.formatBulletString(description, urls)
         return rString
 
@@ -158,23 +160,23 @@ class ClusterEvaluator():
                     description = "The service \"acpid\" is not disabled on all runlevels(0 - 6). " + \
                         "This service should be disabled since a system management fence device(%s) "%(fd.getAgent()) + \
                         "was detected. If acpid is enabled the fencing operation may not work as intended."
-                    urls = ["https://access.redhat.com/kb/docs/DOC-5415"]
+                    urls = ["https://access.redhat.com/knowledge/solutions/5414"]
                     rString += StringUtil.formatBulletString(description, urls)
                     break;
             # Check if fence_manual is enabled on a node
             if (cca.isFenceDeviceAgentEnabledOnClusterNode(clusternode.getClusterNodeName(), "fence_manual")):
                 description = "The fence device \"fence_manual\" is defined as a fence agent for this node which is an unsupported fencing method."
-                urls = ["https://access.redhat.com/kb/docs/DOC-43212"]
+                urls = ["https://access.redhat.com/knowledge/articles/36302"]
                 rString += StringUtil.formatBulletString(description, urls)
             # Check to make sure that fence_vmware is not enabled on node
             if (cca.isFenceDeviceAgentEnabledOnClusterNode(clusternode.getClusterNodeName(), "fence_vmware")):
                 description =  "The fence device \"fence_vmware\" is defined as a fence agent for this node which is an unsupported fencing method. "
                 description += "The only supported fencing method for VMWare is fence_vmware_soap and fence_scsi."
-                urls = ["https://access.redhat.com/kb/docs/DOC-46375"]
+                urls = ["https://access.redhat.com/knowledge/articles/29440"]
                 rString += StringUtil.formatBulletString(description, urls)
         else:
             description = "There was no fence device defined for the clusternode. A fence device is required for each clusternode."
-            urls = ["https://access.redhat.com/kb/docs/DOC-62219"]
+            urls = ["https://access.redhat.com/knowledge/solutions/15575"]
             rString += StringUtil.formatBulletString(description, urls)
         return rString
 
@@ -214,7 +216,7 @@ class ClusterEvaluator():
 
     def __evaluateClusterStorage(self, cca):
         # Is active/active nfs supported? Sorta
-        # urls = ["https://access.redhat.com/kb/docs/DOC-60255"]
+        # urls = ["https://access.redhat.com/knowledge/solutions/59498"]
         rString = ""
         for clusternode in self.__cnc.getClusterNodes():
             clusterNodeEvalString = ""
@@ -229,7 +231,7 @@ class ClusterEvaluator():
                 # Check if GFS2 module should be removed on RH5 nodes
                 if (self.__cnc.doesGFS2ModuleNeedRemoval(clusternode.getUnameA(), clusternode.getClusterModulePackagesVersion())) :
                     description = "The kmod-gfs2 is installed on a running kernel >= 2.6.18-128. This module should be removed since the module is included in the kernel."
-                    urls = ["https://access.redhat.com/kb/docs/DOC-54965"]
+                    urls = ["https://access.redhat.com/knowledge/solutions/17832"]
                     clusterNodeEvalString += StringUtil.formatBulletString(description, urls)
 
             # ###################################################################
@@ -251,7 +253,7 @@ class ClusterEvaluator():
                 description += "\"nodiratime\" on every GFS/GFS2 mount point. This will significantly improve performance since "
                 description += "it prevents reads from turning into writes."
                 tableOfStrings = stringUtil.toTableStringsList(fsTable, tableHeader)
-                urls = ["https://access.redhat.com/kb/docs/DOC-41485"]
+                urls = ["https://access.redhat.com/knowledge/solutions/35662"]
                 clusterNodeEvalString += StringUtil.formatBulletString(description, urls, tableOfStrings)
 
             # Check to see if they are exporting a gfs/gfs2 fs via samba and nfs.
@@ -327,7 +329,7 @@ class ClusterEvaluator():
                 description += "samba export via /etc/exports for samba (ES)                           "
                 description += "samba export via /etc/cluster/cluster.conf for samba (CS)"
                 tableOfStrings = stringUtil.toTableStringsList(fsTable, tableHeader)
-                urls = ["https://access.redhat.com/kb/docs/DOC-60253"]
+                urls = ["https://access.redhat.com/knowledge/solutions/39855"]
                 clusterNodeEvalString += StringUtil.formatBulletString(description, urls, tableOfStrings)
 
             # Check for localflocks if they are exporting nfs.
@@ -358,7 +360,7 @@ class ClusterEvaluator():
                 description = "Any GFS/GFS2 filesystem that is exported with nfs should have the option \"localflocks\" set."
                 description += "The following GFS/GFS2 filesystem do not have the option set."
                 tableOfStrings = stringUtil.toTableStringsList(fsTable, tableHeader)
-                urls = ["https://access.redhat.com/kb/docs/DOC-59118", "http://docs.redhat.com/docs/en-US/Red_Hat_Enterprise_Linux/5/html-single/Configuration_Example_-_NFS_Over_GFS/index.html#locking_considerations"]
+                urls = ["https://access.redhat.com/knowledge/solutions/20327", "http://docs.redhat.com/docs/en-US/Red_Hat_Enterprise_Linux/5/html-single/Configuration_Example_-_NFS_Over_GFS/index.html#locking_considerations"]
                 clusterNodeEvalString += StringUtil.formatBulletString(description, urls, tableOfStrings)
             # ###################################################################
             # Add to string with the hostname and header if needed.
@@ -411,8 +413,9 @@ class ClusterEvaluator():
 
             # Checking all clusternode names in /etc/hosts
             if (not self.__cnc.isClusterNodeNamesInHostsFile(cca.getClusterNodeNames(), clusternode.getNetworkMaps().getListOfNetworkMaps())) :
-                description = "The clusternode names were not all defined in the /etc/hosts file."
-                urls = ["https://access.redhat.com/kb/docs/DOC-5935"]
+                description = "The clusternode names were not all defined in the /etc/hosts file. This is not a requirement, but does "
+                description += "make troubleshooting a cluster a lot easier."
+                urls = ["https://access.redhat.com/knowledge/articles/5934"]
                 clusterNodeEvalString += StringUtil.formatBulletString(description, urls)
 
             # Check the networking configuration of the cluster node's
@@ -437,7 +440,7 @@ class ClusterEvaluator():
                 # Make sure that multicast tags are not on clusternode stanzas
                 if (((len(cnp.getMulticastAddress()) > 0) or (len(cnp.getMulticastInterface()) > 0))) :
                     description = "The multicast tags should not be in the <clusternodes> stanzas. These tags are no longer supported in RHEL5."
-                    urls = ["https://access.redhat.com/kb/docs/DOC-59392"]
+                    urls = ["https://access.redhat.com/knowledge/solutions/32242"]
                     clusterNodeEvalString += StringUtil.formatBulletString(description, urls)
 
             # ###################################################################
@@ -450,7 +453,7 @@ class ClusterEvaluator():
                 if (len(serviceRunlevelEnabledString) > 0):
                     description =  "The service %s should be disabled if the host is part of a cluster since the service cman starts the service %s." %(serviceName, serviceName)
                     description += "The following runlevels have %s enabled: %s." %(serviceName, serviceRunlevelEnabledString.strip())
-                    urls = ["https://access.redhat.com/kb/docs/DOC-5899"]
+                    urls = ["https://access.redhat.com/knowledge/solutions/5898"]
                     clusterNodeEvalString += StringUtil.formatBulletString(description, urls)
 
                 # Check if scsi_reserve service is enabled with no scsi fencing device in cluster.conf
@@ -460,7 +463,7 @@ class ClusterEvaluator():
                     if (len(serviceRunlevelEnabledString) > 0):
                         description =  "The service %s should be disabled since there was no fence_scsi device detected for this node." %(serviceName)
                         description += "The following runlevels have %s enabled: %s." %(serviceName, serviceRunlevelEnabledString.strip())
-                        urls = ["https://access.redhat.com/kb/docs/DOC-47503", "https://access.redhat.com/kb/docs/DOC-17809"]
+                        urls = ["https://access.redhat.com/knowledge/solutions/42530", "https://access.redhat.com/knowledge/solutions/17784"]
                         clusterNodeEvalString += StringUtil.formatBulletString(description, urls)
 
             # ###################################################################
@@ -473,7 +476,7 @@ class ClusterEvaluator():
                 if (len(serviceRunlevelEnabledString) > 0):
                     description =  "The service %s should be disabled if the host is part of a cluster since the service cman starts the service %s." %(serviceName, serviceName)
                     description += "The following runlevels have %s enabled: %s." %(serviceName, serviceRunlevelEnabledString.strip())
-                    urls = ["https://access.redhat.com/kb/docs/DOC-5899"]
+                    urls = ["https://access.redhat.com/knowledge/solutions/5898"]
                     clusterNodeEvalString += StringUtil.formatBulletString(description, urls)
             # ###################################################################
             if (len(clusterNodeEvalString) > 0):

@@ -44,7 +44,7 @@ class StorageEvaluator():
                     if ((lineSplit[0].strip() == "bindings_file") and
                         (lineSplit[1].strip().startswith("/var"))):
                         description = "The binding file for multipath is located on /var."
-                        urls = ["https://access.redhat.com/kb/docs/DOC-17650"]
+                        urls = ["https://access.redhat.com/knowledge/solutions/17643"]
                         rstring += StringUtil.formatBulletString(description, urls)
                         break;
         # ###################################################################
@@ -59,7 +59,7 @@ class StorageEvaluator():
                 foundDMMultipath = True
         if (foundEMC and foundDMMultipath) :
             description = "The modules dm-emc and scsi_dh_emc should never be loaded at the same time. One of these packages should be remove: emc or device-mapper-multipath."
-            urls = ["https://access.redhat.com/kb/docs/DOC-47889"]
+            urls = ["https://access.redhat.com/knowledge/solutions/45197"]
             rstring += StringUtil.formatBulletString(description, urls)
 
         # ###################################################################

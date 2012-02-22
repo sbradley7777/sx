@@ -160,7 +160,7 @@ class Clusterha(sx.plugins.PluginBase):
             self.write(filename, "NOTE: The state(Enabled/Disabled) of each service can vary with each")
             self.write(filename, "      cluster, since some configurations do not need all services.")
             self.write(filename, "      The following articles explains the cluster services:")
-            self.write(filename, "      - https://access.redhat.com/kb/docs/DOC-5899 \n")
+            self.write(filename, "      -  https://access.redhat.com/knowledge/solutions/5898 \n")
             self.write(filename, "NOTE: The following services are required to be disabled because")
             self.write(filename, "      the service cman will start and stop these services:")
             self.write(filename, "      RHEL 5: openais")

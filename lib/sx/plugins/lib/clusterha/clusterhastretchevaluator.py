@@ -72,7 +72,7 @@ class ClusterHAStretchEvaluator():
                 if (len(serviceRunlevelEnabledString) > 0):
                     description =  "The service %s should be disabled if this is cluster node is part of a stretch cluster. The service %s is not supported in stretch clusters." %(serviceName, serviceName)
                     description += "The following runlevels have %s enabled: %s." %(serviceName, serviceRunlevelEnabledString.strip())
-                    urls = ["https://access.redhat.com/kb/docs/DOC-66514"]
+                    urls = ["https://access.redhat.com/knowledge/articles/66513"]
                     clusterNodeEvalString += StringUtil.formatBulletString(description, urls)
 
                 serviceName = "cmirror"
@@ -88,7 +88,7 @@ class ClusterHAStretchEvaluator():
                 if (len(serviceRunlevelEnabledString) > 0):
                     description =  "The service %s should be disabled if this is cluster node is part of a stretch cluster. The service %s is not supported in stretch clusters." %(serviceName, serviceName)
                     description += "The following runlevels have %s enabled: %s." %(serviceName, serviceRunlevelEnabledString.strip())
-                    urls = ["https://access.redhat.com/kb/docs/DOC-66514"]
+                    urls = ["https://access.redhat.com/knowledge/articles/66513"]
                     clusterNodeEvalString += StringUtil.formatBulletString(description, urls)
 
 
