@@ -1,6 +1,7 @@
 * Fri Feb 10 2012 Shane Bradley <sbradley@redhat.com>- 2.09-0.0
 - Added detection for fence_vmware agent
 - Fixed bug where clusternode names that were IPv4 address was not detected.
+- Changed old knowledge base urls to the new urls.
 * Fri Feb 10 2012 Shane Bradley <sbradley@redhat.com>- 2.08-0.0
 - Added detection for various cluster configurations issues.
 - Added ability to detect samba/nfs exports of gfs/gfs2 fs and will report if nfs/smb are exporting same gfs/gfs2 fs.
