@@ -79,12 +79,12 @@ class ArchiveLayout:
         """
         @param archivePath: The root directory where all the files
         will be archived.
-        @type uid: String
+        @type archivePath: String
         @param uid: A unique identifer for the collection of files.
         @type uid: String
         @param timestamp: A string that represents a time stamp which
         is unique.
-        @type: String
+        @type timestamp: String
         """
         self.__archivePath = archivePath
         self.__uid = uid
@@ -201,12 +201,12 @@ class ModifiedArchiveLayout(ArchiveLayout):
         """
         @param archivePath: The root directory where all the files
         will be archived.
-        @type uid: String
+        @type archivePath: String
         @param uid: A unique identifer for the collection of files.
         @type uid: String
         @param timestamp: A string that represents a time stamp which
         is unique.
-        @type: String
+        @type timestamp: String
         """
         ArchiveLayout.__init__(self, archivePath, uid, timestamp)
 

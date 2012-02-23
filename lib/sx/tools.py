@@ -118,8 +118,8 @@ class ConfigurationFileParser:
         not exist then "" is returned.
         @rtype: String
 
-        @param: An option in the configuration file.
-        @type: String
+        @param optionName: An option in the configuration file.
+        @type optionName: String
         """
         if ((self.__configOptionsMap.has_key(optionName)) and (self.isValid())):
             return self.__configOptionsMap[optionName]
@@ -255,9 +255,9 @@ class SimpleUtil:
         than: a-zA-Z0-9_.-
         @rtype: Boolean
 
-        @param: A string that will be tested to see if it only
+        @param svar: A string that will be tested to see if it only
         contains certain characters.
-        @type: String
+        @type svar: String
         """
         ALPHANUM=re.compile('^[a-zA-Z0-9_.-]+$')
         for s in svar:
@@ -427,7 +427,7 @@ class FileUtil:
 
         @param pathToFilename: Path to the file whose creation time
         will be turned into a string.
-        @parm pathToFilename: String
+        @type pathToFilename: String
         """
         creationTimestamp = None
         try:
@@ -779,12 +779,10 @@ class StringUtil:
         same for each row in the table.
 
         I got code from this url and modified it:
-        - http://ginstrom.com/scribbles/2.08/09/04/pretty-printing-a-table-in-python/
+        http://ginstrom.com/scribbles/2.08/09/04/pretty-printing-a-table-in-python/
 
         Example(added spacing to make example clear):
-        table = [["",       "names", "birthyear", "age"],
-                 ["NCuser", "bob",   1976,         35],
-                 ["SCuser", "mary",  1980,         31]]
+        table = [["",       "names", "birthyear", "age"], ["NCuser", "bob",   1976,         35]]
 
         @return: Returns a list of strings(row of strings) that has
         the proper spacing in each column.

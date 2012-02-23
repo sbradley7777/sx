@@ -224,7 +224,7 @@ class ClusterNode:
         @type networkMaps: Array
         @param heartbeatNetworkMap: A network map object of the heartbeat
         network for this node.
-        @type networkMaps: ClusterNodeNetworkMap
+        @type heartbeatNetworkMap: ClusterNodeNetworkMap
         @param chkConfigList: List of ChkConfigServiceStatus objects.
         @type chkConfigList: Array
         @param clusterCommandsMap: Map of the cluster commands file contents.

@@ -27,7 +27,7 @@ class Sosreport(sx.reports.Report) :
     uniquely indentify the report object.
     @type TYPE_DETECTION_FILE: String
     @cvar REPORT_NAME: The name of the report.
-    @type: String
+    @type REPORT_NAME: String
     """
     TYPE_DETECTION_FILE = "sos_logs/sos.log"
     REPORT_NAME = "sosreport"

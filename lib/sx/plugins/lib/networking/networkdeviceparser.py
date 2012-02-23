@@ -75,7 +75,7 @@ class NetworkDeviceParser:
         will not be mapped.
 
         Information about ifconfig output:
-        - http://linux-ip.net/html/tools-ifconfig.html#tools-ifconfig-output
+        http://linux-ip.net/html/tools-ifconfig.html#tools-ifconfig-output
 
         @return: Returns an array of NetworkMap objects.
         @rtype: Array

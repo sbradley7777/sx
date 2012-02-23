@@ -18,11 +18,6 @@ from sx.logwriter import LogWriter
 class SysLogParser:
     def parseVarLogMessagesData(varLogMessagesData):
         """
-        * Example
-          Mar 17 11:28:45 mantra sxconsole: abrt: detected unhandled Python exception in /home/someuser/somebinary
-
-        * Dont forget that there is new syntax i believe in 9.
-        * keep the orginal line in case our regex fail
         """
         parsedList = []
         if (varLogMessagesData == None):

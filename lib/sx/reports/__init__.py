@@ -293,9 +293,9 @@ class Report:
         file is the value.
         @rtype: Dictionary
 
-        @param pathToFile: The path to the directory, which is relative to
+        @param pathToDir: The path to the directory, which is relative to
         the root report directory.
-        @type pathToFile: String
+        @type pathToDir: String
         """
         fileDataMap = {}
         fullPathToDir = self.getPathForFile(pathToDir)

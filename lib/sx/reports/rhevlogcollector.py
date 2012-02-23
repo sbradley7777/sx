@@ -22,7 +22,7 @@ class Rhevlogcollector(Report) :
     uniquely indentify the report object.
     @type TYPE_DETECTION_FILE: String
     @cvar REPORT_NAME: The name of the report.
-    @type: String
+    @type REPORT_NAME: String
     """
     TYPE_DETECTION_FILE = "RhevManager.exe.config"
     REPORT_NAME = "rhev log collector"
