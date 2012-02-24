@@ -2,8 +2,8 @@
 
 Summary: Tool to extract reports and run plug-ins against those extracted reports
 Name: sx
-Version: 2.08
-Release: 1%{?dist}
+Version: 2.09
+Release: 0%{?dist}
 URL: https://fedorahosted.org/sx
 Source0: %{name}-%{version}.tar.gz
 License: GPLv2

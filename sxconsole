@@ -7,7 +7,7 @@ All reports have to be a a compressed tarfile of type bzip2/gunzip.
 
 @author    :  Shane Bradley
 @contact   :  sbradley@redhat.com
-@version   :  2.08
+@version   :  2.09
 @copyright :  GPLv2
 """
 import sys
@@ -39,7 +39,7 @@ from sx.modulesloader import ExtractorsLoader
 @cvar VERSION_NUMBER: The current version number of sxconsole.
 @type VERSION_NUMBER: String
 """
-VERSION_NUMBER = "2.08-0.0"
+VERSION_NUMBER = "2.09-0.0"
 
 def getArchiveLayout(caseNumber, pathToArchiveDirectory, pathToExtractedReports,
                      isModifiedArchiveLayoutEnabled) :
