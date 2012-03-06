@@ -600,7 +600,7 @@ class ClusterHAConfAnalyzer :
         """
         # Get the names of all the fence devices
         fenceDeviceList = []
-        for fdElement in self.__ccRootElement.findall("fencedevices/") :
+        for fdElement in self.__ccRootElement.findall("fencedevices/fencedevice") :
             try:
                 name = fdElement.attrib["name"]
                 agent = fdElement.attrib["agent"]

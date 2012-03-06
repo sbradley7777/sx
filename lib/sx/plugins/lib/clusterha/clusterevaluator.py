@@ -45,7 +45,7 @@ class ClusterEvaluator():
         # Disable the post_join_delay check for now
         if (not int(cca.getPostJoinDelay()) > 3):
             description =  "The post_join_delay option was 3 (which is the default value) in the /etc/cluster/cluster.conf file. "
-            description += "In some cluster environments a value of 3 for post_join_delayis to too low."
+            description += "In some cluster environments a value of 3 for post_join_delay is to too low."
             urls = ["https://access.redhat.com/knowledge/solutions/21742", "https://access.redhat.com/knowledge/solutions/3641"]
             rString += StringUtil.formatBulletString(description, urls)
         if (not (int(cca.getPostFailDelay()) == 0)):
@@ -63,8 +63,8 @@ class ClusterEvaluator():
             rString += StringUtil.formatBulletString(description, urls)
         elif (clusterNodeCount > 16):
             descriptioin = "The maximum number of cluster nodes supported by the High Availability Add-On is 16, and the same "
-            description += "is true for the Resilient Storage Add-On that includes GFS2 and CLVM. This cluster currently has "
-            description += "%d number of cluster nodes which exceeds the supported 16 number of cluster nodes." %(clusterNodeCount)
+            description += "is true for the Resilient Storage Add-On that includes GFS2 and CLVM. "
+            description += "This cluster currently has %d number of cluster nodes which exceeds the supported 16 number of cluster nodes." %(clusterNodeCount)
             urls = ["https://access.redhat.com/knowledge/articles/40051"]
             rString += StringUtil.formatBulletString(description, urls)
         # Compare the cluster.conf files
@@ -323,7 +323,7 @@ class ClusterEvaluator():
             # Write the table if it is not empty.
             if (len(fsTable) > 0):
                 description =  "The following GFS/GFS2 filesystem(s) are being exported by NFS and SMB(samba) which is unsupported. "
-                description += "Where the mount point was found will be noted:                                                      "
+                description += "The mount point(s) that were found will be noted with these symbols below:                          "
                 description += "nfs export via /etc/exports (EN)                                       "
                 description += "nfs export via /etc/cluster/cluster.conf (CN)                          "
                 description += "samba export via /etc/exports for samba (ES)                           "

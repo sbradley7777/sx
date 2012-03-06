@@ -1,3 +1,5 @@
+* Tue Mar 06 2012 Shane Bradley <sbradley@redhat.com>- 2.10-0.0
+- Fix bug where fence devies were not found.
 * Fri Feb 10 2012 Shane Bradley <sbradley@redhat.com>- 2.09-0.0
 - Added detection for fence_vmware agent
 - Fixed bug where clusternode names that were IPv4 address was not detected.
