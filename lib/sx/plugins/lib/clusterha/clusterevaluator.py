@@ -51,7 +51,7 @@ class ClusterEvaluator():
         if (not (int(cca.getPostFailDelay()) == 0)):
             description =  "The post_fail_delay option in the /etc/cluster/cluster.conf file was not zero(default). "
             description += "Most clusters should not modifiy the default value of zero."
-            urls = ["https://access.redhat.com/knowledge/solutions/3641", "https://access.redhat.com/knowledge/solutions/5929"]
+            urls = ["https://access.redhat.com/knowledge/solutions/21742", "https://access.redhat.com/knowledge/solutions/5929"]
             rString += StringUtil.formatBulletString(description, urls)
         # Check for single node configurations and clusters that are larger than 16 nodes.
         clusterNodeCount = len(cca.getClusterNodeNames())
