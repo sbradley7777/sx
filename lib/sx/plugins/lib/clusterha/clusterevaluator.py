@@ -239,22 +239,6 @@ class ClusterEvaluator():
             # ###################################################################
             listOfClusterStorageFilesystems = clusternode.getClusterStorageFilesystemList()
             stringUtil = StringUtil()
-            # Check to see if the GFS/GFS2 fs has certain mount options enabled.
-            fsTable = []
-            for csFilesystem in listOfClusterStorageFilesystems:
-                csFilesystemOptions = csFilesystem.getMountOptions()
-                if(not (csFilesystemOptions.find("noatime") >= 0) or
-                   (not csFilesystemOptions.find("nodiratime") >= 0)):
-                    fsTable.append([csFilesystem.getDeviceName(), csFilesystem.getMountPoint()])
-            if (len(fsTable) > 0):
-                tableHeader = ["device_name", "mount_point"]
-                description =  "The following GFS/GFS2 file-systems did not have the mount option noatime or nodiratime set. "
-                description += "Unless atime support is essential, Red Hat recommends setting the mount option \"noatime\" and "
-                description += "\"nodiratime\" on every GFS/GFS2 mount point. This will significantly improve performance since "
-                description += "it prevents reads from turning into writes."
-                tableOfStrings = stringUtil.toTableStringsList(fsTable, tableHeader)
-                urls = ["https://access.redhat.com/knowledge/solutions/35662"]
-                clusterNodeEvalString += StringUtil.formatBulletString(description, urls, tableOfStrings)
 
             # Check to see if they are exporting a gfs/gfs2 fs via samba and nfs.
             tableHeader = ["device_name", "mount_point", "nfs_mp", "smb_mp"]
@@ -335,25 +319,10 @@ class ClusterEvaluator():
             # Check for localflocks if they are exporting nfs.
             fsTable = []
             for csFilesystem in listOfClusterStorageFilesystems:
-                if (csFilesystem.isEtcExportMount()):
-                    csFilesystemOptions = csFilesystem.getMountOptions()
-                    if (csFilesystem.isFilesysMount()):
-                        csFilesystemOptions = "%s %s" %(csFilesystemOptions, csFilesystem.getFilesysMount().getMountOptions())
-                    if (csFilesystem.isEtcFstabMount()):
-                        csFilesystemOptions = "%s %s" %(csFilesystemOptions, csFilesystem.getEtcFstabMount().getMountOptions())
-                    if (csFilesystem.isClusterConfMount()):
-                        csFilesystemOptions = "%s %s" %(csFilesystemOptions, csFilesystem.getClusterConfMount().getMountOptions())
-                    # Check if localflock is enabled.
-                    if (not csFilesystemOptions.find("localflocks") >=0):
+                if ((csFilesystem.isEtcExportMount()) or (csFilesystem.isClusterConfMount())):
+                    csFilesystemOptions = csFilesystem.getAllMountOptions()
+                    if (not csFilesystemOptions.find("localflocks") >= 0):
                         fsTable.append([csFilesystem.getDeviceName(), csFilesystem.getMountPoint()])
-                elif(csFilesystem.isClusterConfMount()):
-                    # Since we know it is not in /etc/exports but is in
-                    # cluster.conf then we need to see if there is a service
-                    # where it has child resource of nfsexports.
-                    if(self.__isNFSChildOfClusterStorageResource(cca, csFilesystem)):
-                        csFilesystemOptions = csFilesystem.getClusterConfMount().getMountOptions()
-                        if (not csFilesystemOptions.find("localflocks") >=0):
-                            fsTable.append([csFilesystem.getDeviceName(), csFilesystem.getMountPoint()])
             # Write the table if it is not empty.
             if (len(fsTable) > 0):
                 tableHeader = ["device_name", "mount_point"]
@@ -362,6 +331,24 @@ class ClusterEvaluator():
                 tableOfStrings = stringUtil.toTableStringsList(fsTable, tableHeader)
                 urls = ["https://access.redhat.com/knowledge/solutions/20327", "http://docs.redhat.com/docs/en-US/Red_Hat_Enterprise_Linux/5/html-single/Configuration_Example_-_NFS_Over_GFS/index.html#locking_considerations"]
                 clusterNodeEvalString += StringUtil.formatBulletString(description, urls, tableOfStrings)
+
+            # Check to see if the GFS/GFS2 fs has certain mount options enabled.
+            fsTable = []
+            for csFilesystem in listOfClusterStorageFilesystems:
+                csFilesystemOptions = csFilesystem.getAllMountOptions()
+                if (not ((csFilesystemOptions.find("noatime") >= 0) and
+                         (csFilesystemOptions.find("nodiratime") >= 0))):
+                    fsTable.append([csFilesystem.getDeviceName(), csFilesystem.getMountPoint()])
+            if (len(fsTable) > 0):
+                tableHeader = ["device_name", "mount_point"]
+                description =  "The following GFS/GFS2 file-systems did not have the mount option noatime or nodiratime set. "
+                description += "Unless atime support is essential, Red Hat recommends setting the mount option \"noatime\" and "
+                description += "\"nodiratime\" on every GFS/GFS2 mount point. This will significantly improve performance since "
+                description += "it prevents reads from turning into writes."
+                tableOfStrings = stringUtil.toTableStringsList(fsTable, tableHeader)
+                urls = ["https://access.redhat.com/knowledge/solutions/35662"]
+                clusterNodeEvalString += StringUtil.formatBulletString(description, urls, tableOfStrings)
+
             # ###################################################################
             # Add to string with the hostname and header if needed.
             # ###################################################################

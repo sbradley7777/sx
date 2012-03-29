@@ -450,7 +450,6 @@ class ClusterNodes:
         if (mountData == None):
             mountData = report.getDataFromFile("sos_commands/filesys/mount_-l")
         filesysMountsList = FilesysParser.parseFilesysMountData(mountData, fsTypes)
-
         etcFstabList = FilesysParser.parseEtcFstabData(report.getDataFromFile("etc/fstab"), fsTypes)
         # ###############################################################
         # Get Storage Related Configuration Files

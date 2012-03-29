@@ -87,6 +87,16 @@ class ClusterStorageFilesystem(FilesysMount):
             return self.__smbClusteredSectionsMap.get(name)
         return []
 
+    def getAllMountOptions(self):
+        mountOptions = self.getMountOptions()
+        if (not self.__filesysMount == None):
+            mountOptions += self.__filesysMount.getMountOptions()
+        if (not self.__etcFstabMount == None):
+            mountOptions += self.__etcFstabMount.getMountOptions()
+        if (not self.__clusterConfMount == None):
+            mountOptions += self.__clusterConfMount.getMountOptions()
+        return mountOptions
+
     def setFilesysMount(self, filesysMount):
         self.__filesysMount = filesysMount
 

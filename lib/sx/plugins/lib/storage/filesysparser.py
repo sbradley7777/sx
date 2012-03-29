@@ -123,8 +123,8 @@ class FilesysParser:
         regex = "^(?P<device>none|usbfs|automount.*|/.*)" + " on " + \
             "(?P<mountPoint>/.*)" + " type " +  \
             fsTypesRegex + " " + \
-            "(?P<fsAttributes>\(.*\))" + \
-            "(?P<fsOptions>.*)"
+            "(?P<fsOptions>\(.*\))" + \
+            "(?P<fsAttributes>.*)"
         rem = re.compile(regex)
 
         for line in filesysMountData:
