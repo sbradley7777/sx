@@ -789,7 +789,8 @@ class ClusterHAConfAnalyzer :
         except KeyError:
             # This resource is not a reference but a private resource.
             resource = self.__getClusteredResource(resourceElement, True)
-            return ClusteredResourceInService(resource.getType(), resource.getName(), resource.isPrivate(), resource.getAttributesMap(), level, order)
+            if (not resource == None):
+                return ClusteredResourceInService(resource.getType(), resource.getName(), resource.isPrivate(), resource.getAttributesMap(), level, order)
         return None
 
     def __getClusteredResource(self, resourceElement, isPrivate):
