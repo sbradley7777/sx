@@ -83,11 +83,13 @@ class NetworkDeviceParser:
         networkInterfaces = []
         if (ifconfigData == None):
             return networkInterfaces
-        remIface = re.compile("(.*)Link encap:.*\s\sHWaddr\s([0-9a-zA-Z\:].*)")
-        remLoopback = re.compile("(.*)Link encap:Local Loopback.*")
-        remIPV4Addr  = re.compile(".*inet addr:([\d\.]*)\s.*Mask:([\d\.]*)")
-        remIPV6Addr  = re.compile(".*inet6 addr:.*")
-        remMTUMetric = re.compile("(?P<states>.*)  MTU:(?P<mtu>.*)  Metric:(?P<metric>.*).*")
+        # Does english and spanish currently.
+        remIface = re.compile("(.*)Link.*HW.*\s([0-9a-zA-Z\:].*)")
+        remLoopback = re.compile("(.*)Link encap:(Local Loopback.*|Loopback Local.*)")
+        remIPV4Addr  = re.compile(".*(inet addr|inet end.):\s?([\d\.]*)\s.*(Mask|Masc):([\d\.]*)")
+
+        remIPV6Addr  = re.compile(".*inet6 addr:.*|en.*inet6:")
+        remMTUMetric = re.compile("(?P<states>.*)  MTU:(?P<mtu>.*)  M.*:(?P<metric>.*).*")
         for index in range(0, len(ifconfigData)):
             # A counter that will increment on each regex that finds a
             # match.
@@ -119,8 +121,8 @@ class NetworkDeviceParser:
                 nextLine = ifconfigData[index + nextLineCounter].strip()
                 moIPV4Addr  = remIPV4Addr.match(nextLine)
                 if (moIPV4Addr):
-                    ipv4Addr = moIPV4Addr.group(1).strip()
-                    subnetMask = moIPV4Addr.group(2).strip()
+                    ipv4Addr = moIPV4Addr.group(2).strip()
+                    subnetMask = moIPV4Addr.group(4).strip()
                     nextLineCounter = nextLineCounter + 1
                     nextLine = ifconfigData[index + nextLineCounter].strip()
                 moIPV6Addr = remIPV6Addr.match(nextLine)
