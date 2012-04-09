@@ -842,7 +842,7 @@ class ClusterHAConfAnalyzer :
                     return fd
         except KeyError:
             for fd in failoverDomainsList:
-                if (fd.getName() == "Default Failover Domain"):
+                    print fd.getName()
                     return fd
         return FailoverDomain("ERROR FINDING FAILOVERDOMAIN", 0, 0, {})
 
@@ -862,12 +862,24 @@ class ClusterHAConfAnalyzer :
                         fdMembersMap[childElement.attrib["name"]] = childElement.attrib["priority"]
                     except KeyError:
                         pass
+                    ordered = "0"
+                    try:
+                        ordered = fdElement.attrib["ordered"]
+                    except KeyError:
+                        pass
+                    restricted = "0"
+                    try:
+                        ordered = fdElement.attrib["restricted"]
+                    except KeyError:
+                        pass
                 failoverDomainsList.append(FailoverDomain(fdElement.attrib["name"],
-                                                          fdElement.attrib["ordered"],
-                                                          fdElement.attrib["restricted"],
+                                                          ordered, restricted,
                                                           fdMembersMap))
             except KeyError:
                 continue
+
+        for fd in failoverDomainsList:
+            print fd.getName()
         return failoverDomainsList
 
     def getSharedClusterResources(self):
