@@ -539,11 +539,11 @@ class NetworkMaps:
         for networkMap in self.getListOfNetworkMaps():
             parentAliasNetworkMap = networkMap.getParentAliasNetworkMap()
             if (not parentAliasNetworkMap == None):
-                keys = networkInterfaceAliasMap.keys()
-                if (parentAliasNetworkMap.getInterface() in keys):
-                    networkInterfaceAliasMap[parentAliasNetworkMap.getInterface()].append(networkMap)
+                currentInterface = parentAliasNetworkMap.getInterface()
+                if (currentInterface in networkInterfaceAliasMap.keys()):
+                    networkInterfaceAliasMap[currentInterface].append(networkMap)
                 else:
-                    networkInterfaceAliasMap[parentAliasNetworkMap.getInterface()] = [networkMap]
+                    networkInterfaceAliasMap[currentInterface] = [networkMap]
         return networkInterfaceAliasMap
 
     def getListOfBridgedNetworkMaps(self):

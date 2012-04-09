@@ -240,12 +240,13 @@ class Networking(sx.plugins.PluginBase):
             aliasesInterfaceTable = []
             networkInterfaceAliasMap = networkMaps.getNetworkInterfaceAliasMap()
             for key in networkInterfaceAliasMap.keys():
-                aliasInterfacesString =  ""
                 for key in networkInterfaceAliasMap.keys():
+                    aliasInterfacesString =  ""
                     for networkMap in networkInterfaceAliasMap[key]:
                         aliasInterfacesString += " %s |" %(networkMap.getInterface())
                     aliasInterfacesString = aliasInterfacesString.rstrip("|")
                     aliasesInterfaceTable.append([key, aliasInterfacesString])
+
             if (len(aliasesInterfaceTable) > 0):
                 self.writeSeperator(filenameSummary, "Aliases Summary", True)
                 tableHeader = ["device", "alias_interfaces"]
