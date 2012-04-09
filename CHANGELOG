@@ -2,6 +2,8 @@
 - Fix bug where fence devies were not found.
 - Fix bug where it was not getting all the mount options for checking GFS mounts.
 - Fix bug where ifconfig could not parse spanish ifconfig file
+- Fix bug on writing out the aliases for the interfaces.
+- Added check in cluster plugin to see if libvirt-guests enabled if there are <vm> in cluster.conf.
 * Fri Feb 10 2012 Shane Bradley <sbradley@redhat.com>- 2.09-0.0
 - Added detection for fence_vmware agent
 - Fixed bug where clusternode names that were IPv4 address was not detected.

@@ -104,17 +104,31 @@ class Clusterha(sx.plugins.PluginBase):
             filename = "%s-services.txt" %(cca.getClusterName())
             clusteredServicesList = cca.getClusteredServices()
             clusteredServicesString = ""
+            clusteredVMServicesString = ""
             index = 1
+            vIndex = 1
             for clusteredService in clusteredServicesList:
-                sIndex = str(index)
-                if (index < 10):
-                    sIndex = " %d" %(index)
-                clusteredServicesString += "%s. %s\n" %(sIndex, str(clusteredService))
-                index = index + 1
+                if (not clusteredService.isVirtualMachineService()):
+                    sIndex = str(index)
+                    if (index < 10):
+                        sIndex = " %d" %(index)
+                    clusteredServicesString += "%s. %s\n" %(sIndex, str(clusteredService))
+                    index = index + 1
+                elif (clusteredService.isVirtualMachineService()):
+                    sIndex = str(vIndex)
+                    if (index < 10):
+                        sIndex = " %d" %(vIndex)
+                    clusteredVMServicesString += "%s. %s\n" %(sIndex, str(clusteredService))
+                    vIndex = vIndex + 1
             if (len(clusteredServicesString) > 0):
                 self.writeSeperator(filename, "Cluster Services Summary");
-                self.write(filename, "There was %d clustered services.\n" %(len(clusteredServicesList)))
+                self.write(filename, "There was %d clustered services.\n" %(index - 1))
                 self.write(filename, "%s\n" %(clusteredServicesString))
+
+            if (len(clusteredVMServicesString) > 0):
+                self.writeSeperator(filename, "Cluster Virtual Machine Services Summary");
+                self.write(filename, "There was %d clustered virtual machine services.\n" %(vIndex - 1))
+                self.write(filename, "%s\n" %(clusteredVMServicesString))
 
             # List of clusternodes in cluster.conf that do not have
             # corresponding sosreport/sysreport.

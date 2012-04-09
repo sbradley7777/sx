@@ -416,6 +416,22 @@ class ClusterEvaluator():
             result = self.__evaluateClusterNodeFencing(cca, clusternode)
             if (len(result) > 0):
                 clusterNodeEvalString += result
+
+            # Check if there are clustered vm services and if so that
+            # libvirt-guests is not enabled.
+            serviceName = "libvirt-guests"
+            serviceRunlevelEnabledString = self.__evaluateServiceIsEnabled(clusternode, serviceName)
+            if (len(serviceRunlevelEnabledString) > 0):
+                for clusteredService in cca.getClusteredServices():
+                    if (clusteredService.isVirtualMachineService()):
+                        description =  "The service %s should be disabled since there are virtual machines that are " %(serviceName)
+                        description += "being managed by rgmanager in the /etc/cluster/cluster.conf file. "
+                        description += "The following runlevels have %s enabled: %s." %(serviceName, serviceRunlevelEnabledString.strip())
+                        urls = ["https://access.redhat.com/knowledge/solutions/96543"]
+                        clusterNodeEvalString += StringUtil.formatBulletString(description, urls)
+                        # Break out because if we find a vm then we break out
+                        # cause we just need one instance.
+                        break;
             # ###################################################################
             # Distro specfic evaluations
             # ###################################################################

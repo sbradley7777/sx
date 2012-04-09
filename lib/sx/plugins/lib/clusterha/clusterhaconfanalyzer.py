@@ -117,11 +117,12 @@ class ClusteredResourceInService(ClusteredResource):
         self.__childResources.append(clusteredResource)
 
 class ClusteredService():
-    def __init__(self, serviceName, recoveryPolicy, failoverDomain, listOfClusteredResources):
+    def __init__(self, serviceName, recoveryPolicy, failoverDomain, listOfClusteredResources, isVirtualMachineService=False):
         self.__serviceName = serviceName
         self.__recoveryPolicy = recoveryPolicy
         self.__failoverDomain = failoverDomain
         self.__listOfClusteredResources = listOfClusteredResources
+        self.__isVirtualMachineService = isVirtualMachineService
 
     def __str__(self):
         rString = " %s(recovery policy: %s | failover domain: %s)\n     %s\n%s" %(self.getName(), self.getRecoveryPolicy(),
@@ -154,6 +155,9 @@ class ClusteredService():
 
     def getListOfClusterResources(self):
         return self.__listOfClusteredResources
+
+    def isVirtualMachineService(self):
+        return self.__isVirtualMachineService
 
     def __getFlatListOfClusterResourcesHelper(self, resource):
         flatListOfClusteredResources = []
@@ -907,5 +911,14 @@ class ClusterHAConfAnalyzer :
                                                              failoverDomain, listOfClusteredResourcesinService)
                 except KeyError:
                     continue
+            elif (rmElement.tag == "vm"):
+                name = rmElement.attrib["name"]
+                # Get the Failover Domain for the service.
+                failoverDomain = self.__getFailoverDomain(failoverDomainsList, rmElement)
+                try:
+                    recovery = rmElement.attrib["recovery"]
+                except KeyError:
+                    pass
+                servicesMap[name] = ClusteredService(name, recovery, failoverDomain, [], True)
         return servicesMap.values()
 

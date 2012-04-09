@@ -21,10 +21,15 @@ class RunLevelParser:
         if (chkConfigData == None):
             return parsedList
         if (not chkConfigData == None):
-            regexStanza = "^(?P<name>%s)\s*[0-6].(?P<runlevel0>o[f|n][f]?)\s*"%("\w+") + \
+            #regexStanza = "^(?P<name>%s)\s*[0-6].(?P<runlevel0>o[f|n][f]?)\s*"%("\w+") + \
+            #    "[0-6].(?P<runlevel1>o[f|n][f]?)\s*[0-6].(?P<runlevel2>o[f|n][f]?)\s*" + \
+            #    "[0-6].(?P<runlevel3>o[f|n][f]?)\s*[0-6].(?P<runlevel4>o[f|n][f]?)\s*" + \
+            #    "[0-6].(?P<runlevel5>o[f|n][f]?)\s*[0-6].(?P<runlevel6>o[f|n][f]?).*$"
+            regexStanza = "^(?P<name>\w+(-\w+)?)\s*[0-6].(?P<runlevel0>o[f|n][f]?)\s*" + \
                 "[0-6].(?P<runlevel1>o[f|n][f]?)\s*[0-6].(?P<runlevel2>o[f|n][f]?)\s*" + \
                 "[0-6].(?P<runlevel3>o[f|n][f]?)\s*[0-6].(?P<runlevel4>o[f|n][f]?)\s*" + \
                 "[0-6].(?P<runlevel5>o[f|n][f]?)\s*[0-6].(?P<runlevel6>o[f|n][f]?).*$"
+
             remStanza = re.compile(regexStanza)
             for item in chkConfigData:
                 mo = remStanza.match(item)
@@ -48,13 +53,13 @@ class ChkConfigServiceStatus:
     """
     def __init__(self, name, rl0, rl1, rl2, rl3, rl4, rl5, rl6):
         self.__name = name
-        self.__rl0 = self.__convertBooleanString(rl0)
-        self.__rl1 = self.__convertBooleanString(rl1)
-        self.__rl2 = self.__convertBooleanString(rl2)
-        self.__rl3 = self.__convertBooleanString(rl3)
-        self.__rl4 = self.__convertBooleanString(rl4)
-        self.__rl5 = self.__convertBooleanString(rl5)
-        self.__rl6 = self.__convertBooleanString(rl6)
+        self.__rl0 = self.__convertBooleanString(rl0.strip())
+        self.__rl1 = self.__convertBooleanString(rl1.strip())
+        self.__rl2 = self.__convertBooleanString(rl2.strip())
+        self.__rl3 = self.__convertBooleanString(rl3.strip())
+        self.__rl4 = self.__convertBooleanString(rl4.strip())
+        self.__rl5 = self.__convertBooleanString(rl5.strip())
+        self.__rl6 = self.__convertBooleanString(rl6.strip())
 
         # The default will be zero can be specified later in set
         # method if needed.
