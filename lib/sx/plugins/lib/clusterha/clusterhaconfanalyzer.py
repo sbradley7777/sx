@@ -842,7 +842,6 @@ class ClusterHAConfAnalyzer :
                     return fd
         except KeyError:
             for fd in failoverDomainsList:
-                    print fd.getName()
                     return fd
         return FailoverDomain("ERROR FINDING FAILOVERDOMAIN", 0, 0, {})
 
@@ -877,9 +876,6 @@ class ClusterHAConfAnalyzer :
                                                           fdMembersMap))
             except KeyError:
                 continue
-
-        for fd in failoverDomainsList:
-            print fd.getName()
         return failoverDomainsList
 
     def getSharedClusterResources(self):
