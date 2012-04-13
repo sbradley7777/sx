@@ -34,7 +34,7 @@ class Sosreport(sx.reports.Report) :
     def __init__(self) :
         sx.reports.Report.__init__(self,
                                    Sosreport.REPORT_NAME,
-                                   "A container for sosreport files")
+                                   "A container for sosreport files", stripDirectoriesDepth=1)
         self.__hostname = ""
 
     def getUname(self) :

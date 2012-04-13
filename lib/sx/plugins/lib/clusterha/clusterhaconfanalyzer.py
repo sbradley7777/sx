@@ -923,6 +923,7 @@ class ClusterHAConfAnalyzer :
                 name = rmElement.attrib["name"]
                 # Get the Failover Domain for the service.
                 failoverDomain = self.__getFailoverDomain(failoverDomainsList, rmElement)
+                recovery = ""
                 try:
                     recovery = rmElement.attrib["recovery"]
                 except KeyError:

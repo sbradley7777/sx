@@ -417,8 +417,10 @@ class ClusterEvaluator():
             if (len(result) > 0):
                 clusterNodeEvalString += result
 
+            # ###################################################################
             # Check if there are clustered vm services and if so that
             # libvirt-guests is not enabled.
+            # ###################################################################
             serviceName = "libvirt-guests"
             serviceRunlevelEnabledString = self.__evaluateServiceIsEnabled(clusternode, serviceName)
             if (len(serviceRunlevelEnabledString) > 0):
