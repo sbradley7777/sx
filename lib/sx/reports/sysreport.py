@@ -39,6 +39,24 @@ class Sysreport(sx.reports.Report) :
     # ##########################################################################
     # Helper functions
     # ##########################################################################
+
+    def getDate(self):
+        """
+        This function will return a string for the date which is when the report
+        was generated.
+
+        @return: This function will return a string for the date which is when
+        the report was generated.
+        @rtype: String
+        """
+        dateData = self.getDataFromFile("date")
+        # Return empty string if data object was not found.
+        date = ""
+        if (not dateData == None):
+            if (len(dateData) > 0):
+                date = dateData[0].rstrip()
+        return date
+
     def getUname(self) :
         """
         This function will return a string of the "uname -a" data.

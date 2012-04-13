@@ -49,6 +49,25 @@ class Sosreport(sx.reports.Report) :
             return ""
         return unameAData[0]
 
+    def getDate(self):
+        """
+        This function will return a string for the date which is when the report
+        was generated.
+
+        @return: This function will return a string for the date which is when
+        the report was generated.
+        @rtype: String
+        """
+        dateData = self.getDataFromFile("sos_commands/general/date")
+        if (dateData == None):
+            dateData = self.getDataFromFile("date")
+        # Return empty string if data object was not found.
+        date = ""
+        if (not dateData == None):
+            if (len(dateData) > 0):
+                date = dateData[0].rstrip()
+        return date
+
     def getUptime(self) :
         """
         This function will return a string of the "uptime" data.

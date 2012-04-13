@@ -471,6 +471,7 @@ class ClusterNodes:
         # ###############################################################
         clusterNode = ClusterNode(pathToClusterConfFile,
                                   distroRelease,
+                                  report.getDate(),
                                   report.getUname(),
                                   report.getHostname(),
                                   report.getUptime(),
@@ -512,11 +513,12 @@ class ClusterNodes:
                     unameA += "\n\t      "
                 unameA += "%s " %(unameASplit[i])
                 i = i + 1
-            rstring += "Hostname:     %s" %(clusternode.getHostname())
-            rstring += "\nRH Release:   %s" %(clusternode.getDistroRelease())
-            rstring += "\nUptime:       %s" %(clusternode.getUptime())
-            rstring += "\nUname -a:     %s" %(unameA)
-            rstring += "\n%s" %(str (clusternode))
+            rstring += "Hostname:     %s\n" %(clusternode.getHostname())
+            rstring += "Date:         %s\n" %(clusternode.getDate())
+            rstring += "RH Release:   %s\n" %(clusternode.getDistroRelease())
+            rstring += "Uptime:       %s\n" %(clusternode.getUptime())
+            rstring += "Uname -a:     %s\n" %(unameA)
+            rstring += "%s" %(str (clusternode))
         return rstring
 
     def getClusterNodesNetworkSummary(self):

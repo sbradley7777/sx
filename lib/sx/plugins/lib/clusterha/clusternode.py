@@ -206,7 +206,7 @@ class ClusterNode:
     RHEL6_CLUSTER_SERVICES = { 0:"corosync", 1:"cman", 2:"cmirror", 3:"clvmd", 4:"gfs2",
                                5:"rgmanager", 6:"modclusterd", 7:"ricci", 8:"luci"}
 
-    def __init__(self, pathToClusterConf, distroRelease, uname_a, hostname,
+    def __init__(self, pathToClusterConf, distroRelease, date, uname_a, hostname,
                  uptime, networkMaps, heartbeatNetworkMap, chkConfigList,
                  clusterCommandsMap, installedRPMS, clusterStorageFilesystemList):
         """
@@ -228,6 +228,8 @@ class ClusterNode:
         @type uname_a: String
         @param hostname: The hostname of the node.
         @type hostname: String
+        @param date: A string that is timestamp the report was taken.
+        @type date: String
         @param uptime: The uptime data for the node.
         @type uptime: String
         @param networkMaps: Array of NetworkMap objects
@@ -247,6 +249,7 @@ class ClusterNode:
         """
         self.__pathToClusterConf = pathToClusterConf
         self.__distroRelease = distroRelease
+        self.__date = date
         self.__uname_a = uname_a
         self.__hostname = hostname
         self.__uptime = uptime
@@ -398,6 +401,15 @@ class ClusterNode:
         @rtype: DistroRelease
         """
         return self.__distroRelease
+
+    def getDate(self):
+        """
+        Returns the date string for when the report was taken.
+
+        @return: Returns the date string for when the report was taken.
+        @rtype: String
+        """
+        return self.__date
 
     def getUnameA(self) :
         """
