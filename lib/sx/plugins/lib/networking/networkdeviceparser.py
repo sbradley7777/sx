@@ -15,6 +15,7 @@ import logging
 import sx
 from sx.logwriter import LogWriter
 from sx.tools import ConfigurationFileParser
+from sx.tools import SimpleUtil
 
 # Offical naming map.
 BONDING_MODES_MAP = {"-1":"unknown bonding mode", "0":"balance-rr", "1":"active-backup", "2":"balance-xor",
@@ -214,7 +215,10 @@ class NetworkInterface:
         self.__interface = interface
         self.__hwAddr = hwAddr
         self.__ipv4Addr = ipv4Addr
-        self.__subnetMask = subnetMask
+        if ((not subnetMask.find(".") > 0) and (len(subnetMask) > 0)):
+            self.__subnetMask = self.__convertCIDRToDotDecimal(subnetMask)
+        else:
+            self.__subnetMask = subnetMask
         self.__listOfStates = listOfStates
         self.__mtu = mtu
         self.__metric = metric
@@ -228,6 +232,15 @@ class NetworkInterface:
             if (len(smask) > 0):
                 rString += "/%s" %(smask)
         return rString
+
+    def __convertCIDRToDotDecimal(self, subnetMask):
+        subnetMask = SimpleUtil.castInt(subnetMask)
+        if (not subnetMask == None):
+            bits = 0
+            for i in xrange(32-subnetMask,32):
+                bits |= (1 << i)
+            return "%d.%d.%d.%d" % ((bits & 0xff000000) >> 24, (bits & 0xff0000) >> 16, (bits & 0xff00) >> 8 , (bits & 0xff))
+        return ""
 
     def getInterface(self):
         """
