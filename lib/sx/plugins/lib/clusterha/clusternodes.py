@@ -399,8 +399,8 @@ class ClusterNodes:
         # Get more network interfaces might need to add this at some point for
         # cases where ifconfig fails.
         # ###############################################################
-        ip_addressData = report.getDataFromFile("sos_commands/networking/ip_address")
-        networkInterfacesFromIPAddress = NetworkDeviceParser.parseIPAddressData(ip_addressData)
+        # ip_addressData = report.getDataFromFile("sos_commands/networking/ip_address")
+        # networkInterfacesFromIPAddress = NetworkDeviceParser.parseIPAddressData(ip_addressData)
         # ###############################################################
 
         etcHostsMap = NetworkDeviceParser.parseEtcHostsData(report.getDataFromFile("etc/hosts"))

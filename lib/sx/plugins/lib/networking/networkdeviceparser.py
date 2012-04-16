@@ -318,14 +318,16 @@ class NetworkMap(NetworkInterface):
         # If interface is not found, but sysconfig file has data then search it.
         if (not len(ipv4Addr) > 0):
             if (networkScriptMap.has_key("IPADDR")):
-                ipaddr = networkScriptMap.get("IPADDR")
-                if (len(ipaddr) > 0):
-                    ipv4Addr = ipaddr
+                if (len(networkScriptMap.get("IPADDR")) > 0):
+                    ipv4Addr = networkScriptMap.get("IPADDR")
         if (not len(subnetMask) > 0):
             if (networkScriptMap.has_key("NETMASK")):
-                netmask = networkScriptMap.get("NETMASK")
-                if (len(netmask) > 0):
-                    subnetMask = netmask
+                if (len(networkScriptMap.get("NETMASK")) > 0):
+                    subnetMask = networkScriptMap.get("NETMASK")
+        if (not len(hwAddr) > 0):
+            if (networkScriptMap.has_key("HWADDR")):
+                if (len(networkScriptMap.get("HWADDR")) > 0):
+                    hwAddr = networkScriptMap.get("HWADDR")
 
         NetworkInterface.__init__(self, interface, hwAddr, ipv4Addr,
                                   subnetMask, listOfStates, mtu, metric)
