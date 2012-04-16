@@ -68,6 +68,43 @@ class NetworkDeviceParser:
         return etcHostsMap
     parseEtcHostsData = staticmethod(parseEtcHostsData)
 
+    def parseIPAddressData(ip_addressData):
+        networkInterfaces = []
+        if (ip_addressData == None):
+            return networkInterfaces
+
+        # 1: lo: <LOOPBACK,UP,LOWER_UP> mtu 16436 qdisc noqueue
+        remIface = re.compile("([0-9].*): (?P<interface>.*): <(?P<listOfStates>.*)> mtu (?P<mtu>[0-9]?[0-9]?[0-9]?[0-9]?[0-9]?[0-9]) (?P<otherOptions>.*)")
+        remLink = re.compile("link/(?P<interfaceType>loopback|ether) (?P<hwAddr>[0-9a-zA-Z\:].*) brd (?P<brd>[0-9a-zA-Z\:])")
+        remInet = re.compile("inet (?P<ipv4Address>([\d\.]*))/(?P<subnetMask>([\d\.]*)) .*")
+        for index in range(0, len(ip_addressData)):
+            # A counter that will increment on each regex that finds a
+            # match.
+            moIface = remIface.search(ip_addressData[index].strip())
+            if (moIface):
+                interface = moIface.group("interface")
+                listOfStates = moIface.group("listOfStates").split(",")
+                mtu = moIface.group("mtu")
+                otherOptions = moIface.group("otherOptions").split(" ")
+
+                hwAddr = ""
+                for nextIndex in range((index + 1), len(ip_addressData)):
+                    currentLine = ip_addressData[nextIndex].strip()
+                    nextMoIface = remIface.search(currentLine)
+                    if (nextMoIface):
+                        break
+                    else:
+                        moLink = remLink.search(currentLine)
+                        moInet = remInet.search(currentLine)
+                        if (moLink):
+                            hwAddr = moLink.group("hwAddr")
+                        elif (moInet):
+                            ipv4Addr = moInet.group("ipv4Address")
+                            subnetMask = moInet.group("subnetMask")
+                            networkInterfaces.append(NetworkInterface(interface, hwAddr, ipv4Addr, subnetMask, listOfStates, mtu, -1))
+        return networkInterfaces
+    parseIPAddressData = staticmethod(parseIPAddressData)
+
     def parseIfconfigData(ifconfigData) :
         """
         This function generates a NetworkMap of all the interfaces. It
@@ -182,6 +219,16 @@ class NetworkInterface:
         self.__mtu = mtu
         self.__metric = metric
 
+    def __str__(self):
+        ip = self.getIPv4Address()
+        smask = self.getSubnetMask()
+        rString = "%s" %(self.getInterface())
+        if (len(ip) > 0):
+            rString += ": %s" %(ip)
+            if (len(smask) > 0):
+                rString += "/%s" %(smask)
+        return rString
+
     def getInterface(self):
         """
         Returns the network interface.
@@ -255,6 +302,18 @@ class NetworkMap(NetworkInterface):
     """
     def __init__(self, interface, hwAddr, ipv4Addr, subnetMask, listOfStates, mtu, metric,
                  etcHostsMap, networkScriptMap, modprobeConfCommands, procNetMap):
+        # If interface is not found, but sysconfig file has data then search it.
+        if (not len(ipv4Addr) > 0):
+            if (networkScriptMap.has_key("IPADDR")):
+                ipaddr = networkScriptMap.get("IPADDR")
+                if (len(ipaddr) > 0):
+                    ipv4Addr = ipaddr
+        if (not len(subnetMask) > 0):
+            if (networkScriptMap.has_key("NETMASK")):
+                netmask = networkScriptMap.get("NETMASK")
+                if (len(netmask) > 0):
+                    subnetMask = netmask
+
         NetworkInterface.__init__(self, interface, hwAddr, ipv4Addr,
                                   subnetMask, listOfStates, mtu, metric)
         self.__etcHostsMap = etcHostsMap
@@ -273,6 +332,8 @@ class NetworkMap(NetworkInterface):
         self.__parentAliasNetworkMap = None
         # Bridging
         self.__virtualBridgedNetworkMap = None
+
+
 
     def __str__(self) :
         """

@@ -394,6 +394,15 @@ class ClusterNodes:
         if (ifconfigData == None):
             ifconfigData = report.getDataFromFile("ifconfig")
         networkInterfaces = NetworkDeviceParser.parseIfconfigData(ifconfigData)
+
+        # ###############################################################
+        # Get more network interfaces might need to add this at some point for
+        # cases where ifconfig fails.
+        # ###############################################################
+        # ip_addressData = report.getDataFromFile("sos_commands/networking/ip_address")
+        # networkInterfacesFromIPAddress = NetworkDeviceParser.parseIPAddressData(ip_addressData)
+        # ###############################################################
+
         etcHostsMap = NetworkDeviceParser.parseEtcHostsData(report.getDataFromFile("etc/hosts"))
         modprobeConfCommands = ModulesParser.parseEtcModprobeConf(report.getDataFromFile("etc/modprobe.conf"))
         # Appears this is not collect on rhel6, so collecting all the
@@ -414,11 +423,12 @@ class ClusterNodes:
         procNetMap = dict(procNetMap.items() + bondingMap.items())
         # Build networkmaps from all the network related information.
         networkMaps = NetworkMaps(networkInterfaces, etcHostsMap, networkScriptsDataMap, modprobeConfCommands, procNetMap)
-
+        # ###############################################################
         #clusternodeName = ""
         #etcSysConfigCluster = report.getDataFromFile("etc/sysconfig/cluster")
         #if (not etcSysConfigCluster == None):
         #    pass
+        # ###############################################################
 
         # Using Heartbeat network to determine if this is a
         # clusternode. It will capture almost all nodes correctly
