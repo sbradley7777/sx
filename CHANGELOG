@@ -1,4 +1,4 @@
-* Tue Mar 06 2012 Shane Bradley <sbradley@redhat.com>- 2.10-0.0
+* Tue Apr 17 2012 Shane Bradley <sbradley@redhat.com>- 2.10-0.0
 - Fix sorting issue with cluster nodes if cluster node count was greater than 9.
 - Added parser for sos_commands/networking/ip_address.
 - Added date data to the cluster summary so that it would state when sosreport/sysreport was created.
