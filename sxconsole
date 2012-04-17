@@ -39,7 +39,7 @@ from sx.modulesloader import ExtractorsLoader
 @cvar VERSION_NUMBER: The current version number of sxconsole.
 @type VERSION_NUMBER: String
 """
-VERSION_NUMBER = "2.10-0.0"
+VERSION_NUMBER = "2.10-0.1"
 
 def getArchiveLayout(caseNumber, pathToArchiveDirectory, pathToExtractedReports,
                      isModifiedArchiveLayoutEnabled) :
@@ -700,70 +700,42 @@ class ExtendOption (Option):
             else:
                 Option.take_action(self, action, dest, opt, value, values, parser)
 
-class ConsoleReport:
-    def __init__(self):
-        self.__pathToCompressedReports = ""
-        self.__pathToExtractedReports = ""
-        self.__pathToNonReports = ""
-        self.__listOfNonReportPaths = ""
-        self.__mapOfPluginReportPaths = {}
 
-    def printToConsole(self):
-        # Print the report archive location
-        if ((len(self.getPathToCompressedReports()) > 0) or
-            (len(self.getPathToExtractedReports()) > 0)):
-            print
-            print "%s" %(ConsoleUtil.colorText("Details of Report Extraction: ","lcyan"))
-            print "%s %s" %(ConsoleUtil.colorText("Compressed Reports Path:  ","lgreen"), self.getPathToCompressedReports())
-            print "%s %s" %(ConsoleUtil.colorText("Extracted Reports Path:   ","lgreen"), self.getPathToExtractedReports())
-            print
 
-        # Print all the paths to files created by the plugins
-        if (len(self.getMapOfPluginReportPaths().keys()) > 0):
-            print "%s" %(ConsoleUtil.colorText("List of Files Created by the Plugins: ","lcyan"))
-            for key in self.getMapOfPluginReportPaths().keys():
-                index = 1;
-                for pathToPluginReport in self.getMapOfPluginReportPaths()[key]:
-                    print "%s %s" %(ConsoleUtil.colorText("%s plugin File %d: " %(key, index),"lgreen"), pathToPluginReport)
-                    index += 1;
-                print
 
-        if (len(self.getListOfNonReportPaths()) > 0) :
-            print "%s" %(ConsoleUtil.colorText("Details for Non-Report Files: ","lcyan"))
+# ###############################################################################
+# Simple function to print info about what files were uploaded.
+# ###############################################################################
+def __printToConsole(pathToCompressedReports, pathToExtractedReports, mapOfPluginReportPaths, listOfNonReportPaths):
+    # Print the report archive location
+    if ((len(pathToCompressedReports) > 0) or
+        (len(pathToExtractedReports) > 0)):
+        print
+        print "%s" %(ConsoleUtil.colorText("Details of Report Extraction: ","lcyan"))
+        print "%s %s" %(ConsoleUtil.colorText("Compressed Reports Path:  ","lgreen"), pathToCompressedReports)
+        print "%s %s" %(ConsoleUtil.colorText("Extracted Reports Path:   ","lgreen"), pathToExtractedReports)
+        if (len(listOfNonReportPaths) > 0):
+            pathToNonReportFiles = os.path.split(listOfNonReportPaths[0])[0]
+            print "%s %s" %(ConsoleUtil.colorText("Non-Reports Files Path:   ","lgreen"), pathToNonReportFiles)
+        print
+
+    # Print all the paths to files created by the plugins
+    if (len(mapOfPluginReportPaths.keys()) > 0):
+        print "%s" %(ConsoleUtil.colorText("List of Files Created by the Plugins: ","lcyan"))
+        for key in mapOfPluginReportPaths.keys():
             index = 1;
-            for pathToNonReportFile in self.getListOfNonReportPaths():
-                print "%s %s" %(ConsoleUtil.colorText("Non-Report File %d: " %(index),"lgreen"), pathToNonReportFile)
+            for pathToPluginReport in mapOfPluginReportPaths[key]:
+                print "%s %s" %(ConsoleUtil.colorText("%s plugin File %d: " %(key, index),"lgreen"), pathToPluginReport)
                 index += 1;
             print
-    def setPathToCompressedReports(self, pathToCompressedReports):
-        self.__pathToCompressedReports = pathToCompressedReports
 
-    def setPathToExtractedReports(self, pathToExtractedReports):
-        self.__pathToExtractedReports = pathToExtractedReports
-
-    def setPathToNonReports(self, pathToNonReports):
-        self.__pathToNonReports = pathToNonReports
-
-    def setListOfNonReportPaths(self, listOfNonReportPaths):
-        self.__listOfNonReportPaths = listOfNonReportPaths
-
-    def setMapOfPluginReportPaths(self, mapOfPluginReportPaths):
-        self.__mapOfPluginReportPaths = mapOfPluginReportPaths
-
-    def getPathToCompressedReports(self):
-        return self.__pathToCompressedReports
-
-    def getPathToExtractedReports(self):
-        return self.__pathToExtractedReports
-
-    def getPathToNonReports(self):
-        return self.__pathToNonReports
-
-    def getListOfNonReportPaths(self):
-        return self.__listOfNonReportPaths
-
-    def getMapOfPluginReportPaths(self):
-        return self.__mapOfPluginReportPaths
+    if (len(listOfNonReportPaths) > 0) :
+        print "%s" %(ConsoleUtil.colorText("Details for Non-Report Files: ","lcyan"))
+        index = 1;
+        for pathToNonReportFile in listOfNonReportPaths:
+            print "%s %s" %(ConsoleUtil.colorText("Non-Report File %d: " %(index),"lgreen"), pathToNonReportFile)
+            index += 1;
+        print
 
 # ###############################################################################
 # Main Function
@@ -823,15 +795,9 @@ if __name__ == "__main__":
                                   cmdLineOpts.pathToExtractedReports,
                                   cmdLineOpts.modifiedArchiveLayout)
 
-            # message = "The archive directory layout:\n%s" %(str(al))
-            # logging.getLogger(sx.MAIN_LOGGER_NAME).debug(message)
-
-            # #######################################################################
-            # Create a ConsoleReport Object that will report all information about
-            # the execution of sxconsole such as paths to reports created.
-            # #######################################################################
-            consoleReport = ConsoleReport()
-
+            # List of files that were added to the archive that were not known
+            # report types.
+            listOfNonReportPaths = []
             # #######################################################################
             # Move all non-report files before extracting reports so
             # that non-report files will not be scanned.
@@ -840,8 +806,7 @@ if __name__ == "__main__":
                 message = "Moving all the non-report files into the archive directory before extracting reports so they will not be scanned."
                 logging.getLogger(sx.MAIN_LOGGER_NAME).info(message)
                 pathToNonReports = al.getPathToNonReportFiles()
-                consoleReport.setPathToNonReports(pathToNonReports)
-                consoleReport.setListOfNonReportPaths(__moveNonReportFiles(pathToNonReports, cmdLineOpts.filePathArray))
+                listOfNonReportPaths = __moveNonReportFiles(pathToNonReports, cmdLineOpts.filePathArray)
 
             # #######################################################################
             # Get the list of extracted reports that were extracted or loaded.
@@ -852,10 +817,10 @@ if __name__ == "__main__":
                                                     cmdLineOpts.reportPath,
                                                     (not cmdLineOpts.disableUserDefinedModules))
 
+            # Map of the files that were created by the plugins.
+            mapOfPluginReportPaths = {}
             # Set archive location if there was reports load/extracted.
             if (len(listOfReportsExtracted) > 0):
-                consoleReport.setPathToCompressedReports(al.getPathToCompressedReports())
-                consoleReport.setPathToExtractedReports(al.getPathToExtractedReports())
 
                 # #######################################################################
                 # Run the plugins on the extracted reports
@@ -880,9 +845,6 @@ if __name__ == "__main__":
                             print "\t  %s" %(plugin)
                     # Generate map of all plugins reports that were created after they run.
                     mapOfPluginReportPaths = pluginsHelper.generatePluginReports(listOfReportsExtracted, listOfEnabledPlugins)
-                    # Set the map of plugins report files created if there was any.
-                    if (len(mapOfPluginReportPaths.keys()) > 0):
-                        consoleReport.setMapOfPluginReportPaths(mapOfPluginReportPaths)
                 else:
                     logging.getLogger(sx.MAIN_LOGGER_NAME).warning("There are no plugins enabled.")
             # #######################################################################
@@ -924,7 +886,7 @@ if __name__ == "__main__":
                 report.clean()
 
             # Print console information about the ConsoleReport
-            consoleReport.printToConsole()
+            __printToConsole(al.getPathToCompressedReports(), al.getPathToExtractedReports(), mapOfPluginReportPaths, listOfNonReportPaths)
         # #######################################################################
     except KeyboardInterrupt:
         print ""
