@@ -102,7 +102,7 @@ class NetworkDeviceParser:
                         elif (moInet):
                             ipv4Addr = moInet.group("ipv4Address")
                             subnetMask = moInet.group("subnetMask")
-                            networkInterfaces.append(NetworkInterface(interface, hwAddr, ipv4Addr, subnetMask, listOfStates, mtu, -1))
+                            networkInterfaces.append(NetworkInterface(interface, hwAddr, ipv4Addr, subnetMask, listOfStates, mtu))
         return networkInterfaces
     parseIPAddressData = staticmethod(parseIPAddressData)
 
@@ -153,7 +153,7 @@ class NetworkDeviceParser:
                 subnetMask = ""
                 listOfStates = []
                 mtu = -1
-                metric = -1
+                # metric = -1
 
                 # Get the next line
                 nextLine = ifconfigData[index + nextLineCounter].strip()
@@ -171,10 +171,10 @@ class NetworkDeviceParser:
                 if (moMTUMetric):
                     listOfStates = moMTUMetric.group("states").split()
                     mtu = int(moMTUMetric.group("mtu"))
-                    metric = int(moMTUMetric.group("metric"))
+                    #metric = int(moMTUMetric.group("metric"))
 
                 # Add the map since we have interface for the map.
-                networkInterfaces.append(NetworkInterface(interface, hwAddr, ipv4Addr, subnetMask, listOfStates, mtu, metric))
+                networkInterfaces.append(NetworkInterface(interface, hwAddr, ipv4Addr, subnetMask, listOfStates, mtu))
         return networkInterfaces
     parseIfconfigData = staticmethod(parseIfconfigData)
 
@@ -194,7 +194,7 @@ class NetworkInterface:
     """
     Container for network information for network information.
     """
-    def __init__(self, interface, hwAddr, ipv4Addr, subnetMask, listOfStates, mtu, metric):
+    def __init__(self, interface, hwAddr, ipv4Addr, subnetMask, listOfStates, mtu):
         """
         @param interface: The network interface.
         @type interface: String
@@ -209,8 +209,6 @@ class NetworkInterface:
         @type listOfStates: Array
         @param mtu: The mtu for the interface.
         @type mtu: Int
-        @param metric: The metric for interface.
-        @type metric: Int
         """
         self.__interface = interface
         self.__hwAddr = hwAddr
@@ -221,7 +219,6 @@ class NetworkInterface:
             self.__subnetMask = subnetMask
         self.__listOfStates = listOfStates
         self.__mtu = mtu
-        self.__metric = metric
 
     def __str__(self):
         ip = self.getIPv4Address()
@@ -299,21 +296,11 @@ class NetworkInterface:
         """
         return self.__mtu
 
-    def getMetric(self) :
-        """
-        Returns an int for the metric for this interface. A -1 will
-        mean an metric was not found.
-
-        @return: Returns an int for the metric for this interface.
-        @rtype: Int
-        """
-        return self.__metric
-
 class NetworkMap(NetworkInterface):
     """
     Container for network information for network information.
     """
-    def __init__(self, interface, hwAddr, ipv4Addr, subnetMask, listOfStates, mtu, metric,
+    def __init__(self, interface, hwAddr, ipv4Addr, subnetMask, listOfStates, mtu,
                  etcHostsMap, networkScriptMap, modprobeConfCommands, procNetMap):
         # If interface is not found, but sysconfig file has data then search it.
         if (not len(ipv4Addr) > 0):
@@ -330,7 +317,7 @@ class NetworkMap(NetworkInterface):
                     hwAddr = networkScriptMap.get("HWADDR")
 
         NetworkInterface.__init__(self, interface, hwAddr, ipv4Addr,
-                                  subnetMask, listOfStates, mtu, metric)
+                                  subnetMask, listOfStates, mtu)
         self.__etcHostsMap = etcHostsMap
         # What if there is quotes in the values. that is a problem on
         # compares.
@@ -347,8 +334,6 @@ class NetworkMap(NetworkInterface):
         self.__parentAliasNetworkMap = None
         # Bridging
         self.__virtualBridgedNetworkMap = None
-
-
 
     def __str__(self) :
         """
@@ -569,7 +554,6 @@ class NetworkMaps:
                                         networkInterface.getSubnetMask(),
                                         networkInterface.getListOfStates(),
                                         networkInterface.getMTU(),
-                                        networkInterface.getMetric(),
                                         self.__etcHostsMap,
                                         networkScriptMap,
                                         self.__modprobeConfCommands,

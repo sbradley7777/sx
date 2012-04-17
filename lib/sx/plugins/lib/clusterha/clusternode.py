@@ -123,10 +123,10 @@ class ClusterNodeNetworkMap(NetworkMap):
     """
     Container for network information for network information.
     """
-    def __init__(self, interface, hwAddr, ipv4Addr, subnetMask, listOfStates, mtu, metric,
+    def __init__(self, interface, hwAddr, ipv4Addr, subnetMask, listOfStates, mtu,
                  etcHostsMap, networkScriptMap, modprobeConfCommands, procNetMap, clusterNodeName):
         NetworkMap.__init__(self, interface, hwAddr, ipv4Addr,
-                            subnetMask, listOfStates, mtu, metric,
+                            subnetMask, listOfStates, mtu,
                             etcHostsMap, networkScriptMap, modprobeConfCommands, procNetMap)
         self.__clusterNodeName = clusterNodeName
 

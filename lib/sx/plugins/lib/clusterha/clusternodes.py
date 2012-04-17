@@ -84,7 +84,6 @@ class ClusterNodes:
                                                                           networkMap.getSubnetMask(),
                                                                           networkMap.getListOfStates(),
                                                                           networkMap.getMTU(),
-                                                                          networkMap.getMetric(),
                                                                           networkMap.getEtcHostsMap(),
                                                                           networkMap.getNetworkScriptMap(),
                                                                           networkMap.getModprobeConfCommands(),
@@ -126,7 +125,6 @@ class ClusterNodes:
                                                                   networkMap.getSubnetMask(),
                                                                   networkMap.getListOfStates(),
                                                                   networkMap.getMTU(),
-                                                                  networkMap.getMetric(),
                                                                   networkMap.getEtcHostsMap(),
                                                                   networkMap.getNetworkScriptMap(),
                                                                   networkMap.getModprobeConfCommands(),
@@ -147,7 +145,6 @@ class ClusterNodes:
                                                                                networkMap.getSubnetMask(),
                                                                                networkMap.getListOfStates(),
                                                                                networkMap.getMTU(),
-                                                                               networkMap.getMetric(),
                                                                                networkMap.getEtcHostsMap(),
                                                                                networkMap.getNetworkScriptMap(),
                                                                                networkMap.getModprobeConfCommands(),
@@ -397,10 +394,10 @@ class ClusterNodes:
 
         # ###############################################################
         # Get more network interfaces might need to add this at some point for
-        # cases where ifconfig fails.
+        # cases where ifconfig fails. Not sure how to combine the data yet.
         # ###############################################################
-        # ip_addressData = report.getDataFromFile("sos_commands/networking/ip_address")
-        # networkInterfacesFromIPAddress = NetworkDeviceParser.parseIPAddressData(ip_addressData)
+        #ip_addressData = report.getDataFromFile("sos_commands/networking/ip_address")
+        #networkInterfacesFromIP_Address = NetworkDeviceParser.parseIPAddressData(ip_addressData)
         # ###############################################################
 
         etcHostsMap = NetworkDeviceParser.parseEtcHostsData(report.getDataFromFile("etc/hosts"))
@@ -426,7 +423,7 @@ class ClusterNodes:
         # ###############################################################
         #clusternodeName = ""
         #etcSysConfigCluster = report.getDataFromFile("etc/sysconfig/cluster")
-        #if (not etcSysConfigCluster == None):
+        #i f (not etcSysConfigCluster == None):
         #    pass
         # ###############################################################
 
@@ -496,7 +493,7 @@ class ClusterNodes:
         # nodes so they are kept in node id order.
         # ###############################################################
         self.__clusterNodes.append(clusterNode)
-        self.__clusterNodes.sort(key=lambda c: c.getClusterNodeProperties().getNodeID())
+        self.__clusterNodes.sort(key=lambda c: int(c.getClusterNodeProperties().getNodeID()))
         return True
 
     # #######################################################################
