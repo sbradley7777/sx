@@ -9,7 +9,7 @@ $ cp demoreport.py $HOME/.sx/sxreports/
 
 @author    :  Shane Bradley
 @contact   :  sbradley@redhat.com
-@version   :  2.09
+@version   :  2.10
 @copyright :  GPLv2
 """
 import os.path

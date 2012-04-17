@@ -4,7 +4,7 @@ This contains Global variables for sx.
 
 @author    :  Shane Bradley
 @contact   :  sbradley@redhat.com
-@version   :  2.09
+@version   :  2.10
 @copyright :  GPLv2
 """
 import sys
