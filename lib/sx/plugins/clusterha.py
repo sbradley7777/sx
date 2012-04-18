@@ -55,7 +55,9 @@ class Clusterha(sx.plugins.PluginBase):
 
         # Set the default options for the plugin
         self.setOptionValue("isStretchCluster", "0");
-        self.__cnc = ClusterNodes()
+        # A map of all the clusters found. The key is the name of the cluster
+        # and value is a ClusterNodes object.
+        self.__clusterMap = {}
 
     # #######################################################################
     # Functions that should be overwritten in the plugin
@@ -72,20 +74,33 @@ class Clusterha(sx.plugins.PluginBase):
         logging.getLogger(sx.MAIN_LOGGER_NAME).log(LogWriter.STATUS_LEVEL, message)
         for report in reports:
             if (self.isValidReportType(report)) :
-                self.__cnc.add(report)
+                # Verify that cluster.conf exists because we need to sort the
+                # reports into the correct bin in case there are multiple
+                # clusters uploaded.
+                pathToClusterConfFile = report.getPathForFile("etc/cluster/cluster.conf")
+                if ((not len(pathToClusterConfFile) > 0) or (not os.path.exists(pathToClusterConfFile))) :
+                    message = "The cluster.conf file could not be located for this report."
+                    logging.getLogger(sx.MAIN_LOGGER_NAME).debug(message)
+                    return False
+                cca = ClusterHAConfAnalyzer(pathToClusterConfFile)
+                clusterName = cca.getClusterName()
+                if (len(clusterName) > 0):
+                    if (not self.__clusterMap.has_key(clusterName)):
+                        self.__clusterMap[clusterName] = ClusterNodes()
+                    self.__clusterMap.get(clusterName).add(report)
 
     def report(self) :
         """
         This function will write to report files the results of the
         cluster validation tests and report any errors to console.
         """
-        if (not len(self.__cnc.getClusterNodes()) > 0):
+        if (not len(self.__clusterMap.keys()) > 0):
             message = "There were no cluster nodes found in the list of reports so no report will be generated."
             logging.getLogger(sx.MAIN_LOGGER_NAME).warn(message)
         else:
             message = "Generating report for plugin: %s" %(self.getName())
             logging.getLogger(sx.MAIN_LOGGER_NAME).log(LogWriter.STATUS_LEVEL, message)
-            message = "%s is generating a report of various information about the nodes in the cluster." %(self.getName())
+            message = "%s is generating a report for the Cluster(s) that were found." %(self.getName())
             logging.getLogger(sx.MAIN_LOGGER_NAME).info(message)
 
             # Since we are going to run the plugin and create files in
@@ -93,8 +108,19 @@ class Clusterha(sx.plugins.PluginBase):
             # all the existing files.
             self.clean()
 
-            # Name of the file that will be used to write the report.
-            baseClusterNode = self.__cnc.getBaseClusterNode()
+            for clusterName in self.__clusterMap.keys():
+                message = "Analyzing and writing the report for the cluster: %s" %(clusterName)
+                logging.getLogger(sx.MAIN_LOGGER_NAME).log(LogWriter.STATUS_LEVEL, message)
+                cnc = self.__clusterMap.get(clusterName)
+                self.__generateReport(cnc)
+
+    def __generateReport(self, cnc):
+        # Name of the file that will be used to write the report.
+        if (not len(cnc.getClusterNodes()) > 0):
+            message = "There were no cluster nodes found for this cluster."
+            logging.getLogger(sx.MAIN_LOGGER_NAME).warn(message)
+        else:
+            baseClusterNode = cnc.getBaseClusterNode()
             if (baseClusterNode == None):
                 # Should never occur since node count should be checked first.
                 return
@@ -133,7 +159,7 @@ class Clusterha(sx.plugins.PluginBase):
             # List of clusternodes in cluster.conf that do not have
             # corresponding sosreport/sysreport.
             filename = "%s-summary.txt" %(cca.getClusterName())
-            missingNodesList = self.__cnc.listClusterNodesMissingReports()
+            missingNodesList = cnc.listClusterNodesMissingReports()
             missingNodesMessage = ""
             if (len(missingNodesList) > 0):
                 missingNodesMessage = "The following cluster nodes could not be matched to a report that was analyzed:"
@@ -145,23 +171,23 @@ class Clusterha(sx.plugins.PluginBase):
             # ###################################################################
             # Summary of each node in collection
             # ###################################################################
-            result = self.__cnc.getClusterNodesSystemSummary()
+            result = cnc.getClusterNodesSystemSummary()
             if (len(result) > 0):
                 self.writeSeperator(filename, "Cluster Nodes Summary");
                 self.write(filename, result.rstrip())
                 self.write(filename, "")
-            result = self.__cnc.getClusterNodesPackagesInstalledSummary()
+            result = cnc.getClusterNodesPackagesInstalledSummary()
             if (len(result) > 0):
                 self.writeSeperator(filename, "Cluster/Cluster-Storage Packages Installed");
                 self.write(filename, result.rstrip())
                 self.write(filename, "")
-            result = self.__cnc.getClusterNodesNetworkSummary()
+            result = cnc.getClusterNodesNetworkSummary()
             if (len(result) > 0):
                 self.writeSeperator(filename, "Cluster Nodes Network Summary");
                 self.write(filename, "* =   heartbeat network\n** =  bonded slave interfaces\n*** = parent of alias interface\n")
                 self.write(filename, result)
                 self.write(filename, "")
-            result = self.__cnc.getClusterStorageSummary()
+            result = cnc.getClusterStorageSummary()
             if (len(result) > 0):
                 self.writeSeperator(filename, "Cluster Storage Summary for GFS/GFS2");
                 self.write(filename, result)
@@ -180,7 +206,7 @@ class Clusterha(sx.plugins.PluginBase):
             self.write(filename, "      RHEL 5: openais")
             self.write(filename, "      RHEL 6: corosync\n")
 
-            for clusternode in self.__cnc.getClusterNodes():
+            for clusternode in cnc.getClusterNodes():
                 chkConfigClusterServiceList = clusternode.getChkConfigClusterServicesStatus()
                 if (not len(chkConfigClusterServiceList) > 0):
                     # If there is no chkconfig data then skip
@@ -203,7 +229,7 @@ class Clusterha(sx.plugins.PluginBase):
             # Verify the cluster node configuration
             # ###################################################################
             filenameCE = "%s-evaluator.txt" %(cca.getClusterName())
-            clusterEvaluator = ClusterEvaluator(self.__cnc)
+            clusterEvaluator = ClusterEvaluator(cnc)
             evaluatorResult = clusterEvaluator.evaluate()
             if (len(evaluatorResult) > 0):
                 if (len(missingNodesList) > 0):
@@ -223,7 +249,7 @@ class Clusterha(sx.plugins.PluginBase):
             isStretchCluster = self.getOptionValue("isStretchCluster")
             if (not isStretchCluster == "0"):
                 filenameCE = "%s-stretch_evaluator.txt" %(cca.getClusterName())
-                clusterHAStretchEvaluator = ClusterHAStretchEvaluator(self.__cnc)
+                clusterHAStretchEvaluator = ClusterHAStretchEvaluator(cnc)
                 evaluatorResult = clusterHAStretchEvaluator.evaluate()
                 if (len(evaluatorResult) > 0):
                     if (len(missingNodesList) > 0):
