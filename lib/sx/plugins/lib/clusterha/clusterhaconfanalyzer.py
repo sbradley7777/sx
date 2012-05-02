@@ -21,6 +21,109 @@ import sx
 from sx.tools import FileUtil
 from sx.plugins.lib.storage.filesysparser import FilesysMount
 
+class Quorumd:
+    def __init__(self, quorumdAttributes):
+        self.__quorumdAttributes = quorumdAttributes
+        self.__quorumdHeuristics = []
+
+    def __str__(self):
+        rString = "Label: %s | min_score: %s \n" %(self.getLabel(), self.getMinScore())
+        for heuristic in self.getHeuristics():
+            rString += "\t%s\n" %(str(heuristic))
+        return rString.rstrip()
+
+    def addHeuristic(self, heuristic):
+        if (len(heuristic.getProgram()) > 0):
+            self.__quorumdHeuristics.append(heuristic)
+            return True
+        else:
+            return False
+
+    def getHeuristics(self):
+        return self.__quorumdHeuristics
+
+    def __getAttribute(self, name):
+        if (self.__quorumdAttributes.has_key(name)):
+            return self.__quorumdAttributes.get(name)
+        else:
+            return ""
+
+    # Need to set defaults on some of these if empty string is returned.
+    def getLabel(self):
+        return self.__getAttribute("label")
+
+    def getDevice(self):
+        return self.__getAttribute("device")
+
+    def getCmanLabel(self):
+        return self.__getAttribute("cman_label")
+
+    def getMinScore(self):
+        return self.__getAttribute("min_score")
+
+    def getUseUptime(self):
+        return self.__getAttribute("use_uptime")
+
+    def getPriority(self):
+        return self.__getAttribute("priority")
+
+    def getStatusFile(self):
+        return self.__getAttribute("status_file")
+
+    def getMasterWins(self):
+        return self.__getAttribute("master_wins")
+
+    def getAllowKill(self):
+        return self.__getAttribute("allow_kill")
+
+    def getReboot(self):
+        return self.__getAttribute("reboot")
+
+class QuorumdHeuristic:
+    def __init__(self, heuristicAttributes):
+        # If there is no program value then this should be invalid heuristic.
+        self.__program = ""
+        # The default interval is determined by the qdiskd timeout. Not sure how
+        # to get that. By default I will set to -1.
+        self.__interval = -1
+        # Default is 1
+        self.__score = 1
+        # The default interval is determined by the qdiskd timeout. Not sure how
+        # to get that. By default I will set to -1.
+        self.__tko = -1
+        if (heuristicAttributes.has_key("program")):
+           self.__program = heuristicAttributes.get("program")
+        if (heuristicAttributes.has_key("interval")):
+            self.__interval = int(heuristicAttributes.get("interval"))
+        if (heuristicAttributes.has_key("score")):
+            self.__score = int(heuristicAttributes.get("score"))
+        if (heuristicAttributes.has_key("tko")):
+            self.__tko = int(heuristicAttributes.get("tko"))
+
+    def __str__(self):
+        rString = ""
+        if (len(self.getProgram()) > 0):
+            rString =  "program: %s" %(self.getProgram())
+            if (self.getInterval() > 0):
+                rString += " | interval: %d" %(self.getInterval())
+            if (self.getScore() > 0):
+                rString += " | score: %d" %(self.getScore())
+            if (self.getTKO() > 0):
+                rString += " | tko: %d" %(self.getTKO())
+        return rString
+
+    def getProgram(self):
+        return self.__program
+
+    def getInterval(self):
+        return self.__interval
+
+    def getScore(self):
+        return self.__score
+
+    def getTKO(self):
+        return self.__tko
+
 class ClusterConfMount(FilesysMount):
     def __init__(self, deviceName, mountPoint, fsType, mountOptions, resourceName, fsid):
         # /etc/fstab does not have attributes section so we just set to empty string.
@@ -486,9 +589,34 @@ class ClusterHAConfAnalyzer :
                 return True
         return False
 
+    def isCleanStartEnabled(self) :
+        """
+        Returns True if the value is equal to 0, otherwise False.
+
+        @return: Returns True if the value is equal to 0, otherwise False.
+        @rtype: Boolean
+        """
+        fdElement = self.__ccRootElement.find("fence_daemon")
+        try:
+            return (not fdElement.attrib["clean_start"] == "0")
+        except KeyError:
+            # If attribute does not exist then return False
+            return False
+        except AttributeError:
+            return False
+
     # #######################################################################
     # Get Functions
     # #######################################################################
+    def getQuorumd(self):
+        quorumdElement = self.__ccRootElement.find("quorumd")
+        if (not quorumdElement == None):
+            quorumd = Quorumd(quorumdElement.attrib)
+            for heuristic in quorumdElement:
+                quorumd.addHeuristic(QuorumdHeuristic(heuristic.attrib))
+            return quorumd
+        return None
+
     def getClusterName(self) :
         """
         Returns the name of the cluster.
@@ -525,22 +653,6 @@ class ClusterHAConfAnalyzer :
                     pass
 
         return hostnames
-
-    def isCleanStartEnabled(self) :
-        """
-        Returns True if the value is equal to 0, otherwise False.
-
-        @return: Returns True if the value is equal to 0, otherwise False.
-        @rtype: Boolean
-        """
-        fdElement = self.__ccRootElement.find("fence_daemon")
-        try:
-            return (not fdElement.attrib["clean_start"] == "0")
-        except KeyError:
-            # If attribute does not exist then return False
-            return False
-        except AttributeError:
-            return False
 
     def getPostFailDelay(self) :
         """
@@ -930,4 +1042,11 @@ class ClusterHAConfAnalyzer :
                     pass
                 servicesMap[name] = ClusteredService(name, recovery, failoverDomain, [], True)
         return servicesMap.values()
+
+    def getQuorumdSummary(self):
+        quorumd = self.getQuorumd()
+        if (not quorumd == None):
+            return str(quorumd)
+        else:
+            return ""
 

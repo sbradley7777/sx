@@ -176,17 +176,27 @@ class Clusterha(sx.plugins.PluginBase):
                 self.writeSeperator(filename, "Cluster Nodes Summary");
                 self.write(filename, result.rstrip())
                 self.write(filename, "")
+
+            # Write qdisk information if it exists.
+            result = cca.getQuorumdSummary()
+            if (len(result) > 0):
+                self.writeSeperator(filename, "Cluster Quorum Disk Summary");
+                self.write(filename, result.rstrip())
+                self.write(filename, "")
+
             result = cnc.getClusterNodesPackagesInstalledSummary()
             if (len(result) > 0):
                 self.writeSeperator(filename, "Cluster/Cluster-Storage Packages Installed");
                 self.write(filename, result.rstrip())
                 self.write(filename, "")
+
             result = cnc.getClusterNodesNetworkSummary()
             if (len(result) > 0):
                 self.writeSeperator(filename, "Cluster Nodes Network Summary");
                 self.write(filename, "* =   heartbeat network\n** =  bonded slave interfaces\n*** = parent of alias interface\n")
                 self.write(filename, result)
                 self.write(filename, "")
+
             result = cnc.getClusterStorageSummary()
             if (len(result) > 0):
                 self.writeSeperator(filename, "Cluster Storage Summary for GFS/GFS2");
