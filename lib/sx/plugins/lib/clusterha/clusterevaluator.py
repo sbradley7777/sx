@@ -90,6 +90,23 @@ class ClusterEvaluator():
             logging.getLogger(sx.MAIN_LOGGER_NAME).warning(message)
         return rString
 
+    def __evaluateQuorumdConfiguration(self, cca):
+        rString = ""
+        quorumd = cca.getQuorumd()
+        if (len(quorumd.getStatusFile()) > 0):
+            description =  "The status_file option for quorumd should be removed prior to production "
+            description += "cause it is know to cause qdiskd to hang unnecessarily."
+            urls = ["https://access.redhat.com/knowledge/articles/113803#The_status_file_option_should_not_be_used_in_production"]
+            rString += StringUtil.formatBulletString(description, urls)
+        if (quorumd.getReboot() == "0"):
+            description =  "If the quorumd option reboot is set to 0 this option only prevents "
+            description += "rebooting on loss of score. The option does not change whether qdiskd "
+            description += "reboots the host as a result of hanging for too long and getting "
+            description += "evicted by other nodes in the cluster."
+            urls = ["https://access.redhat.com/knowledge/articles/113803#The_reboot_option_only_effects_loss_of_score"]
+            rString += StringUtil.formatBulletString(description, urls)
+        return rString
+
     def __evaluateClusterNodeHeartbeatNetwork(self, hbNetworkMap):
         rString = ""
         # ###################################################################
@@ -381,6 +398,14 @@ class ClusterEvaluator():
         if (len(clusterConfigString) > 0):
             sectionHeader = "%s\nCluster Global Configuration Known Issues\n%s" %(self.__seperator, self.__seperator)
             rstring += "%s\n%s:\n%s\n" %(sectionHeader, cca.getClusterName(), clusterConfigString)
+
+        # ###################################################################
+        # Check global configuration issues:
+        # ###################################################################
+        quorumdConfigString = self.__evaluateQuorumdConfiguration(cca)
+        if (len(quorumdConfigString) > 0):
+            sectionHeader = "%s\nQuorumd Disk Configuration Known Issues\n%s" %(self.__seperator, self.__seperator)
+            rstring += "%s\n%s:\n%s\n" %(sectionHeader, cca.getClusterName(), quorumdConfigString)
 
         # ###################################################################
         # Check cluster nodes configuration

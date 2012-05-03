@@ -27,9 +27,18 @@ class Quorumd:
         self.__quorumdHeuristics = []
 
     def __str__(self):
-        rString = "Label: %s | min_score: %s \n" %(self.getLabel(), self.getMinScore())
+        rString = "quorum disk: "
+        keys = self.__quorumdAttributes.keys()
+        keys.sort()
+        for key in keys:
+            # Probably need to push to new line if two long.
+            rString += "%s: %s | " %(key, self.__quorumdAttributes.get(key))
+        rString = rString.rstrip(" | ")
+        rString += "\n\tHeuristics:\n"
+        index = 1
         for heuristic in self.getHeuristics():
-            rString += "\t%s\n" %(str(heuristic))
+            rString += "\t%d. %s\n" %(index, str(heuristic))
+            index += 1
         return rString.rstrip()
 
     def addHeuristic(self, heuristic):
@@ -61,23 +70,57 @@ class Quorumd:
     def getMinScore(self):
         return self.__getAttribute("min_score")
 
-    def getUseUptime(self):
-        return self.__getAttribute("use_uptime")
-
-    def getPriority(self):
-        return self.__getAttribute("priority")
-
     def getStatusFile(self):
         return self.__getAttribute("status_file")
 
     def getMasterWins(self):
-        return self.__getAttribute("master_wins")
+        quorumdOption = self.__getAttribute("master_wins")
+        # Set it to default if not found.
+        if (not len(quorumdOption) > 0):
+            quorumdOption = "0"
+        return quorumdOption
+
+    def getUseUptime(self):
+        quorumdOption = self.__getAttribute("use_uptime")
+        # Set it to default if not found.
+        if (not len(quorumdOption) > 0):
+            quorumdOption = "1"
+        return quorumdOption
+
+    def getScheduler(self):
+        quorumdOption = self.__getAttribute("scheduler")
+        # Set it to default if not found.
+        if (not len(quorumdOption) > 0):
+            quorumdOption = "rr"
+        return quorumdOption
+
+    def getPriority(self):
+        quorumdOption = self.__getAttribute("priority")
+        # Set it to default if not found.
+        if (not len(quorumdOption) > 0):
+            scheduler = self.getScheduler()
+            if ((scheduler == "rr") or (scheduler == "fifo")):
+                quorumdOption = "1"
+            elif (scheduler == "other"):
+                # Not sure what the default is for "other".
+                quorumdOption = "1"
+            else:
+                quorumdOption = "1"
+        return quorumdOption
 
     def getAllowKill(self):
-        return self.__getAttribute("allow_kill")
+        quorumdOption = self.__getAttribute("allow_kill")
+        # Set it to default if not found.
+        if (not len(quorumdOption) > 0):
+            quorumdOption = "1"
+        return quorumdOption
 
     def getReboot(self):
-        return self.__getAttribute("reboot")
+        quorumdOption = self.__getAttribute("reboot")
+        # Set it to default if not found.
+        if (not len(quorumdOption) > 0):
+            quorumdOption = "1"
+        return quorumdOption
 
 class QuorumdHeuristic:
     def __init__(self, heuristicAttributes):
