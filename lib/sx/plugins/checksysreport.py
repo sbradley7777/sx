@@ -125,10 +125,18 @@ class Checksysreport(sx.plugins.PluginBase):
             return ""
 
     def __stripDanglingNewLine(self, pathToFile):
-        import fileinput
-        for line in fileinput.input(pathToFile, inplace=True):
-            if (line != '\n'):
-                print line,
+        # Make sure there is no danglying newlines at end of the
+        # file to avoid error genereated by checksysreport.
+        tailOfFile = FileUtil.tail(pathToFile)
+        if (not len(tailOfFile) > 0):
+            return False
+        elif (tailOfFile[0] == "\n"):
+            import fileinput
+            for line in fileinput.input(pathToFile, inplace=True):
+                if (line != '\n'):
+                    print line,
+        return True
+
     # #######################################################################
     # Overwriting function of parent
     # #######################################################################
@@ -181,29 +189,27 @@ class Checksysreport(sx.plugins.PluginBase):
         for key in cKeys:
             # Make sure there is no danglying newlines at end of the
             # file to avoid error genereated by checksysreport.
-            tailOfFile = FileUtil.tail(self.__installedRPMSPath.get(key))
-            if (not len(tailOfFile) > 0):
-                message = "The file appears to be empty or does not exist: %s." %(self.__installedRPMSPath.get(key))
-                logging.getLogger(sx.MAIN_LOGGER_NAME).error(message)
-            elif (tailOfFile[0] == "\n"):
-                self.__stripDanglingNewLine(self.__installedRPMSPath.get(key))
-            # Check to see which way the checksysreport will be generated.
-            if ("on" == self.getOptionValue("enable_binary")) :
-                checksysreportData = self.__executeBinary(key).strip()
-                if (checksysreportData.startswith("Canot parse the following in installed-rpms")):
-                    message = "There was an error parsing the installed-rpms file: \"%s \"." %(checksysreportData.strip())
-                    logging.getLogger(sx.MAIN_LOGGER_NAME).error(message)
-                    message = "There is probably a dangling newline at the end of the installed-rpm file that should be removed in this directory:\n\t  %s" %(key)
-                    logging.getLogger(sx.MAIN_LOGGER_NAME).info(message)
-                elif (checksysreportData.startswith("no such file")):
-                    message = "There was an error generating the checksysreport file."
-                    logging.getLogger(sx.MAIN_LOGGER_NAME).error(message)
-                    self.__chksysData[key] = ""
+            checksysreportData = ""
+            if (self.__stripDanglingNewLine(self.__installedRPMSPath.get(key))):
+                # Check to see which way the checksysreport will be generated and
+                # put the result in the checksysreportData variable.
+                if ("on" == self.getOptionValue("enable_binary")) :
+                    checksysreportData = self.__executeBinary(key).strip()
                 else:
-                    self.__chksysData[key] = checksysreportData
+                    checksysreportData = self.__executeNative(key).strip()
+                # Add the data to the map and check for errors. If error then add empty string.
+                if (checksysreportData.startswith("Canot parse the following in installed-rpms")):
+                    message = "There was an error parsing the installed-rpms file that is read by checksysreport."
+                    logging.getLogger(sx.MAIN_LOGGER_NAME).error(message)
+                    checksysreportData = ""
+                elif ((checksysreportData.startswith("no such file")) or (checksysreportData.startswith("Unable to detect base channel"))):
+                    message = "The checksysreport file could not be generated because of checksysreport error."
+                    logging.getLogger(sx.MAIN_LOGGER_NAME).error(message)
+                    checksysreportData = ""
             else:
-                checksysreportData = self.__executeNative(key).strip()
-                self.__chksysData[key] =  checksysreportData
+                message = "There was an error parsing the installed-rpms file that is read by checksysreport."
+                logging.getLogger(sx.MAIN_LOGGER_NAME).error(message)
+            self.__chksysData[key] = checksysreportData
 
     def report(self) :
         """

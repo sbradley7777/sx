@@ -71,6 +71,7 @@ class Quorumd:
         return self.__getAttribute("min_score")
 
     def getStatusFile(self):
+        print self.__getAttribute("status_file")
         return self.__getAttribute("status_file")
 
     def getMasterWins(self):
@@ -82,6 +83,20 @@ class Quorumd:
 
     def getUseUptime(self):
         quorumdOption = self.__getAttribute("use_uptime")
+        # Set it to default if not found.
+        if (not len(quorumdOption) > 0):
+            quorumdOption = "1"
+        return quorumdOption
+
+    def getAllowKill(self):
+        quorumdOption = self.__getAttribute("allow_kill")
+        # Set it to default if not found.
+        if (not len(quorumdOption) > 0):
+            quorumdOption = "1"
+        return quorumdOption
+
+    def getReboot(self):
+        quorumdOption = self.__getAttribute("reboot")
         # Set it to default if not found.
         if (not len(quorumdOption) > 0):
             quorumdOption = "1"
@@ -108,19 +123,26 @@ class Quorumd:
                 quorumdOption = "1"
         return quorumdOption
 
-    def getAllowKill(self):
-        quorumdOption = self.__getAttribute("allow_kill")
-        # Set it to default if not found.
-        if (not len(quorumdOption) > 0):
-            quorumdOption = "1"
-        return quorumdOption
+    def getPriorityMin(self, scheduler):
+        # Return the minimual value for a scheduler. If unknown scheduler is
+        # passed then 0 is returned.
+        if ((scheduler == "rr") or (scheduler == "fifo")):
+            return 1
+        elif (scheduler == "other"):
+            return -20
+        else:
+            return 0
 
-    def getReboot(self):
-        quorumdOption = self.__getAttribute("reboot")
-        # Set it to default if not found.
-        if (not len(quorumdOption) > 0):
-            quorumdOption = "1"
-        return quorumdOption
+    def getPriorityMax(self, scheduler):
+        # Return the minimual value for a scheduler. If unknown scheduler is
+        # passed then 0 is returned.
+        if ((scheduler == "rr") or (scheduler == "fifo")):
+            return 99
+        elif (scheduler == "other"):
+            return 20
+        else:
+            return 0
+
 
 class QuorumdHeuristic:
     def __init__(self, heuristicAttributes):
@@ -128,31 +150,31 @@ class QuorumdHeuristic:
         self.__program = ""
         # The default interval is determined by the qdiskd timeout. Not sure how
         # to get that. By default I will set to -1.
-        self.__interval = -1
+        self.__interval = "-1"
         # Default is 1
-        self.__score = 1
+        self.__score = "1"
         # The default interval is determined by the qdiskd timeout. Not sure how
         # to get that. By default I will set to -1.
-        self.__tko = -1
+        self.__tko = "-1"
         if (heuristicAttributes.has_key("program")):
            self.__program = heuristicAttributes.get("program")
         if (heuristicAttributes.has_key("interval")):
-            self.__interval = int(heuristicAttributes.get("interval"))
+            self.__interval = heuristicAttributes.get("interval")
         if (heuristicAttributes.has_key("score")):
-            self.__score = int(heuristicAttributes.get("score"))
+            self.__score = heuristicAttributes.get("score")
         if (heuristicAttributes.has_key("tko")):
-            self.__tko = int(heuristicAttributes.get("tko"))
+            self.__tko = heuristicAttributes.get("tko")
 
     def __str__(self):
         rString = ""
         if (len(self.getProgram()) > 0):
             rString =  "program: %s" %(self.getProgram())
             if (self.getInterval() > 0):
-                rString += " | interval: %d" %(self.getInterval())
+                rString += " | interval: %s" %(self.getInterval())
             if (self.getScore() > 0):
-                rString += " | score: %d" %(self.getScore())
+                rString += " | score: %s" %(self.getScore())
             if (self.getTKO() > 0):
-                rString += " | tko: %d" %(self.getTKO())
+                rString += " | tko: %s" %(self.getTKO())
         return rString
 
     def getProgram(self):

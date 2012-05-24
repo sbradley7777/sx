@@ -371,11 +371,11 @@ class FileUtil:
         except OSError:
             message = "Could not read the file: %s." %(pathToFile)
             logging.getLogger(sx.MAIN_LOGGER_NAME).error(message)
-            return False
+            return lines
         except IOError:
             message = "Could not read the file: %s." %(pathToFile)
             logging.getLogger(sx.MAIN_LOGGER_NAME).error(message)
-            return False
+            return lines
         return lines
     tail = staticmethod(tail)
 

@@ -93,11 +93,41 @@ class ClusterEvaluator():
     def __evaluateQuorumdConfiguration(self, cca):
         rString = ""
         quorumd = cca.getQuorumd()
+        if (quorumd == None):
+            return rString
+        # ###################################################################
+        # Quorumd Evaluations
+        # ###################################################################
+        # Configuration options that are unsupported in production clusters.
         if (len(quorumd.getStatusFile()) > 0):
             description =  "The status_file option for quorumd should be removed prior to production "
             description += "cause it is know to cause qdiskd to hang unnecessarily."
             urls = ["https://access.redhat.com/knowledge/articles/113803#The_status_file_option_should_not_be_used_in_production"]
             rString += StringUtil.formatBulletString(description, urls)
+        if (not quorumd.getUseUptime() == "1"):
+            description =  "The changing of the internal timers used by qdisk by setting "
+            description += "\"use_uptime\" to a value that is not 1, is not supported."
+            urls = ["https://access.redhat.com/knowledge/articles/113803##The_option_use_uptime_is_not_supported"]
+            rString += StringUtil.formatBulletString(description, urls)
+
+        # ###################################################################
+        # NEED ARTICLE AND VERIFICIATION ON THE MIN MAX PRIO AND DEFAULTS. REVIEW THE SOURCE CODE.
+        # ###################################################################
+        qPriority = int(quorumd.getPriority())
+        if (qPriority > quorumd.getPriorityMax(quorumd.getScheduler())):
+            description  = "The quorumd priority \"%s\" exceeds the maximum priority for the " %(qPriority)
+            description += "scheduler \"%s\". The maximum value for the scheduler is \"%s\"." %(quorumd.getScheduler(), quorumd.getPriorityMax(quorumd.getScheduler()))
+            urls = [""]
+            rString += StringUtil.formatBulletString(description, urls)
+        elif (qPriority < quorumd.getPriorityMin(quorumd.getScheduler())):
+            description  = "The quorumd priority \"%s\" is not equal or greater than the  minimum priority for the " %(qPriority)
+            description += "scheduler \"%s\". The minimum value for the scheduler is \"%s\"." %(quorumd.getScheduler(), quorumd.getPriorityMin(quorumd.getScheduler()))
+            urls = [""]
+            rString += StringUtil.formatBulletString(description, urls)
+
+
+        # Configurations that should print a warning message, but are still
+        # supported in production.
         if (quorumd.getReboot() == "0"):
             description =  "If the quorumd option reboot is set to 0 this option only prevents "
             description += "rebooting on loss of score. The option does not change whether qdiskd "
@@ -105,6 +135,61 @@ class ClusterEvaluator():
             description += "evicted by other nodes in the cluster."
             urls = ["https://access.redhat.com/knowledge/articles/113803#The_reboot_option_only_effects_loss_of_score"]
             rString += StringUtil.formatBulletString(description, urls)
+        if (quorumd.getAllowKill() == "0"):
+            description =  "If the quorumd option allow_kill is set to 0 (off), qdiskd will not instruct cman to kill "
+            description += "the cluster nodes that openais or corosync think are dead cluster nodes. Cluster nodes "
+            description += "are still evicted via the qdiskd which will cause a reboot to occur. By default this option "
+            description += "is set to 1."
+            urls = ["https://access.redhat.com/knowledge/articles/113803##The_allow_kill_is_for_handling_dead_nodes_detected_by_openais_and_corosync"]
+            rString += StringUtil.formatBulletString(description, urls)
+
+        # ###################################################################
+        # Heuristics Evaluations
+        # ###################################################################
+        import re
+        stringUtil = StringUtil()
+        remPing = re.compile("^(?P<command>ping|/bin/ping) .*")
+        remPingDT = re.compile("^(?P<command>ping|/bin/ping) .*-(?P<deadlineTimeout>w\d?\d?\d|w \d?\d?\d).*")
+
+        # The list of heuristics that are using the "ping" command for the
+        # program that does not have -w option enabled or the -w option is <= 0.
+        heuristicsWithPingNoDTList = []
+        for heuristic in quorumd.getHeuristics():
+            hProgram = heuristic.getProgram()
+            moPing = remPing.search(hProgram)
+            if (moPing):
+                # Found Ping
+                moPingDT = remPingDT.search(hProgram)
+                if (moPingDT):
+                    deadlineTimeout = moPingDT.group("deadlineTimeout").replace("w", "").strip()
+                    if (not int(deadlineTimeout) > 0):
+                        heuristicsWithPingNoDTList.append(heuristic)
+
+                else:
+                    heuristicsWithPingNoDTList.append(heuristic)
+
+        if (len(heuristicsWithPingNoDTList) > 0):
+            description =  "Any heuristic that is using the ping command must enabled the "
+            description += "-w (deadline timeout) with a value equal to or larger than one. "
+            description += "The following heuristic program values were invalid: \n"
+            urls = ["https://access.redhat.com/knowledge/articles/113803##A_heuristic_that_uses_the_ping_command_must_use_the_deadline_timeout_option"]
+
+            tableHeader = ["program", "interval", "min_score", "tko"]
+            fsTable = []
+            for heuristic in heuristicsWithPingNoDTList:
+                fsTable.append([heuristic.getProgram(), heuristic.getInterval(),
+                               heuristic.getScore(), heuristic.getTKO()])
+
+            tableOfStrings = stringUtil.toTableStringsList(fsTable, tableHeader)
+            rString += StringUtil.formatBulletString(description, urls, tableOfStrings)
+
+        """
+        https://bugzilla.redhat.com/show_bug.cgi?id=803015
+
+        - quorumd/@priority
+        If set, must not be set to 99
+        """
+
         return rString
 
     def __evaluateClusterNodeHeartbeatNetwork(self, hbNetworkMap):
