@@ -187,6 +187,17 @@ class NetworkDeviceParser:
         return networkScriptMap
     parseEtcSysconfigNetworkScript = staticmethod(parseEtcSysconfigNetworkScript)
 
+    def parseEthtoolIData(ethtoolIData):
+        ethtoolIDataMap = {}
+        if (ethtoolIData == None):
+            return ethtoolIDataMap
+        for line in ethtoolIData:
+            lineSplit = line.split(":")
+            if (len(lineSplit) == 2):
+                ethtoolIDataMap[lineSplit[0]] = lineSplit[1].strip()
+        return ethtoolIDataMap
+    parseEthtoolIData = staticmethod(parseEthtoolIData)
+
 # ###########################################################################
 # Network Objects
 # ###########################################################################
@@ -301,7 +312,8 @@ class NetworkMap(NetworkInterface):
     Container for network information for network information.
     """
     def __init__(self, interface, hwAddr, ipv4Addr, subnetMask, listOfStates, mtu,
-                 etcHostsMap, networkScriptMap, modprobeConfCommands, procNetMap):
+                 etcHostsMap, networkScriptMap, modprobeConfCommands, procNetMap,
+                 networkingCommandsMap):
         # If interface is not found, but sysconfig file has data then search it.
         if (not len(ipv4Addr) > 0):
             if (networkScriptMap.has_key("IPADDR")):
@@ -324,6 +336,7 @@ class NetworkMap(NetworkInterface):
         self.__networkScriptMap = networkScriptMap
         self.__modprobeConfCommands = modprobeConfCommands
         self.__procNetMap = procNetMap
+        self.__networkingCommandsMap = networkingCommandsMap
         self.__hostnames = []
         if (self.__etcHostsMap.has_key(self.getIPv4Address())):
             self.__hostnames = self.__etcHostsMap.get(self.getIPv4Address())
@@ -352,6 +365,29 @@ class NetworkMap(NetworkInterface):
             returnString += "ipv4 address:      %s\n" % (self.getIPv4Address())
         return returnString
 
+
+    # ###########################################################################
+    # Helper functions
+    # ###########################################################################
+    def __getEthToolIMap(self):
+        ethtoolIMap = {}
+        networkingCommandsMap = self.getNetworkingCommandsMap()
+        for key in networkingCommandsMap.keys():
+            if (key.startswith("ethtool_-i_")):
+                newKey = key.replace("ethtool_-i_", "")
+                newValue = NetworkDeviceParser.parseEthtoolIData(networkingCommandsMap.get(key))
+                ethtoolIMap[newKey] = newValue
+        return ethtoolIMap
+
+    def __getEthToolIDeviceMap(self, interface):
+        ethtoolIMap = self.__getEthToolIMap()
+        if (ethtoolIMap.has_key(interface)):
+            return ethtoolIMap.get(interface)
+        return {}
+
+    # ###########################################################################
+    # Get functions
+    # ###########################################################################
     def hasHostnameMapped(self, hostname) :
         # Returns True if a particular hostname is in the /etc/hosts
         # file. The hostname does not have to be associated with this
@@ -392,6 +428,9 @@ class NetworkMap(NetworkInterface):
     def getProcNetMap(self):
         return self.__procNetMap
 
+    def getNetworkingCommandsMap(self):
+        return self.__networkingCommandsMap
+
     def getBootProtocal(self):
         bootProtocal = ""
         if (self.getNetworkScriptMap().has_key("BOOTPROTO")):
@@ -410,6 +449,13 @@ class NetworkMap(NetworkInterface):
             if ((modprobeCommand.getCommand() == "alias") and
                 (modprobeCommand.getWildCard() == self.getInterface())):
                 return modprobeCommand.getModuleName()
+
+        ethtoolIDeviceMap = self.__getEthToolIDeviceMap(self.getInterface())
+        if (ethtoolIDeviceMap.has_key("driver")):
+            return ethtoolIDeviceMap.get("driver")
+        # I do not believe there is module for loopback
+        #if ((self.getInterface() == "lo") and (self.getIPv4Address() == "127.0.0.1")):
+        #    return "Loopback"
         return ""
     # ###########################################################################
     # Bonded functions
@@ -423,6 +469,7 @@ class NetworkMap(NetworkInterface):
                 (int(self.getBondedModeNumber()) >= 0))
 
     def isBondedSlaveInterface(self):
+        print self.getNetworkScriptMap().keys()
         if (self.getNetworkScriptMap().has_key("SLAVE")):
             return ((self.getNetworkScriptMap().get("SLAVE").lower() == "yes") and
                     (len(self.getBondedMasterInterface()) > 0))
@@ -526,12 +573,13 @@ class NetworkMap(NetworkInterface):
         self.__virtualBridgedNetworkMap = networkMap
 
 class NetworkMaps:
-    def __init__(self, networkInterfaces, etcHostsMap, networkScriptsDataMap, modprobeConfCommands, procNetMap):
+    def __init__(self, networkInterfaces, etcHostsMap, networkScriptsDataMap, modprobeConfCommands, procNetMap, networkingCommandsMap):
         self.__networkInterfaces = networkInterfaces
         self.__etcHostsMap = etcHostsMap
         self.__modprobeConfCommands = modprobeConfCommands
         self.__networkScriptsDataMap = networkScriptsDataMap
         self.__procNetMap = procNetMap
+        self.__networkCommandsMap = networkingCommandsMap
         # Map and list of all the network maps. Keep the map around
         # for now cause might be useful later.
         self.__mapOfNetworkMaps = self.__buildNetworkMaps()
@@ -557,7 +605,8 @@ class NetworkMaps:
                                         self.__etcHostsMap,
                                         networkScriptMap,
                                         self.__modprobeConfCommands,
-                                        self.__procNetMap)
+                                        self.__procNetMap,
+                                        self.__networkCommandsMap)
                 mapOfNetworkMaps[networkInterface.getInterface()] = networkMap
         # After Maps are created then set the bonding interface for any of them.
         # print "CHECK THAT USE CASE FOR WHEN NETWORKING HAS NO IPS. Problem is ifconfig data does not contain the bond0 that is not up."
@@ -591,8 +640,16 @@ class NetworkMaps:
             if (networkMap.isBondedMasterInterface()):
                 listOfBondedNetworkMaps.append(networkMap)
         listOfBondedNetworkMaps.sort(key=lambda m: m.getInterface())
-        #print "MAP: ", map(lambda m: m.getInterface(), listOfBondedNetworkMaps)
+        # print "MAP: ", map(lambda m: m.getInterface(), listOfBondedNetworkMaps)
         return listOfBondedNetworkMaps
+
+    def getListOfBridgedNetworkMaps(self):
+        listOfBridgedNetworkMaps = []
+        for networkMap in self.getListOfNetworkMaps():
+            if (networkMap.isBridgedInterface()):
+                listOfBridgedNetworkMaps.append(networkMap)
+        listOfBridgedNetworkMaps.sort(key=lambda m: m.getInterface())
+        return listOfBridgedNetworkMaps
 
     def getNetworkInterfaceAliasMap(self):
         networkInterfaceAliasMap = {}
@@ -605,13 +662,5 @@ class NetworkMaps:
                 else:
                     networkInterfaceAliasMap[currentInterface] = [networkMap]
         return networkInterfaceAliasMap
-
-    def getListOfBridgedNetworkMaps(self):
-        listOfBridgedNetworkMaps = []
-        for networkMap in self.getListOfNetworkMaps():
-            if (networkMap.isBridgedInterface()):
-                listOfBridgedNetworkMaps.append(networkMap)
-        listOfBridgedNetworkMaps.sort(key=lambda m: m.getInterface())
-        return listOfBridgedNetworkMaps
 
 

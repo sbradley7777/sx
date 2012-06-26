@@ -91,7 +91,7 @@ class NetworkingData:
         unameASplit = self.getUname().split()
         unameA = ""
         for i in range (0, len(unameASplit)):
-            if (i == 4) :
+            if (i == 5) :
                 unameA += "\n\t      "
             unameA += "%s " %(unameASplit[i])
             i = i + 1
@@ -170,7 +170,9 @@ class Networking(sx.plugins.PluginBase):
                 bondingMap = report.getDataFromDir("proc/net/bonding")
                 procNetMap = dict(procNetMap.items() + bondingMap.items())
 
-                networkMaps = NetworkMaps(networkInterfaces, etcHostsMap, networkScriptsDataMap, modprobeConfCommands, procNetMap)
+                # Get all the data in the sos_commands/networking directory.
+                networkingCommandsMap = report.getDataFromDir("sos_commands/networking")
+                networkMaps = NetworkMaps(networkInterfaces, etcHostsMap, networkScriptsDataMap, modprobeConfCommands, procNetMap, networkingCommandsMap)
                 networkingData = NetworkingData(report.getHostname(),
                                                 report.getUptime(),
                                                 distroRelease,

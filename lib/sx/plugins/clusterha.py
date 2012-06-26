@@ -149,12 +149,12 @@ class Clusterha(sx.plugins.PluginBase):
             if (len(clusteredServicesString) > 0):
                 self.writeSeperator(filename, "Cluster Services Summary");
                 self.write(filename, "There was %d clustered services.\n" %(index - 1))
-                self.write(filename, "%s\n" %(clusteredServicesString))
+                self.write(filename, "%s\n" %(clusteredServicesString.rstrip()))
 
             if (len(clusteredVMServicesString) > 0):
                 self.writeSeperator(filename, "Cluster Virtual Machine Services Summary");
                 self.write(filename, "There was %d clustered virtual machine services.\n" %(vIndex - 1))
-                self.write(filename, "%s\n" %(clusteredVMServicesString))
+                self.write(filename, "%s\n" %(clusteredVMServicesString.rstrip()))
 
             # List of clusternodes in cluster.conf that do not have
             # corresponding sosreport/sysreport.

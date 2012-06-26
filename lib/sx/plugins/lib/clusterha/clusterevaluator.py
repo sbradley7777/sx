@@ -26,8 +26,8 @@ class ClusterEvaluator():
     def __init__(self, cnc):
         self.__cnc = cnc
         # Seperator between sections:
-        self.__seperator = "------------------------------------------------------------------"
-
+        #self.__seperator = "------------------------------------------------------------------"
+        self.__seperator = "-------------------------------------------------------------------------------------------------"
     def getClusterNodes(self):
         return self.__cnc
 
@@ -74,7 +74,7 @@ class ClusterEvaluator():
                 # More than 2 nodes compared and all cluster nodes cluster.confs
                 # were compared, but not all nodes in the cluster's cluster.conf
                 # was compared.
-                description += "There was only %d cluster.conf files compared for the %d node cluster." %(len(self.__cnc.getPathToClusterConfFiles()),
+                description += "There was only %d cluster.conf files compared for the %d node cluster. " %(len(self.__cnc.getPathToClusterConfFiles()),
                                                                                                           len(cca.getClusterNodeNames()))
             urls = ["https://access.redhat.com/knowledge/solutions/19808"]
             rString += StringUtil.formatBulletString(description, urls)
@@ -82,7 +82,8 @@ class ClusterEvaluator():
         if ((not len(self.__cnc.getPathToClusterConfFiles()) > 1) and (clusterNodeCount > 1)):
             # Need more than 1 node to compare cluster.confs
             message =  "There was only 1 cluster.conf file found for a %d node cluster. " %(len(cca.getClusterNodeNames()))
-            message += "This evaluation will be skipped since there is not enough files to compare."
+            message += "The comparing of cluster.conf files will be skipped since there is not enough files to compare."
+            message += "Please verify that a cluster.conf files exists for all cluster nodes and that they are identical."
             logging.getLogger(sx.MAIN_LOGGER_NAME).warning(message)
         elif (not  len(cca.getClusterNodeNames()) == len(self.__cnc.getClusterNodes())):
             message = "There was only %d cluster.conf compared for the %d node cluster." %(len(self.__cnc.getPathToClusterConfFiles()),
@@ -172,7 +173,7 @@ class ClusterEvaluator():
             description =  "Any heuristic that is using the ping command must enabled the "
             description += "-w (deadline timeout) with a value equal to or larger than one. "
             description += "The following heuristic program values were invalid: \n"
-            urls = ["https://access.redhat.com/knowledge/articles/113803##A_heuristic_that_uses_the_ping_command_must_use_the_deadline_timeout_option"]
+            urls = ["https://access.redhat.com/knowledge/solutions/64633"]
 
             tableHeader = ["program", "interval", "min_score", "tko"]
             fsTable = []
@@ -232,7 +233,7 @@ class ClusterEvaluator():
                 description =  "The network interface that the cluster is using for communication is using the module: %s." %(bondedSlaveInterface.getNetworkInterfaceModule())
                 description += "This network interface is a slave interface(%s) that is part of the bond: %s." %(bondedSlaveInterface.getInterface(),
                                                                                                                  hbNetworkMap.getInterface())
-                description += "This module has had known issues with network communication. Here are a couple articles that may or may not be related:"
+                description += "This module has had known issues with network communication."
 
                 if (bondedSlaveInterface.getNetworkInterfaceModule().strip() == "bnx2"):
                     urls = []
@@ -240,6 +241,7 @@ class ClusterEvaluator():
                 elif ((bondedSlaveInterface.getNetworkInterfaceModule().strip() == "netxen") or
                       (bondedSlaveInterface.getNetworkInterfaceModule().strip() == "nx_nic") or
                       (bondedSlaveInterface.getNetworkInterfaceModule().strip() == "netxen_nic")):
+                    description += "Here are a couple articles that may or may not be related:"
                     urls = ["https://access.redhat.com/knowledge/solutions/44475",
                             "https://access.redhat.com/knowledge/solutions/35299",
                             "https://access.redhat.com/knowledge/solutions/46663",
@@ -410,9 +412,9 @@ class ClusterEvaluator():
             if (len(fsTable) > 0):
                 description =  "The following GFS/GFS2 filesystem(s) are being exported by NFS and SMB(samba) which is unsupported. "
                 description += "The mount point(s) that were found will be noted with these symbols below:                          "
-                description += "nfs export via /etc/exports (EN)                                       "
-                description += "nfs export via /etc/cluster/cluster.conf (CN)                          "
-                description += "samba export via /etc/exports for samba (ES)                           "
+                description += "nfs export via /etc/exports (EN)                                                                    "
+                description += "nfs export via /etc/cluster/cluster.conf (CN)                                                       "
+                description += "samba export via /etc/exports for samba (ES)                                                        "
                 description += "samba export via /etc/cluster/cluster.conf for samba (CS)"
                 tableOfStrings = stringUtil.toTableStringsList(fsTable, tableHeader)
                 urls = ["https://access.redhat.com/knowledge/solutions/39855"]
@@ -421,14 +423,16 @@ class ClusterEvaluator():
             # Check for localflocks if they are exporting nfs.
             fsTable = []
             for csFilesystem in listOfClusterStorageFilesystems:
-                if ((csFilesystem.isEtcExportMount()) or (csFilesystem.isClusterConfMount())):
+                # If a GFS or GFS2 fs is in /etc/exports or has a child that is
+                # nfsexport then localflocks required.
+                if ((csFilesystem.isEtcExportMount()) or (self.__isNFSChildOfClusterStorageResource(cca, csFilesystem))):
                     csFilesystemOptions = csFilesystem.getAllMountOptions()
                     if (not csFilesystemOptions.find("localflocks") >= 0):
                         fsTable.append([csFilesystem.getDeviceName(), csFilesystem.getMountPoint()])
             # Write the table if it is not empty.
             if (len(fsTable) > 0):
                 tableHeader = ["device_name", "mount_point"]
-                description = "Any GFS/GFS2 filesystem that is exported with nfs should have the option \"localflocks\" set."
+                description = "Any GFS/GFS2 filesystem that is exported with NFS should have the option \"localflocks\" set."
                 description += "The following GFS/GFS2 filesystem do not have the option set."
                 tableOfStrings = stringUtil.toTableStringsList(fsTable, tableHeader)
                 urls = ["https://access.redhat.com/knowledge/solutions/20327", "http://docs.redhat.com/docs/en-US/Red_Hat_Enterprise_Linux/5/html-single/Configuration_Example_-_NFS_Over_GFS/index.html#locking_considerations"]

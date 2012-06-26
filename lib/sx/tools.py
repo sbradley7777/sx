@@ -74,13 +74,15 @@ class ConfigurationFileParser:
         res = re.compile("^(?P<key>\w+)=(?P<value>(\S+)?$|\'(\S+.*)\'.*|\"(\S+.*)\".*)")
         remComments = re.compile("^#")
 
-        for item in self.__configurationFileData:
-            item = item.strip().rstrip()
-            searchRes = res.search(item)
-            if ((not len(item) > 0) or (remComments.match(item))):
+        for line in self.__configurationFileData:
+            # If the line is a comment then skip
+            if ((not len(line) > 0) or (remComments.match(line.strip().rstrip()))):
                 # Skip empty lines and comments
                 continue
-            elif (searchRes):
+            # Split the lines if there is inline comments.
+            item = line.split("#")[0].strip().rstrip()
+            searchRes = res.search(item)
+            if (searchRes):
                 key = searchRes.group("key")
                 value = searchRes.group("value").strip("\"").strip("\'")
                 if ((value == None) and (not self.__enforceEmptyValues)):
@@ -91,7 +93,9 @@ class ConfigurationFileParser:
                     message = "This is not a valid configuration file because there was an invalid key \"%s\" found." %(key)
                     logging.getLogger(sx.MAIN_LOGGER_NAME).error(message)
                     return False
-                self.__configOptionsMap[key] = value
+                # Added this to remove comments after value and strip other characters.
+                value = value.split("#")[0]
+                self.__configOptionsMap[key] = value.strip().rstrip().rstrip("\"").rstrip("\'")
             else:
                 message = "This is an invalid configuration option: %s" %(item)
                 logging.getLogger(sx.MAIN_LOGGER_NAME).debug(message)
@@ -638,7 +642,8 @@ class FileUtil:
 
 class StringUtil:
 
-    def formatBulletString(description, urls, tableOfStrings=None, indentChar="*", indentSize=3, width=65) :
+    def formatBulletString(description, urls, tableOfStrings=None, indentChar="*", indentSize=3, width=98) :
+        # Orginal width was 65.
         # Only the first character will be used for the bullet. If no
         # character is passed then a whitespace will be used.
         if (len(indentChar) > 1):
@@ -794,16 +799,25 @@ class StringUtil:
         for each column in the table.
         @type headerList: Array
         """
+        # Copy the table so that we do not ref the orginal list and change it.
+        copyOfTable = []
+        for currentList in table:
+            newList = []
+            for item in currentList:
+                newList.append(item)
+            if (len(newList) > 0):
+                copyOfTable.append(newList)
+
         # Return empty list and print error if all the rows in table
         # dont have same column count.
-        if (len(table) > 0):
+        if (len(copyOfTable) > 0):
             # Add header to the list if one was passed to it and table is not empty.
             if (not headerList == None):
-                table.insert(0, headerList)
+                copyOfTable.insert(0, headerList)
             # Make sure that table and header contain the same number
             # of columns.
-            colCount = len(table[0])
-            for currentRow in table:
+            colCount = len(copyOfTable[0])
+            for currentRow in copyOfTable:
                 currentColCount = len(currentRow)
                 if (not (currentColCount == colCount)):
                     message = "The table continues columns with a different columns counts and will not be processed."
@@ -817,7 +831,7 @@ class StringUtil:
         # for a row is an array/list. If there is a None value or
         # empty string then replace with "-" for no value rep.
         currentRowIndex = 0
-        for currentRow in table:
+        for currentRow in copyOfTable:
             newRows = []
             currentColIndex = 0
             for currentCol in currentRow:
@@ -838,14 +852,14 @@ class StringUtil:
                             newRows.append(newRow)
                 currentColIndex = currentColIndex + 1
             for row in newRows:
-                table.insert(currentRowIndex + 1,row)
+                copyOfTable.insert(currentRowIndex + 1,row)
             currentRowIndex = currentRowIndex  + 1
         # Fix the max spacing for each column after iterating over
         # each row.
         tableStringsList = []
         col_paddings = []
-        for i in range(len(table[0])):
-            maxColumnWidth = self.__getMaxColumnWidth(table, i)
+        for i in range(len(copyOfTable[0])):
+            maxColumnWidth = self.__getMaxColumnWidth(copyOfTable, i)
             if (maxColumnWidth >= 0):
                 col_paddings.append(maxColumnWidth)
         # If header was given then use the max column size to build
@@ -857,8 +871,8 @@ class StringUtil:
                 for index in range(0, colMaxSize):
                     currentHeaderSeperator += "-"
                 headerSeperatorList.append(currentHeaderSeperator)
-            table.insert(1, headerSeperatorList)
-        for row in table:
+            copyOfTable.insert(1, headerSeperatorList)
+        for row in copyOfTable:
             # Left col string has no spacing.
             tableStrings = []
             tableStrings.append( str(row[0].ljust(col_paddings[0] + 1)))

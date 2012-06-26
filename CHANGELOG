@@ -1,7 +1,10 @@
 * Tue Apr 18 2012 Shane Bradley <sbradley@redhat.com>- 2.11-0.0
+- Fixed parsing issue on RHEL6 for getting the network interface module being used.
+- Fixed parsing issue of failover domains in cluster.conf.
 - Added support for multiple clusters detection.
 - Display location of directory that contains non-report files.
 - Fix bug in checksysreport when there is no data in the file that contains rpms list.
+- Fixed bug with checking for "localflocks" mount option on GFS/GFS2 fs.
 * Tue Apr 17 2012 Shane Bradley <sbradley@redhat.com>- 2.10-0.0
 - Fix sorting issue with cluster nodes if cluster node count was greater than 9.
 - Added parser for sos_commands/networking/ip_address.

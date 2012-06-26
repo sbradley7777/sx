@@ -132,9 +132,14 @@ class Checksysreport(sx.plugins.PluginBase):
             return False
         elif (tailOfFile[0] == "\n"):
             import fileinput
-            for line in fileinput.input(pathToFile, inplace=True):
-                if (line != '\n'):
-                    print line,
+            try:
+                fileInput = fileinput.input(pathToFile, inplace=True)
+                for line in fileInput:
+                    if (line != '\n'):
+                        print line,
+                fileInput.close()
+            except IOError:
+                pass
         return True
 
     # #######################################################################

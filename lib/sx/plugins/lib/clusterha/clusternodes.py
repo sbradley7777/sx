@@ -88,6 +88,7 @@ class ClusterNodes:
                                                                           networkMap.getNetworkScriptMap(),
                                                                           networkMap.getModprobeConfCommands(),
                                                                           networkMap.getProcNetMap(),
+                                                                          networkMap.getNetworkingCommandsMap(),
                                                                           clusterNodeNameFromStatus)
                             for slaveInterface in networkMap.getBondedSlaveInterfaces():
                                 clusternodeNetworkMap.addBondedSlaveInterfaces(slaveInterface)
@@ -129,6 +130,7 @@ class ClusterNodes:
                                                                   networkMap.getNetworkScriptMap(),
                                                                   networkMap.getModprobeConfCommands(),
                                                                   networkMap.getProcNetMap(),
+                                                                  networkMap.getNetworkingCommandsMap(),
                                                                   nodeName)
                     for slaveInterface in networkMap.getBondedSlaveInterfaces():
                         clusternodeNetworkMap.addBondedSlaveInterfaces(slaveInterface)
@@ -149,6 +151,7 @@ class ClusterNodes:
                                                                                networkMap.getNetworkScriptMap(),
                                                                                networkMap.getModprobeConfCommands(),
                                                                                networkMap.getProcNetMap(),
+                                                                               networkMap.getNetworkingCommandsMap(),
                                                                                nodeName)
                     for slaveInterface in networkMap.getBondedSlaveInterfaces():
                         possibleClusterNodeNetworkMapMatch.addBondedSlaveInterfaces(slaveInterface)
@@ -418,8 +421,10 @@ class ClusterNodes:
         procNetMap = report.getDataFromDir("proc/net")
         bondingMap = report.getDataFromDir("proc/net/bonding")
         procNetMap = dict(procNetMap.items() + bondingMap.items())
+        # Get all the data in the sos_commands/networking directory.
+        networkingCommandsMap = report.getDataFromDir("sos_commands/networking")
         # Build networkmaps from all the network related information.
-        networkMaps = NetworkMaps(networkInterfaces, etcHostsMap, networkScriptsDataMap, modprobeConfCommands, procNetMap)
+        networkMaps = NetworkMaps(networkInterfaces, etcHostsMap, networkScriptsDataMap, modprobeConfCommands, procNetMap, networkingCommandsMap)
         # ###############################################################
         #clusternodeName = ""
         #etcSysConfigCluster = report.getDataFromFile("etc/sysconfig/cluster")
@@ -516,7 +521,7 @@ class ClusterNodes:
             unameASplit = clusternode.getUnameA().split()
             unameA = ""
             for i in range (0, len(unameASplit)):
-                if (i == 4) :
+                if (i == 5) :
                     unameA += "\n\t      "
                 unameA += "%s " %(unameASplit[i])
                 i = i + 1
@@ -626,48 +631,35 @@ class ClusterNodes:
         GFS2 filesystems found.
         @rtype: String
         """
-        rstring  = ""
-        stringUtil = StringUtil()
-        fsClusterConfTable = []
-        clusterName = ""
+        fsMap = {}
         for clusternode in self.getClusterNodes():
+            clusternodeName = clusternode.getClusterNodeName()
             csFilesystemList = clusternode.getClusterStorageFilesystemList()
-            if (not len(clusterName) > 0):
-                cca = ClusterHAConfAnalyzer(clusternode.getPathToClusterConf())
-                clusterName = cca.getClusterName()
-            # The tables that will hold an array of data about the fs.
-            fsEtcFstabTable =  []
-            fsMountTable = []
-            # Sort all the mounted fs into different bins.
             for fs in csFilesystemList:
+                locationFound = ""
                 if (fs.isEtcFstabMount()):
-                    fsEtcFstabTable.append([fs.getDeviceName(), fs.getMountPoint(), fs.getFSType()])
+                    locationFound += "F"
                 if (fs.isFilesysMount()):
-                    fsMountTable.append([fs.getDeviceName(), fs.getMountPoint(), fs.getFSType()])
+                    locationFound += "M"
                 if (fs.isClusterConfMount()):
-                    # No reason to duplicates so we check to see if it has been
-                    # added yet.
-                    foundMatch = False
-                    for ccMount in fsClusterConfTable:
-                        if ((fs.getDeviceName() == ccMount[0]) and
-                            (fs.getMountPoint() == ccMount[1])):
-                            foundMatch = True
-                            break;
-                    if (not foundMatch):
-                        fsClusterConfTable.append([fs.getDeviceName(), fs.getMountPoint(), fs.getFSType()])
-                        # fsClusterConfTable.append([fs.getDeviceName(), fs.getMountPoint(), fs.getFSType(), fs.getClusterConfMount().getResourceName()])
-            # Add mounted fs to the different bins.
-            if (len(fsMountTable) > 0):
-                rstring += "%s(%s)\n%s\n\n" %("mounted", clusternode.getHostname(), stringUtil.toTableString(fsMountTable,["device", "mount_point", "fs_type"]))
-            if (len(fsEtcFstabTable) > 0):
-                rstring += "%s(%s)\n%s\n\n" %("/etc/fstab", clusternode.getHostname(), stringUtil.toTableString(fsEtcFstabTable, ["device", "mount_point", "fs_type"]))
-            rstring += "\n"
-        if (len(fsClusterConfTable) > 0):
-            rstring = "%s(%s)\n%s\n\n\n%s" %("/etc/cluster/cluster.conf", clusterName,
-                                          stringUtil.toTableString(fsClusterConfTable,
-                                                                   ["device", "mount_point", "fs_type"]),
-                                           rstring)
-        return "%s" %(rstring.rstrip())
+                    locationFound += "C"
+                if (not fsMap.has_key(clusternodeName)):
+                    fsMap[clusternodeName] = []
+                fsMap.get(clusternodeName).append([fs.getDeviceName(), fs.getMountPoint(), fs.getFSType(), locationFound])
+        rString  = ""
+        fsListHeader = ["device", "mount_point", "fs_type", "location_found"]
+        stringUtil = StringUtil()
+        for clusternodeName in self.getClusterNodeNames():
+            # In the future I should probably add a way to only print once if they are all the same .
+            if (fsMap.has_key(clusternodeName)):
+                listOfFileystems = fsMap.get(clusternodeName)
+                if (len(listOfFileystems) > 0):
+                    tableString = "%s\n%s\n\n" %(clusternodeName, stringUtil.toTableString(listOfFileystems, fsListHeader))
+                    rString += tableString
+        if (len(rString) > 0):
+            legend = "C = file-system is in /etc/cluster/cluster.conf\nF = file-system is in /etc/fstab\nM = file-system is mounted\n\n"
+            rString = "%s%s" %(legend, rString)
+        return rString.strip()
 
     # #######################################################################
     # Helper functions

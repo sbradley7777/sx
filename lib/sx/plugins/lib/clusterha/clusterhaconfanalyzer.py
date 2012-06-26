@@ -27,19 +27,26 @@ class Quorumd:
         self.__quorumdHeuristics = []
 
     def __str__(self):
-        rString = "quorum disk: "
+        header = "quorum disk: "
+        rString = ""
         keys = self.__quorumdAttributes.keys()
         keys.sort()
+        lineIsSplit = False
         for key in keys:
             # Probably need to push to new line if two long.
-            rString += "%s: %s | " %(key, self.__quorumdAttributes.get(key))
+            newString = "%s: %s | " %(key, self.__quorumdAttributes.get(key))
+            if (((len(newString) + len(rString)) > 98) and (not lineIsSplit)):
+                rString += "\n             %s" %(newString)
+                lineIsSplit = True
+            else:
+                rString += newString
         rString = rString.rstrip(" | ")
         rString += "\n\tHeuristics:\n"
         index = 1
         for heuristic in self.getHeuristics():
             rString += "\t%d. %s\n" %(index, str(heuristic))
             index += 1
-        return rString.rstrip()
+        return "%s%s" %(header, rString.rstrip())
 
     def addHeuristic(self, heuristic):
         if (len(heuristic.getProgram()) > 0):
@@ -71,7 +78,6 @@ class Quorumd:
         return self.__getAttribute("min_score")
 
     def getStatusFile(self):
-        print self.__getAttribute("status_file")
         return self.__getAttribute("status_file")
 
     def getMasterWins(self):
@@ -169,11 +175,11 @@ class QuorumdHeuristic:
         rString = ""
         if (len(self.getProgram()) > 0):
             rString =  "program: %s" %(self.getProgram())
-            if (self.getInterval() > 0):
+            if (int(self.getInterval()) > 0):
                 rString += " | interval: %s" %(self.getInterval())
-            if (self.getScore() > 0):
+            if (int(self.getScore()) > 0):
                 rString += " | score: %s" %(self.getScore())
-            if (self.getTKO() > 0):
+            if (int(self.getTKO()) > 0):
                 rString += " | tko: %s" %(self.getTKO())
         return rString
 
@@ -222,10 +228,10 @@ class FailoverDomain:
         return self.__name
 
     def isOrdered(self):
-        return (self.__isOrdered == "0")
+        return (self.__isOrdered == "1")
 
     def isRestricted(self):
-        return (self.__isRestricted == "0")
+        return (self.__isRestricted == "1")
 
     def getFailoverDomainMembersMap(self):
         return self.__failoverDomainMembersMap
@@ -576,11 +582,15 @@ class ClusterHAConfAnalyzer :
                 # #######################################################################
                 # Try to do xml parsing with elementtree instead of libxml2.
                 # #######################################################################
+                from xml.etree.ElementTree import ParseError
                 try:
                     self.__ccRootElement = fromstring(clusterConfString)
                 except IOError:
-                    message = "There was an XML parsing error on the file: %s." %(self.__pathToClusterConf)
-                    logging.getLogger(sx.MAIN_LOGGER_NAME).debug(message)
+                    message = "There was an IO error on parsing the file: %s." %(self.__pathToClusterConf)
+                    logging.getLogger(sx.MAIN_LOGGER_NAME).warning(message)
+                except ParseError:
+                    message = "There was an XML parsing error analyzing the file: %s." %(self.__pathToClusterConf)
+                    logging.getLogger(sx.MAIN_LOGGER_NAME).warning(message)
         else:
             message = "The cluster.conf file does not exist: %s" %(self.__pathToClusterConf)
             logging.getLogger(sx.MAIN_LOGGER_NAME).error(message)
@@ -1045,7 +1055,7 @@ class ClusterHAConfAnalyzer :
                         pass
                     restricted = "0"
                     try:
-                        ordered = fdElement.attrib["restricted"]
+                        restricted = fdElement.attrib["restricted"]
                     except KeyError:
                         pass
                 failoverDomainsList.append(FailoverDomain(fdElement.attrib["name"],

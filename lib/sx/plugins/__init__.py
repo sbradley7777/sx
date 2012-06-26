@@ -447,7 +447,8 @@ class PluginBase:
         @type appendToFile: Boolean
         """
         if (len(header) > 0):
-            dashHeaderString = "------------------------------------------------------------------"
+            #dashHeaderString = "------------------------------------------------------------------"
+            dashHeaderString = "-------------------------------------------------------------------------------------------------"
             self.write(filename, "%s\n%s:" %(dashHeaderString, header), appendToFile)
             if (not appendToFile):
                 appendToFile = False

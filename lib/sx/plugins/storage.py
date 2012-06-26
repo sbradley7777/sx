@@ -172,7 +172,7 @@ class StorageData:
         unameASplit = self.getUname().split()
         unameA = ""
         for i in range (0, len(unameASplit)):
-            if (i == 4) :
+            if (i == 5) :
                 unameA += "\n\t      "
             unameA += "%s " %(unameASplit[i])
             i = i + 1
