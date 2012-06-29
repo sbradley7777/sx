@@ -58,7 +58,8 @@ class Clusterha(sx.plugins.PluginBase):
         # A map of all the clusters found. The key is the name of the cluster
         # and value is a ClusterNodes object.
         self.__clusterMap = {}
-
+        # Map of the clusternodes to StorageData
+        self.__storageDataMap = {}
     # #######################################################################
     # Functions that should be overwritten in the plugin
     # #######################################################################
@@ -87,7 +88,7 @@ class Clusterha(sx.plugins.PluginBase):
                 if (len(clusterName) > 0):
                     if (not self.__clusterMap.has_key(clusterName)):
                         self.__clusterMap[clusterName] = ClusterNodes()
-                    self.__clusterMap.get(clusterName).add(report)
+                    result = self.__clusterMap.get(clusterName).add(report)
 
     def report(self) :
         """

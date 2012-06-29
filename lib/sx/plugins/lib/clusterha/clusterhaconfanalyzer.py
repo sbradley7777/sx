@@ -22,9 +22,10 @@ from sx.tools import FileUtil
 from sx.plugins.lib.storage.filesysparser import FilesysMount
 
 class Quorumd:
-    def __init__(self, quorumdAttributes):
+    def __init__(self, quorumdAttributes, clusternodesCount):
         self.__quorumdAttributes = quorumdAttributes
         self.__quorumdHeuristics = []
+        self.__clusternodesCount = clusternodesCount
 
     def __str__(self):
         header = "quorum disk: "
@@ -35,17 +36,19 @@ class Quorumd:
         for key in keys:
             # Probably need to push to new line if two long.
             newString = "%s: %s | " %(key, self.__quorumdAttributes.get(key))
-            if (((len(newString) + len(rString)) > 98) and (not lineIsSplit)):
+            if (((len(newString) + (len(rString)) + (len(header)))  > 98) and (not lineIsSplit)):
                 rString += "\n             %s" %(newString)
                 lineIsSplit = True
             else:
                 rString += newString
         rString = rString.rstrip(" | ")
-        rString += "\n\tHeuristics:\n"
-        index = 1
-        for heuristic in self.getHeuristics():
-            rString += "\t%d. %s\n" %(index, str(heuristic))
-            index += 1
+        heuristics = self.getHeuristics()
+        if (len(heuristics) > 0):
+            rString += "\n\tHeuristics:\n"
+            index = 1
+            for heuristic in self.getHeuristics():
+                rString += "\t%d. %s\n" %(index, str(heuristic))
+                index += 1
         return "%s%s" %(header, rString.rstrip())
 
     def addHeuristic(self, heuristic):
@@ -65,6 +68,13 @@ class Quorumd:
             return ""
 
     # Need to set defaults on some of these if empty string is returned.
+    def getVotes(self):
+        quorumdOption = self.__getAttribute("votes")
+        # Set to default which will be number of nodes in the cluster minus 1.
+        if (not len(quorumdOption) > 0):
+            quorumdOption = (self.__clusternodesCount - 1)
+        return quorumdOption
+
     def getLabel(self):
         return self.__getAttribute("label")
 
@@ -130,24 +140,24 @@ class Quorumd:
         return quorumdOption
 
     def getPriorityMin(self, scheduler):
-        # Return the minimual value for a scheduler. If unknown scheduler is
-        # passed then 0 is returned.
+        # Return the minimual value for a scheduler. If unknown scheduler then
+        # return None.
         if ((scheduler == "rr") or (scheduler == "fifo")):
             return 1
         elif (scheduler == "other"):
             return -20
         else:
-            return 0
+            return None
 
     def getPriorityMax(self, scheduler):
-        # Return the minimual value for a scheduler. If unknown scheduler is
-        # passed then 0 is returned.
+        # Return the minimual value for a scheduler. If unknown scheduler then
+        # return None.
         if ((scheduler == "rr") or (scheduler == "fifo")):
             return 99
         elif (scheduler == "other"):
             return 20
         else:
-            return 0
+            return None
 
 
 class QuorumdHeuristic:
@@ -613,6 +623,21 @@ class ClusterHAConfAnalyzer :
     # #######################################################################
     # IS Functions
     # #######################################################################
+    def isCmanTwoNodeEnabled(self):
+        """
+        Returns True if cman tag has the attribute two_node set to 1.
+
+        @return: Returns True if cman tag has the attribute two_node set to 1.
+        @rtype: Boolean
+        """
+        cmanElement = self.__ccRootElement.find("cman")
+        try:
+            return cmanElement.attrib["two_node"]
+        except KeyError:
+            return False
+        except AttributeError:
+            return False
+
     def isClusterConfFilesIdentical(self,listOfFiles) :
         if (not len(listOfFiles) > 1):
             return False
@@ -686,7 +711,7 @@ class ClusterHAConfAnalyzer :
     def getQuorumd(self):
         quorumdElement = self.__ccRootElement.find("quorumd")
         if (not quorumdElement == None):
-            quorumd = Quorumd(quorumdElement.attrib)
+            quorumd = Quorumd(quorumdElement.attrib, len(self.getClusterNodeNames()))
             for heuristic in quorumdElement:
                 quorumd.addHeuristic(QuorumdHeuristic(heuristic.attrib))
             return quorumd
@@ -765,11 +790,11 @@ class ClusterHAConfAnalyzer :
 
     def getCmanMulticastAddress(self) :
         """
-        Returns the post_join_delay value in fence_daemon
-        properties. Empty String is returned if there was an error or
-        no value.
+        Returns the mulitcast address value. Empty String is returned if there
+        was an error or no value.
 
-        @return: The value of string post_join_delay in xml.
+        @return: Returns the mulitcast address value. Empty String is returned if there
+        was an error or no value.
         @rtype: String
         """
         fdElement = self.__ccRootElement.find("cman/multicast")

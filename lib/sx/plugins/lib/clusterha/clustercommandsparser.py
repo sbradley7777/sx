@@ -57,6 +57,105 @@ class ClusterCommandsParser:
             return None
     parseCmanToolStatusData = staticmethod(parseCmanToolStatusData)
 
+    def parseClustatData(dataList):
+        memberIDMap = {}
+        memberStatusMap = {}
+        serviceOwnerMap = {}
+        serviceStateMap = {}
+
+        serviceStart = False
+
+        # if not re.match('^[a-zA-Z]([a-zA-Z0-9-]*[a-zA-Z0-9])?(\.[a-zA-Z]([a-zA-Z0-9-]*[a-zA-Z0-9])?)*$', hostname)
+        # From clustat.c
+        # member name: some string with no spaces
+        # ID: id > -1
+        # State Possible Values: Online Offline Local Estranged RG-Master rgmanager Quorum Disk
+        regexMemberStanza = "(?P<memberName>.*).*(?P<id>[0-9]?[0-9]).*(?P<status>(Online|Offline)(, Local|, Estranged|, RG-Master|, rgmanager|, Quorum Disk).*)"
+        remMemberStanza = re.compile(regexMemberStanza)
+        # clulib/rg_strings.c
+        # owners: list of owners found
+        # State Possible Values: stopped starting started stopping failed uninitialized checking recoverable recovering disabled migrating
+        regexServiceStanza = ""
+        for line in dataList:
+            line = line.strip().rstrip()
+            mo = remMemberStanza.match(line)
+            if mo:
+                memberName = mo.group("memberName").strip().rstrip()
+                memberIDMap[memberName] = mo.group("id").strip().rstrip()
+                memberStatusMap[memberName] = mo.group("status").strip().rstrip()
+            elif (line.startswith("Service Name")):
+                members = memberIDMap.keys()
+                membersString = ""
+                for member in members:
+                    if (not member.startswith("/")):
+                        membersString += "%s|" %(member)
+                membersString = membersString.rstrip("|")
+                regexServiceStanza = "^(service|vm):(?P<serviceName>.*)(?P<owner>%s).*(?P<state>stopped|starting|started|stopping|failed|uninitialized|checking|recoverable|recovering|disabled|migrating)" %(membersString)
+            elif (len(regexServiceStanza) > 0):
+                remServiceStanza = re.compile(regexServiceStanza)
+                mo = remServiceStanza.match(line)
+                if mo:
+                    serviceName = mo.group("serviceName").strip().rstrip()
+                    serviceOwnerMap[mo.group("serviceName").strip().rstrip()] = mo.group("owner").strip().rstrip()
+                    serviceStateMap[mo.group("serviceName").strip().rstrip()] = mo.group("state").strip().rstrip()
+        # If no values found then object will be basically empty.
+        return ClustatCommand(memberIDMap, memberStatusMap, serviceOwnerMap, serviceStateMap)
+    parseClustatData = staticmethod(parseClustatData)
+
+class ClustatCommand:
+    def __init__(self, memberIDMap, memberStatusMap, serviceOwnerMap, serviceStateMap):
+        # These two maps will have same keys.
+        self.__memberIDMap = memberIDMap
+        self.__memberStatusMap = memberStatusMap
+        # These two maps will have same keys.
+        self.__serviceOwnerMap = serviceOwnerMap
+        self.__serviceStateMap = serviceStateMap
+
+    def getMembers(self):
+        return self.__memberIDMap.keys()
+
+    def getServices(self):
+        return self.__serviceOwnerMap.keys()
+
+    def getMemberID(self, memberName):
+        if (self.__memberIDMap.has_key(memberName)):
+            return self.__memberIDMap.get(memberName)
+        return ""
+
+    def getMemberStatus(self, memberName):
+        # Need a isOffline isOnline function
+        if (self.__memberStatusMap.has_key(memberName)):
+            return self.__memberStatusMap.get(memberName)
+        return ""
+
+    def isOwnerQuorumDisk(self, memberName):
+        memberStatus = self.getMemberStatus(memberName)
+        return (memberStatus.find("Quorum Disk") > 0)
+
+    def findQuorumDisk(self):
+        for member in self.__memberStatusMap.keys():
+            if (self.isOwnerQuorumDisk(member)):
+                return member
+        return ""
+
+    def getServiceOwner(self, serviceName):
+        # Need to grep out last owner and no owner
+        if (self.__serviceOwnerMap.has_key(serviceName)):
+            return self.__serviceOwnerMap.get(serviceName)
+        return ""
+
+    def getServiceLastOwner(self, serviceName):
+        # Need to grep out owner and no owner
+        if (self.__serviceOwnerMap.has_key(serviceName)):
+            return self.__serviceOwnerMap.get(serviceName)
+        return ""
+
+    def getServiceState(self, serviceName):
+        if (self.__serviceStateMap.has_key(serviceName)):
+            return self.__serviceStateMap.get(serviceName)
+        return ""
+
+
 class CmanToolStatusCommand:
     def __init__(self, version, configVersion, clusterName,
                  clusterID, clusterMember, clusterGeneration,
@@ -85,7 +184,7 @@ class CmanToolStatusCommand:
         self.__nodeName = nodeName
         self.__nodeID = nodeID
         self.__heartbeatAddresses = heartbeatAddresses.split()
-        self.__nodeAddresses = nodeAddresses.split() 
+        self.__nodeAddresses = nodeAddresses.split()
 
     def isMulicastHeartbeat(self):
         """
@@ -149,7 +248,3 @@ class CmanToolStatusCommand:
 
     def getNodeAddresses(self):
         return self.__nodeAddresses
-
-
-
-

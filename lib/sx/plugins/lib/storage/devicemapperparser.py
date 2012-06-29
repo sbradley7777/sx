@@ -74,6 +74,64 @@ class DeviceMapperParser:
         return parsedList
     parseDMSetupTableData = staticmethod(parseDMSetupTableData)
 
+    def parsePVS_AVData(pvs_avData):
+        parsedList = []
+        if (pvs_avData == None):
+            return parsedList
+        for line in pvs_avData:
+            currentLine = line.strip().rstrip()
+            # Column Headers
+            # PV VG Fmt Attr PSize PFree DevSize PV UUID
+            if ((len(currentLine) > 0) and (currentLine.startswith("/"))):
+                splitLine = currentLine.split()
+                if (len(splitLine) == 8):
+                    pvs_av = PVS_AV(splitLine[0], splitLine[1], splitLine[2], splitLine[3],
+                                    splitLine[4], splitLine[5], splitLine[6], splitLine[7])
+                    parsedList.append(pvs_av)
+                elif (len(splitLine) == 5):
+                    # This is for cases where there is no VG, Format, PV UUID specified.
+                    pvs_av = PVS_AV(splitLine[0], "", "", splitLine[1], splitLine[2], splitLine[3], splitLine[4], "")
+                    parsedList.append(pvs_av)
+        return parsedList
+    parsePVS_AVData = staticmethod(parsePVS_AVData)
+
+class PVS_AV:
+    def __init__(self, pvName, vgName, formatType, attributes, pSize, pFree, deviceSize, pvUUID):
+        self.__pvName = pvName
+        self.__vgName = vgName
+        self.__formatType = formatType
+        self.__attributes = attributes
+        self.__pSize = pSize
+        self.__pFree = pFree
+        self.__deviceSize = deviceSize
+        self.__pvUUID = pvUUID
+
+    def __str__(self):
+        return "%s %s %s %s %s %s %s %s" %(self.__pvName, self.__vgName, self.__formatType, self.__attributes,
+                                           self.__pSize, self.__pFree, self.__deviceSize, self.__pvUUID)
+    def getPVName(self):
+        return self.__pvName
+
+    def getVGName(self):
+        return self.__vgName
+
+    def getFormatType(self):
+        return self.__formatType
+
+    def getAttributes(self):
+        return self.__attributes
+
+    def getPSize(self):
+        return self.__pSize
+
+    def getPFree(self):
+        return self.__pfree
+
+    def getDeviceSize(self):
+        return self.__deviceSize
+
+    def getPVUUID(self):
+        return self.__pvUUID
 
 class DMSetupInfoC:
     def __init__(self, deviceMapperName, majorNumber, minorNumber, attributes,

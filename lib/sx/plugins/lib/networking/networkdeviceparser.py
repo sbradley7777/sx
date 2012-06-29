@@ -453,8 +453,9 @@ class NetworkMap(NetworkInterface):
         ethtoolIDeviceMap = self.__getEthToolIDeviceMap(self.getInterface())
         if (ethtoolIDeviceMap.has_key("driver")):
             return ethtoolIDeviceMap.get("driver")
-        # I do not believe there is module for loopback
-        #if ((self.getInterface() == "lo") and (self.getIPv4Address() == "127.0.0.1")):
+        # There is no module loaded for the loopback interface and I have
+        # verified this.
+        # if ((self.getInterface() == "lo") and (self.getIPv4Address() == "127.0.0.1")):
         #    return "Loopback"
         return ""
     # ###########################################################################

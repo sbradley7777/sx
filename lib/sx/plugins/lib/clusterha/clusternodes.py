@@ -35,6 +35,9 @@ from sx.plugins.lib.storage.filesysparser import FilesysMount
 from sx.plugins.lib.storage.procparser import ProcParser
 from sx.plugins.lib.storage.procparser import ProcFilesystems
 
+from sx.plugins.lib.storage import StorageData
+from sx.plugins.lib.storage import StorageDataGenerator
+
 class ClusterNodes:
     def __init__(self) :
         """
@@ -42,7 +45,8 @@ class ClusterNodes:
         ClusterNode objects.
         """
         self.__clusterNodes = []
-
+        # Map of clusternode names to their storage data.
+        self.__clusternodesStorageDataMap = {}
     # #######################################################################
     # Private helper methods for functions
     # #######################################################################
@@ -259,6 +263,11 @@ class ClusterNodes:
     # #######################################################################
     # Public helper methods for functions
     # #######################################################################
+    def getStorageData(self, clusternodeName):
+        if(self.__clusternodesStorageDataMap.has_key(clusternodeName)):
+            return self.__clusternodesStorageDataMap.get(clusternodeName)
+        return None
+
     def count(self):
         """
         Returns the number of nodes.
@@ -499,6 +508,10 @@ class ClusterNodes:
         # ###############################################################
         self.__clusterNodes.append(clusterNode)
         self.__clusterNodes.sort(key=lambda c: int(c.getClusterNodeProperties().getNodeID()))
+        storageData = StorageDataGenerator().generate(report)
+        if (not storageData == None):
+            self.__clusternodesStorageDataMap[clusterNode.getClusterNodeName()] = storageData
+
         return True
 
     # #######################################################################

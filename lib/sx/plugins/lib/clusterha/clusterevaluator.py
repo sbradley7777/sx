@@ -21,6 +21,10 @@ from sx.plugins.lib.clusterha.clusternode import ClusterNode
 from sx.plugins.lib.clusterha.clusternode import ClusterNodeNetworkMap
 from sx.plugins.lib.clusterha.clusternode import ClusterStorageFilesystem
 
+# For finding quorum disk
+from sx.plugins.lib.storage.devicemapperparser import DeviceMapperParser
+from sx.plugins.lib.storage.devicemapperparser import DMSetupInfoC
+from sx.plugins.lib.clusterha.clustercommandsparser import ClusterCommandsParser
 
 class ClusterEvaluator():
     def __init__(self, cnc):
@@ -32,7 +36,7 @@ class ClusterEvaluator():
         return self.__cnc
 
     # #######################################################################
-    # Evaluate function
+    # Evaluate Private Function
     # #######################################################################
     def __evaluateClusterGlobalConfiguration(self, cca):
         rString = ""
@@ -97,11 +101,10 @@ class ClusterEvaluator():
         if (quorumd == None):
             return rString
         # ###################################################################
-        # Quorumd Evaluations
-        # ###################################################################
         # Configuration options that are unsupported in production clusters.
+        # ###################################################################
         if (len(quorumd.getStatusFile()) > 0):
-            description =  "The status_file option for quorumd should be removed prior to production "
+            description =  "The \"status_file\" option for quorumd should be removed prior to production "
             description += "cause it is know to cause qdiskd to hang unnecessarily."
             urls = ["https://access.redhat.com/knowledge/articles/113803#The_status_file_option_should_not_be_used_in_production"]
             rString += StringUtil.formatBulletString(description, urls)
@@ -111,24 +114,53 @@ class ClusterEvaluator():
             urls = ["https://access.redhat.com/knowledge/articles/113803##The_option_use_uptime_is_not_supported"]
             rString += StringUtil.formatBulletString(description, urls)
 
-        # ###################################################################
-        # NEED ARTICLE AND VERIFICIATION ON THE MIN MAX PRIO AND DEFAULTS. REVIEW THE SOURCE CODE.
-        # ###################################################################
         qPriority = int(quorumd.getPriority())
         if (qPriority > quorumd.getPriorityMax(quorumd.getScheduler())):
-            description  = "The quorumd priority \"%s\" exceeds the maximum priority for the " %(qPriority)
-            description += "scheduler \"%s\". The maximum value for the scheduler is \"%s\"." %(quorumd.getScheduler(), quorumd.getPriorityMax(quorumd.getScheduler()))
-            urls = [""]
+            description  = "The quorumd \"priority\" %s is set too high and can preempt kernel threads that are being managed by the  " %(qPriority)
+            description += "scheduler %s. The maximum value for the scheduler is %s." %(quorumd.getScheduler(), quorumd.getPriorityMax(quorumd.getScheduler()))
+            urls = ["https://access.redhat.com/knowledge/articles/113803###The_priority_is_set_too_high_or_too_low"]
             rString += StringUtil.formatBulletString(description, urls)
         elif (qPriority < quorumd.getPriorityMin(quorumd.getScheduler())):
-            description  = "The quorumd priority \"%s\" is not equal or greater than the  minimum priority for the " %(qPriority)
-            description += "scheduler \"%s\". The minimum value for the scheduler is \"%s\"." %(quorumd.getScheduler(), quorumd.getPriorityMin(quorumd.getScheduler()))
-            urls = [""]
+            description  = "The quorumd \"priority\" %s is not equal or greater than the minimum priority for the " %(qPriority)
+            description += "scheduler %s. The minimum value for the scheduler is %s." %(quorumd.getScheduler(), quorumd.getPriorityMin(quorumd.getScheduler()))
+            urls = ["https://access.redhat.com/knowledge/articles/113803###The_priority_is_set_too_high_or_too_low"]
             rString += StringUtil.formatBulletString(description, urls)
 
+        masterWins = int(quorumd.getMasterWins())
+        heurisitcCount = len(quorumd.getHeuristics())
+        """
+        Here is the unsupported conditions for master_wins. On RHEL 6
+        master_wins is automagic, so they really should not be changing these
+        options.
 
+        If master_wins is 1 and no heuristics = PASS
+        If master_wins is 1 and 1 or more heuristics = FAIL
+        If 2 node cluster and master_wins is 0 and no heuristics = FAIL
+        urls = ["https://access.redhat.com/knowledge/solutions/24037"]
+        """
+        if ((masterWins == 1) and (not heurisitcCount == 0)):
+            # There cannot be any heuristic set if master_win is enabled.
+            description = "There cannot be any heuristics set in the cluster.conf if \"master_wins\" is enabled."
+            urls = ["https://access.redhat.com/knowledge/solutions/24037"]
+            rString += StringUtil.formatBulletString(description, urls)
+        if ((not masterWins == 1) and (heurisitcCount == 0) and (len(cca.getClusterNodeNames()) >= 2)):
+            description =  "If a quorumd tag is in the cluster.conf and there is no heuristic defined then "
+            description += "enabled \"master_wins\" or define some heuristics for quorumd."
+            urls = ["https://access.redhat.com/knowledge/solutions/24037"]
+            rString += StringUtil.formatBulletString(description, urls)
+
+        # cman/@two_node: Must be set to 0 when qiskd is in use with one EXCEPTION and
+        # that is if quorumd/@votes is set to 0, two_node is allowed.
+        if ((int(quorumd.getVotes()) > 0) and (cca.isCmanTwoNodeEnabled())):
+            description =  "The cluster has the option \"cman/@two_nodes\" enabled and also"
+            description += "have set \"quorumd/@votes\" greater than 0 which is unsupported."
+            urls = ["https://access.redhat.com/knowledge/articles/113803###The_option_two_nodes_should_not_be_enabled"]
+            rString += StringUtil.formatBulletString(description, urls)
+
+        # ###################################################################
         # Configurations that should print a warning message, but are still
         # supported in production.
+        # ###################################################################
         if (quorumd.getReboot() == "0"):
             description =  "If the quorumd option reboot is set to 0 this option only prevents "
             description += "rebooting on loss of score. The option does not change whether qdiskd "
@@ -147,7 +179,6 @@ class ClusterEvaluator():
         # ###################################################################
         # Heuristics Evaluations
         # ###################################################################
-        import re
         stringUtil = StringUtil()
         remPing = re.compile("^(?P<command>ping|/bin/ping) .*")
         remPingDT = re.compile("^(?P<command>ping|/bin/ping) .*-(?P<deadlineTimeout>w\d?\d?\d|w \d?\d?\d).*")
@@ -295,28 +326,6 @@ class ClusterEvaluator():
                 if(chkConfigItem.isEnabledRunlevel5()):
                     rString += "5 "
         return rString
-
-    def __isNFSChildOfClusterStorageResource(self, cca, csFilesystem):
-        # Just need to find 1 match. If clusterstorage fs has 1 nfs child then
-        # requires localflocks to be enabled.
-        clusteredServices = cca.getClusteredServices()
-        for clusteredService in clusteredServices:
-            resourcesInFlatList = clusteredService.getFlatListOfClusterResources()
-            clusterfsResource = None
-            for resource in resourcesInFlatList:
-                if ((resource.getType() == "clusterfs") and (len(resource.getAttribute("device")) > 0)):
-                    if (csFilesystem.getDeviceName() == resource.getAttribute("device")):
-                        # Found Match for the filesystem
-                        clusterfsResource = resource
-                elif (not clusterfsResource == None):
-                    # Since the clusterfsResource is not None then next resource
-                    # should be nfs export. If not then either no nfs export or
-                    # not configured correctly cause nfsexport uses inhertiance
-                    # to get fs to use. Break out of loop after this condition
-                    # is checked.
-                    if ((resource.getLevel() == (clusterfsResource.getLevel() + 1)) and (resource.getType() == "nfsexport")):
-                        return True
-        return False
 
     def __evaluateClusterStorage(self, cca):
         # Is active/active nfs supported? Sorta
@@ -468,6 +477,59 @@ class ClusterEvaluator():
         # Return the string
         return rString
 
+    def __isNFSChildOfClusterStorageResource(self, cca, csFilesystem):
+        # Just need to find 1 match. If clusterstorage fs has 1 nfs child then
+        # requires localflocks to be enabled.
+        clusteredServices = cca.getClusteredServices()
+        for clusteredService in clusteredServices:
+            resourcesInFlatList = clusteredService.getFlatListOfClusterResources()
+            clusterfsResource = None
+            for resource in resourcesInFlatList:
+                if ((resource.getType() == "clusterfs") and (len(resource.getAttribute("device")) > 0)):
+                    if (csFilesystem.getDeviceName() == resource.getAttribute("device")):
+                        # Found Match for the filesystem
+                        clusterfsResource = resource
+                elif (not clusterfsResource == None):
+                    # Since the clusterfsResource is not None then next resource
+                    # should be nfs export. If not then either no nfs export or
+                    # not configured correctly cause nfsexport uses inhertiance
+                    # to get fs to use. Break out of loop after this condition
+                    # is checked.
+                    if ((resource.getLevel() == (clusterfsResource.getLevel() + 1)) and (resource.getType() == "nfsexport")):
+                        return True
+        return False
+
+    def __getPathToQuorumDisk(self, cca):
+        quorumd = cca.getQuorumd()
+        if (not quorumd == None):
+            # Check to see if the qdisk is an lvm device.
+            pathToQuroumDisk = quorumd.getDevice()
+            quorumDiskLabel = quorumd.getLabel()
+            for clusternode in self.__cnc.getClusterNodes():
+                # Find out qdisk device if there is one
+                clustatCommand = ClusterCommandsParser.parseClustatData(clusternode.getClusterCommandData("clustat"))
+                pathToQuroumDisk = clustatCommand.findQuorumDisk()
+                if ((pathToQuroumDisk) > 0):
+                    return pathToQuroumDisk
+        return ""
+    def __isLVMDevice(self, pathToDevice):
+        if (not len(pathToDevice) > 0):
+            return False
+
+        for clusternode in self.__cnc.getClusterNodes():
+            clusternodeName = clusternode.getClusterNodeName()
+            storageData = self.__cnc.getStorageData(clusternodeName)
+            devicemapperCommandsMap =  storageData.getDMCommandsMap()
+            dmsetupInfoCMap = DeviceMapperParser.parseDMSetupInfoCData(devicemapperCommandsMap.get("dmsetup_info_-c"))
+            for key in dmsetupInfoCMap:
+                fullPathToDMDevice = os.path.join("/dev/mapper/", dmsetupInfoCMap.get(key).getDeviceMapperName())
+                if(fullPathToDMDevice == pathToDevice):
+                    return True
+        return False
+
+    # #######################################################################
+    # Evaluate Function
+    # #######################################################################
     def evaluate(self):
         """
          * If two node cluster, check if hb and fence on same network. warn qdisk required if not or fence delay.
@@ -489,9 +551,17 @@ class ClusterEvaluator():
             rstring += "%s\n%s:\n%s\n" %(sectionHeader, cca.getClusterName(), clusterConfigString)
 
         # ###################################################################
-        # Check global configuration issues:
+        # Check qdisk configuration:
         # ###################################################################
-        quorumdConfigString = self.__evaluateQuorumdConfiguration(cca)
+        quorumdConfigString = ""
+        pathToQuroumDisk = self.__getPathToQuorumDisk(cca)
+        #print "Is LVM Device %s? %s" %(pathToQuroumDisk, str(self.__isLVMDevice(pathToQuroumDisk)))
+        if (self.__isLVMDevice(pathToQuroumDisk)):
+            description =  "The quorum disk %s cannot be an lvm device." %(pathToQuroumDisk)
+            urls = ["https://access.redhat.com/knowledge/solutions/41726"]
+            quorumdConfigString += StringUtil.formatBulletString(description, urls)
+
+        quorumdConfigString += self.__evaluateQuorumdConfiguration(cca)
         if (len(quorumdConfigString) > 0):
             sectionHeader = "%s\nQuorumd Disk Configuration Known Issues\n%s" %(self.__seperator, self.__seperator)
             rstring += "%s\n%s:\n%s\n" %(sectionHeader, cca.getClusterName(), quorumdConfigString)
@@ -558,7 +628,7 @@ class ClusterEvaluator():
             if ((distroRelease.getDistroName() == "RHEL") and (distroRelease.getMajorVersion() >= 5)):
                 # Make sure that multicast tags are not on clusternode stanzas
                 if (((len(cnp.getMulticastAddress()) > 0) or (len(cnp.getMulticastInterface()) > 0))) :
-                    description = "The multicast tags should not be in the <clusternodes> stanzas. These tags are no longer supported in RHEL5."
+                    description = "The multicast tags should not be in the <clusternodes> stanzas. These tags are only supported on RHEL 4."
                     urls = ["https://access.redhat.com/knowledge/solutions/32242"]
                     clusterNodeEvalString += StringUtil.formatBulletString(description, urls)
 
@@ -615,5 +685,3 @@ class ClusterEvaluator():
         # ###################################################################
         # return string
         return rstring
-
-
