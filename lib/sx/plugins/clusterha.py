@@ -246,7 +246,7 @@ class Clusterha(sx.plugins.PluginBase):
                 if (len(missingNodesList) > 0):
                     self.write(filenameCE, "%s\n\n" %(missingNodesMessage))
                 self.writeSeperator(filenameCE, "Known Issues with Cluster");
-                self.write(filenameCE, "NOTE: The known issues below may or may not be releated to solving")
+                self.write(filenameCE, "NOTE: The known issues below may or may not be related to solving")
                 self.write(filenameCE, "      the current issue or preventing a issue. These are meant to")
                 self.write(filenameCE, "      be a guide in making sure that the cluster is happy and")
                 self.write(filenameCE, "      healthy all the time. Please use report as a guide in")
