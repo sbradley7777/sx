@@ -520,9 +520,9 @@ class ClusterEvaluator():
             clusternodeName = clusternode.getClusterNodeName()
             storageData = self.__cnc.getStorageData(clusternodeName)
             devicemapperCommandsMap =  storageData.getDMCommandsMap()
-            dmsetupInfoCMap = DeviceMapperParser.parseDMSetupInfoCData(devicemapperCommandsMap.get("dmsetup_info_-c"))
-            for key in dmsetupInfoCMap:
-                fullPathToDMDevice = os.path.join("/dev/mapper/", dmsetupInfoCMap.get(key).getDeviceMapperName())
+            lvsDevices = DeviceMapperParser.parseLVSDevicesData(devicemapperCommandsMap.get("lvs_-a_-o_devices"))
+            for lvsDevice in lvsDevices:
+                fullPathToDMDevice = os.path.join("/dev/mapper/", lvsDevice.getVGLVName())
                 if(fullPathToDMDevice == pathToDevice):
                     return True
         return False
