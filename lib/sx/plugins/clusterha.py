@@ -50,7 +50,7 @@ class Clusterha(sx.plugins.PluginBase):
         @type pathToPluginReportDir: String
         """
         sx.plugins.PluginBase.__init__(self, "Cluster",
-                                       "This plugin will verify configuartion of the cluster(high availability) and analyze cluster(high availability) information gathered from sosreports/sysreports.",
+                                       "This plugin will analyze the configuration of the High Availability and Resilient Storage cluster from the information gathered in the sosreports.",
                                        ["Sosreport", "Sysreport"], True, True, {"isStretchCluster":"If the option is set 1 then the plugin will analyze the reports as a stretch cluster."}, pathToPluginReportDir)
 
         # Set the default options for the plugin

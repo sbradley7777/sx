@@ -632,7 +632,10 @@ class ClusterHAConfAnalyzer :
         """
         cmanElement = self.__ccRootElement.find("cman")
         try:
-            return cmanElement.attrib["two_node"]
+            if (cmanElement.attrib["two_node"] == "1"):
+                return True
+            else:
+                return False
         except KeyError:
             return False
         except AttributeError:
@@ -787,6 +790,23 @@ class ClusterHAConfAnalyzer :
             return "3"
         except AttributeError:
             return "3"
+
+    def getCmanExpectedVotes(self):
+        """
+        Returns the value of the cman/@expected_votes value. Empty string
+        returned if no option found.
+
+        @return: Returns the value of the cman/@expected_votes value. Empty
+        string returned if no option found.
+        @rtype: String
+        """
+        cmanElement = self.__ccRootElement.find("cman")
+        try:
+            return cmanElement.attrib["expected_votes"]
+        except KeyError:
+            return ""
+        except AttributeError:
+            return ""
 
     def getCmanMulticastAddress(self) :
         """
@@ -1149,4 +1169,3 @@ class ClusterHAConfAnalyzer :
             return str(quorumd)
         else:
             return ""
-

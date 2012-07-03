@@ -285,10 +285,6 @@ class LVSDevices:
     def getPhysicalExtendSize(self):
         return self.__physicalExtendSize
 
-    def getVGLVName(self):
-        return "%s-%s" %(self.__vgName, self.__lvName)
-
-
 class DMSetupInfoC:
     def __init__(self, deviceMapperName, majorNumber, minorNumber, attributes,
                  openRefCount, targetCount, lastEventSequenceNumber, uuid):

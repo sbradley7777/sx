@@ -842,7 +842,20 @@ if __name__ == "__main__":
                     logging.getLogger(sx.MAIN_LOGGER_NAME).info(message)
                     for plugin in listOfEnabledPlugins:
                         if plugin.isEnabled() :
-                            print "\t  %s" %(plugin)
+                            pluginDescription = "%s: %s" %(plugin.getName(), plugin.getDescription())
+                            if (not len(pluginDescription) > 100):
+                                print "\t  %s" %(pluginDescription)
+                            else:
+                                import textwrap
+                                subsequentIndent = " " * len(plugin.getName())
+                                # Add in the space and semicolon
+                                subsequentIndent += "  "
+                                textWrappedList = textwrap.wrap(pluginDescription, width=100,
+                                                                initial_indent="\t  ",
+                                                                subsequent_indent="\t  %s"%(subsequentIndent))
+                                for textWrapped in textWrappedList:
+                                    print textWrapped
+
                     # Generate map of all plugins reports that were created after they run.
                     mapOfPluginReportPaths = pluginsHelper.generatePluginReports(listOfReportsExtracted, listOfEnabledPlugins)
                 else:
@@ -897,4 +910,3 @@ if __name__ == "__main__":
     # Exit the application with zero exit code since we cleanly exited.
     # #######################################################################
     sys.exit()
-

@@ -71,6 +71,11 @@ class ClusterEvaluator():
             description += "This cluster currently has %d number of cluster nodes which exceeds the supported 16 number of cluster nodes." %(clusterNodeCount)
             urls = ["https://access.redhat.com/knowledge/articles/40051"]
             rString += StringUtil.formatBulletString(description, urls)
+        # Check if two_node is 1 and if expected_votes is 1
+        if ((cca.isCmanTwoNodeEnabled()) and ((not cca.getCmanExpectedVotes() == "1") or (not len(cca.getCmanExpectedVotes()) > 0))):
+            description = "If the \"cman/@two_node\" option is set to 1 then the option \"cman/@expected_votes\" should be set to 1."
+            urls = ["https://access.redhat.com/knowledge/solutions/30398"]
+            rString += StringUtil.formatBulletString(description, urls)
         # Compare the cluster.conf files
         if ((not cca.isClusterConfFilesIdentical(self.__cnc.getPathToClusterConfFiles())) and (len(self.__cnc.getPathToClusterConfFiles()) > 1)):
             description  = "The /etc/cluster/cluster.conf files were not identical on all the cluster node's cluster.conf files that were analyzed."
@@ -82,7 +87,9 @@ class ClusterEvaluator():
                                                                                                           len(cca.getClusterNodeNames()))
             urls = ["https://access.redhat.com/knowledge/solutions/19808"]
             rString += StringUtil.formatBulletString(description, urls)
-        # Warning messages to console
+        # ###################################################################
+        # Warning messages to console about comparing cluster.confs.
+        # ###################################################################
         if ((not len(self.__cnc.getPathToClusterConfFiles()) > 1) and (clusterNodeCount > 1)):
             # Need more than 1 node to compare cluster.confs
             message =  "There was only 1 cluster.conf file found for a %d node cluster. " %(len(cca.getClusterNodeNames()))
@@ -106,7 +113,7 @@ class ClusterEvaluator():
         if (len(quorumd.getStatusFile()) > 0):
             description =  "The \"status_file\" option for quorumd should be removed prior to production "
             description += "cause it is know to cause qdiskd to hang unnecessarily."
-            urls = ["https://access.redhat.com/knowledge/articles/113803#The_status_file_option_should_not_be_used_in_production"]
+            urls = ["https://access.redhat.com/knowledge/solutions/54460"]
             rString += StringUtil.formatBulletString(description, urls)
         if (not quorumd.getUseUptime() == "1"):
             description =  "The changing of the internal timers used by qdisk by setting "
@@ -161,6 +168,11 @@ class ClusterEvaluator():
         # Configurations that should print a warning message, but are still
         # supported in production.
         # ###################################################################
+        if ((len(quorumd.getLabel()) > 0) and (len(quorumd.getDevice()) > 0)):
+            description =  "The quorumd option should not have a \"quorumd/@device\" and "
+            description += "\"quorumd/@label\" configured. The label option will override the device option."
+            urls = []
+            rString += StringUtil.formatBulletString(description, urls)
         if (quorumd.getReboot() == "0"):
             description =  "If the quorumd option reboot is set to 0 this option only prevents "
             description += "rebooting on loss of score. The option does not change whether qdiskd "
@@ -477,6 +489,9 @@ class ClusterEvaluator():
         # Return the string
         return rString
 
+    # #######################################################################
+    # Evaluate Helper Function
+    # #######################################################################
     def __isNFSChildOfClusterStorageResource(self, cca, csFilesystem):
         # Just need to find 1 match. If clusterstorage fs has 1 nfs child then
         # requires localflocks to be enabled.
@@ -512,19 +527,27 @@ class ClusterEvaluator():
                 if ((pathToQuroumDisk) > 0):
                     return pathToQuroumDisk
         return ""
-    def __isLVMDevice(self, pathToDevice):
+
+    def __isLVMDevice(self, pathToDevice, lvsDevices):
+        filenameOfDevice = os.path.basename(pathToDevice)
+        for lvsDevice in lvsDevices:
+            if ((pathToDevice.endswith("%s-%s" %(lvsDevice.getVGName(), lvsDevice.getLVName()))) or
+                (pathToDevice.endswith("%s/%s" %(lvsDevice.getVGName(), lvsDevice.getLVName())))):
+                # vgName-lvName or /dev/vgName/lvName or /dev/mapper/vgName-lvName
+                return True
+        return False
+
+    def __isQDiskLVMDevice(self, pathToDevice):
         if (not len(pathToDevice) > 0):
             return False
-
+        # Cycle through all the nodes till you find a match.
         for clusternode in self.__cnc.getClusterNodes():
             clusternodeName = clusternode.getClusterNodeName()
             storageData = self.__cnc.getStorageData(clusternodeName)
             devicemapperCommandsMap =  storageData.getDMCommandsMap()
             lvsDevices = DeviceMapperParser.parseLVSDevicesData(devicemapperCommandsMap.get("lvs_-a_-o_devices"))
-            for lvsDevice in lvsDevices:
-                fullPathToDMDevice = os.path.join("/dev/mapper/", lvsDevice.getVGLVName())
-                if(fullPathToDMDevice == pathToDevice):
-                    return True
+            if (self.__isLVMDevice(pathToDevice, lvsDevices)):
+                return True
         return False
 
     # #######################################################################
@@ -556,7 +579,7 @@ class ClusterEvaluator():
         quorumdConfigString = ""
         pathToQuroumDisk = self.__getPathToQuorumDisk(cca)
         #print "Is LVM Device %s? %s" %(pathToQuroumDisk, str(self.__isLVMDevice(pathToQuroumDisk)))
-        if (self.__isLVMDevice(pathToQuroumDisk)):
+        if (self.__isQDiskLVMDevice(pathToQuroumDisk)):
             description =  "The quorum disk %s cannot be an lvm device." %(pathToQuroumDisk)
             urls = ["https://access.redhat.com/knowledge/solutions/41726"]
             quorumdConfigString += StringUtil.formatBulletString(description, urls)
