@@ -62,10 +62,15 @@ class Quorumd:
         return self.__quorumdHeuristics
 
     def __getAttribute(self, name):
-        if (self.__quorumdAttributes.has_key(name)):
+        if (self.attributeExist(name)):
             return self.__quorumdAttributes.get(name)
         else:
             return ""
+
+    def attributeExist(self, name):
+        if (self.__quorumdAttributes.has_key(name)):
+            return True
+        return False
 
     # Need to set defaults on some of these if empty string is returned.
     def getVotes(self):
@@ -91,10 +96,11 @@ class Quorumd:
         return self.__getAttribute("status_file")
 
     def getMasterWins(self):
+        # The option quorumd/@master_wins uses some auto configure magic in RHEL
+        # 6 so cannot set a default value.
         quorumdOption = self.__getAttribute("master_wins")
-        # Set it to default if not found.
         if (not len(quorumdOption) > 0):
-            quorumdOption = "0"
+            quorumdOption = ""
         return quorumdOption
 
     def getUseUptime(self):

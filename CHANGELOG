@@ -1,4 +1,5 @@
 * Tue Apr 18 2012 Shane Bradley <sbradley@redhat.com>- 2.11-0.0
+- Added check for cluster names longer than 16 characters.
 - Added parser for sos_commands/devicemapper/[lvs_-a_-o_devices | vgs_-v | pvs_-a_-v]
 - Added detection of qdisk device and check to see if lvm device which is first iteration of finding and checking.
 - Fixed parsing issue on RHEL6 for getting the network interface module being used.

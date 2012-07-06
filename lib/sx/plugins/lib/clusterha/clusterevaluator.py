@@ -3,6 +3,9 @@
 This class will evalatuate a cluster and create a report that will
 link in known issues with links to resolution.
 
+This plugin is documented here:
+- https://fedorahosted.org/sx/wiki/SX_clusterplugin
+
 @author    :  Shane Bradley
 @contact   :  sbradley@redhat.com
 @version   :  2.10
@@ -40,6 +43,13 @@ class ClusterEvaluator():
     # #######################################################################
     def __evaluateClusterGlobalConfiguration(self, cca):
         rString = ""
+        clusterNameCharSize = len(list(cca.getClusterName()))
+        if (clusterNameCharSize > 16):
+            description = "The name of the cluster cannot be more than 16 characters in size. The cluster's name "
+            description += "\%s\" is %d characters long." %(cca.getClusterName(), clusterNameCharSize)
+            urls = ["https://access.redhat.com/knowledge/solutions/32111"]
+            rString += StringUtil.formatBulletString(description, urls)
+
         if (cca.isCleanStartEnabled()):
             description =  "The clean_start option in the /etc/cluster/cluster.conf was enabled and is not supported "
             description += "for production clusters. The option is for testing and debugging only."
@@ -102,7 +112,7 @@ class ClusterEvaluator():
             logging.getLogger(sx.MAIN_LOGGER_NAME).warning(message)
         return rString
 
-    def __evaluateQuorumdConfiguration(self, cca):
+    def __evaluateQuorumdConfiguration(self, cca, distroRelease):
         rString = ""
         quorumd = cca.getQuorumd()
         if (quorumd == None):
@@ -133,8 +143,6 @@ class ClusterEvaluator():
             urls = ["https://access.redhat.com/knowledge/articles/113803###The_priority_is_set_too_high_or_too_low"]
             rString += StringUtil.formatBulletString(description, urls)
 
-        masterWins = int(quorumd.getMasterWins())
-        heurisitcCount = len(quorumd.getHeuristics())
         """
         Here is the unsupported conditions for master_wins. On RHEL 6
         master_wins is automagic, so they really should not be changing these
@@ -145,12 +153,19 @@ class ClusterEvaluator():
         If 2 node cluster and master_wins is 0 and no heuristics = FAIL
         urls = ["https://access.redhat.com/knowledge/solutions/24037"]
         """
-        if ((masterWins == 1) and (not heurisitcCount == 0)):
-            # There cannot be any heuristic set if master_win is enabled.
+        heurisitcCount = len(quorumd.getHeuristics())
+        masterWins = quorumd.getMasterWins()
+        if ((len(masterWins) > 0) and (distroRelease.getMajorVersion() == "5")):
+            # In RHEL 6 it is autocalculated, but in RHEL 5 it will default to 0
+            # if it is not set.
+            masterWins = "0"
+        # If master_wins is 1 and 1 or more heuristics = FAIL
+        if ((masterWins == "1") and (heurisitcCount > 0)):
             description = "There cannot be any heuristics set in the cluster.conf if \"master_wins\" is enabled."
             urls = ["https://access.redhat.com/knowledge/solutions/24037"]
             rString += StringUtil.formatBulletString(description, urls)
-        if ((not masterWins == 1) and (heurisitcCount == 0) and (len(cca.getClusterNodeNames()) >= 2)):
+        # If master_wins is 1 and 1 or more heuristics = FAIL
+        if ((masterWins == "0") and (heurisitcCount == 0) and (len(cca.getClusterNodeNames()) >= 2)):
             description =  "If a quorumd tag is in the cluster.conf and there is no heuristic defined then "
             description += "enabled \"master_wins\" or define some heuristics for quorumd."
             urls = ["https://access.redhat.com/knowledge/solutions/24037"]
@@ -174,7 +189,7 @@ class ClusterEvaluator():
             urls = []
             rString += StringUtil.formatBulletString(description, urls)
         if (quorumd.getReboot() == "0"):
-            description =  "If the quorumd option reboot is set to 0 this option only prevents "
+            description =  "If the quorumd option reboot is set to 0 then this option only prevents "
             description += "rebooting on loss of score. The option does not change whether qdiskd "
             description += "reboots the host as a result of hanging for too long and getting "
             description += "evicted by other nodes in the cluster."
@@ -226,15 +241,7 @@ class ClusterEvaluator():
 
             tableOfStrings = stringUtil.toTableStringsList(fsTable, tableHeader)
             rString += StringUtil.formatBulletString(description, urls, tableOfStrings)
-
-        """
-        https://bugzilla.redhat.com/show_bug.cgi?id=803015
-
-        - quorumd/@priority
-        If set, must not be set to 99
-        """
-
-        return rString
+        return rString.rstrip()
 
     def __evaluateClusterNodeHeartbeatNetwork(self, hbNetworkMap):
         rString = ""
@@ -584,10 +591,11 @@ class ClusterEvaluator():
             urls = ["https://access.redhat.com/knowledge/solutions/41726"]
             quorumdConfigString += StringUtil.formatBulletString(description, urls)
 
-        quorumdConfigString += self.__evaluateQuorumdConfiguration(cca)
+        distroRelease = baseClusterNode.getDistroRelease()
+        quorumdConfigString += self.__evaluateQuorumdConfiguration(cca, distroRelease)
         if (len(quorumdConfigString) > 0):
             sectionHeader = "%s\nQuorumd Disk Configuration Known Issues\n%s" %(self.__seperator, self.__seperator)
-            rstring += "%s\n%s:\n%s\n" %(sectionHeader, cca.getClusterName(), quorumdConfigString)
+            rstring += "%s\n%s:\n%s\n\n" %(sectionHeader, cca.getClusterName(), quorumdConfigString)
 
         # ###################################################################
         # Check cluster nodes configuration
