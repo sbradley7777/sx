@@ -24,10 +24,104 @@ from sx.plugins.lib.clusterha.clusternode import ClusterNode
 from sx.plugins.lib.clusterha.clusternode import ClusterNodeNetworkMap
 from sx.plugins.lib.clusterha.clusternode import ClusterStorageFilesystem
 
-# For finding quorum disk
+# For finding quorum disk.
 from sx.plugins.lib.storage.devicemapperparser import DeviceMapperParser
 from sx.plugins.lib.storage.devicemapperparser import DMSetupInfoC
 from sx.plugins.lib.clusterha.clustercommandsparser import ClusterCommandsParser
+
+# These are for the CompareReports class.
+from copy import deepcopy
+import operator
+
+class CompareReports:
+    def __init__(self, title, description, listOfReportNames):
+        self.__title = title
+        self.__description = description
+        self.__listOfReportNames = listOfReportNames
+
+        # The key is a string that will be some value that is found in
+        # the report. The value of key will be the name of the report.
+
+        # The key with least number of items will be considered the
+        # key that is incorrect or we shall say it will be the one
+        # outside the norm cause who is stay which is correct.
+        self.__compareMap = {}
+
+    def __str__(self):
+        return "%s: %s"%(self.__title, self.__description)
+
+    def getTitle(self):
+        return self.__title
+
+    def getDescription(self):
+        return self.__description
+
+    def getCompareMap(self):
+        return self.__compareMap
+
+    def getListOfReportNames(self):
+        return self.__listOfReportNames
+
+    def isIdentical(self):
+        # If all the reports had the same size then the size of the
+        # map should be 1. Else there was no reports compared or there
+        # was a mismatch so multiple keys created.
+        return (len(self.__compareMap.keys()) == 1)
+
+    def __getCompareValueCountTuples(self):
+        # Get the items that are not equal to the majority of
+        # items. There could be instances where there is multiple keys
+        # with same value count that is the highest and there is no
+        # way to tell which is diff so none of those returned.
+        compareMap = self.getCompareMap()
+        compareValueCountMap = {}
+        for key in compareMap.keys():
+            compareValueCountMap[key] = len(compareMap.get(key))
+        sortedTuples = sorted(compareValueCountMap.iteritems(), key=operator.itemgetter(1))
+        return sortedTuples
+
+    def getNonBaseCompareMap(self):
+        # Get a map with least number of reports.
+        compareValueCountTuples = self.__getCompareValueCountTuples()
+        compareValueCountTuples.reverse()
+        rMap = {}
+        maxCountValue = compareValueCountTuples[0][1]
+        for cTuple in compareValueCountTuples:
+            currentCountKey = cTuple[0]
+            currentCountValue = cTuple[1]
+            if (currentCountValue < maxCountValue):
+                valueCopy = deepcopy(self.__compareMap.get(currentCountKey))
+                if (rMap.has_key(currentCountKey)):
+                    rMap[currentCountKey].append(valueCopy)
+                else:
+                    rMap[currentCountKey] = valueCopy
+        return rMap
+
+    def getBaseCompareMap(self):
+        # Get a map with most number of reports.
+        compareValueCountTuples = self.__getCompareValueCountTuples()
+        compareValueCountTuples.reverse()
+        rMap = {}
+        maxCountValue = compareValueCountTuples[0][1]
+        for cTuple in compareValueCountTuples:
+            currentCountKey = cTuple[0]
+            currentCountValue = cTuple[1]
+            if (currentCountValue >= maxCountValue):
+                valueCopy = deepcopy(self.__compareMap.get(currentCountKey))
+                if (rMap.has_key(currentCountKey)):
+                    rMap[currentCountKey].append(valueCopy)
+                else:
+                    rMap[currentCountKey] = valueCopy
+            # I could break if the if is false, but we let it cycle
+            # through cause should be quick loop.
+        return rMap
+
+    def add(self, compareString, reportName):
+        if (reportName in self.__listOfReportNames):
+            if (self.__compareMap.has_key(compareString)):
+                self.__compareMap[compareString].append(reportName)
+            else:
+                self.__compareMap[compareString] = [reportName]
 
 class ClusterEvaluator():
     def __init__(self, cnc):
@@ -560,6 +654,55 @@ class ClusterEvaluator():
     # #######################################################################
     # Evaluate Function
     # #######################################################################
+    def __compareToString(self, compareReports):
+        rString = ""
+        nonBaseCompareMap = compareReports.getNonBaseCompareMap()
+        if (not len(nonBaseCompareMap.keys()) > 0):
+            return rString
+        rString = "%s\n" %(compareReports)
+        rString += "\tThe following hosts had similar compared values:\n"
+        baseCompareMap = compareReports.getBaseCompareMap()
+        keys = baseCompareMap.keys()
+        keys.sort()
+        for key in keys:
+            reportNames = baseCompareMap.get(key)
+            reportNames.sort()
+            for reportName in reportNames:
+                rString += "\t%s: %s\n" %(reportName, key)
+
+        rString += "\n\tThe following hosts had different values than the above compared values:\n"
+        keys = nonBaseCompareMap.keys()
+        keys.sort()
+        for key in keys:
+            reportNames = nonBaseCompareMap.get(key)
+            reportNames.sort()
+            for reportName in reportNames:
+                rString += "\t%s: %s\n" %(reportName, key)
+        return rString
+
+    def __compare(self):
+        rString = ""
+        clusternodeCount = self.__cnc.count()
+        if (not clusternodeCount > 1):
+            return rString
+        # Compare kernel version and arch
+        compareKernelVersion = CompareReports("Compare Kernel Version", "Compare the kernel version from the uname output.", self.__cnc.getClusterNodeNames())
+        compareArchVersion = CompareReports("Compare Kernel Arch Version", "Compare the kernel arch version from the uname output.", self.__cnc.getClusterNodeNames())
+        for clusternode in self.__cnc.getClusterNodes():
+            uname = clusternode.getUnameA().strip()
+            unameSplit = uname.split()
+            compareKernelVersion.add(unameSplit[2].strip(), clusternode.getClusterNodeName())
+            compareArchVersion.add(unameSplit[11].strip(), clusternode.getClusterNodeName())
+
+
+        if (not compareKernelVersion.isIdentical()):
+            rString += "%s\n" %(self.__compareToString(compareKernelVersion))
+        if (not compareArchVersion.isIdentical()):
+            rString += "%s\n" %(self.__compareToString(compareArchVersion))
+        return rString
+    # #######################################################################
+    # Evaluate Function
+    # #######################################################################
     def evaluate(self):
         """
          * If two node cluster, check if hb and fence on same network. warn qdisk required if not or fence delay.
@@ -714,5 +857,14 @@ class ClusterEvaluator():
         if (len(resultString) > 0):
             rstring += resultString
         # ###################################################################
-        # return string
+        # Compare ClusterNodes
+        # ###################################################################
+        resultString = self.__compare()
+        if (len(resultString) > 0):
+            sectionHeader = "%s\nClusternode Comparsion\n%s" %(self.__seperator, self.__seperator)
+            description =  "The following section will show the difference between the reports when a value in a file is\n"
+            description += "compared against all the reports. The section will list the reports with similar values\n"
+            description += "and ones that are different then the similar values. The similar values is the highest number\n"
+            description += "of reports with the same value.\n"
+            rstring += "%s\n%s\n%s\n" %(sectionHeader, description, resultString)
         return rstring

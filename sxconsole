@@ -700,42 +700,56 @@ class ExtendOption (Option):
             else:
                 Option.take_action(self, action, dest, opt, value, values, parser)
 
-
-
-
 # ###############################################################################
 # Simple function to print info about what files were uploaded.
 # ###############################################################################
 def __printToConsole(pathToCompressedReports, pathToExtractedReports, mapOfPluginReportPaths, listOfNonReportPaths):
+    # If any path starts with home directory then change to tilda.OB
+    homeDirectory = os.environ["HOME"]
+
     # Print the report archive location
-    if ((len(pathToCompressedReports) > 0) or
-        (len(pathToExtractedReports) > 0)):
-        print
-        print "%s" %(ConsoleUtil.colorText("Details of Report Extraction: ","lcyan"))
-        print "%s %s" %(ConsoleUtil.colorText("Compressed Reports Path:  ","lgreen"), pathToCompressedReports)
-        print "%s %s" %(ConsoleUtil.colorText("Extracted Reports Path:   ","lgreen"), pathToExtractedReports)
-        if (len(listOfNonReportPaths) > 0):
-            pathToNonReportFiles = os.path.split(listOfNonReportPaths[0])[0]
-            print "%s %s" %(ConsoleUtil.colorText("Non-Reports Files Path:   ","lgreen"), pathToNonReportFiles)
-        print
+    wasInformationPrintedToConsole = False
+    if ((os.path.exists(pathToCompressedReports)) or
+        (os.path.exists(pathToExtractedReports))):
+        wasInformationPrintedToConsole = True
+        print "\n%s" %(ConsoleUtil.colorText("Details of Report Extraction: ","lcyan"))
+        print "%s%s" %(ConsoleUtil.colorText("Compressed Reports Directory: ","lgreen"), pathToCompressedReports.replace(homeDirectory, "~"))
+        print "%s%s" %(ConsoleUtil.colorText("Extracted Reports Directory:  ","lgreen"), pathToExtractedReports.replace(homeDirectory, "~"))
 
     # Print all the paths to files created by the plugins
     if (len(mapOfPluginReportPaths.keys()) > 0):
-        print "%s" %(ConsoleUtil.colorText("List of Files Created by the Plugins: ","lcyan"))
+        headerPrinted = False
+        wasInformationPrintedToConsole = True
         for key in mapOfPluginReportPaths.keys():
             index = 1;
             for pathToPluginReport in mapOfPluginReportPaths[key]:
-                print "%s %s" %(ConsoleUtil.colorText("%s plugin File %d: " %(key, index),"lgreen"), pathToPluginReport)
+                if (not index == 1):
+                    print "%s %s" %(ConsoleUtil.colorText("%s plugin File %d: " %(key, index),"lgreen"), pathToPluginReport.replace(homeDirectory, "~"))
+                else:
+                    if(headerPrinted):
+                        print "\n%s %s" %(ConsoleUtil.colorText("%s plugin File %d: " %(key, index),"lgreen"), pathToPluginReport.replace(homeDirectory, "~"))
+                    else:
+                        print "\n%s" %(ConsoleUtil.colorText("List of Files Created by the Plugins: ","lcyan"))
+                        print "%s %s" %(ConsoleUtil.colorText("%s plugin File %d: " %(key, index),"lgreen"), pathToPluginReport.replace(homeDirectory, "~"))
+                        headerPrinted = True
                 index += 1;
-            print
 
     if (len(listOfNonReportPaths) > 0) :
-        print "%s" %(ConsoleUtil.colorText("Details for Non-Report Files: ","lcyan"))
+        wasInformationPrintedToConsole = True
+        print "\n%s" %(ConsoleUtil.colorText("Details for Non-Report Files: ","lcyan"))
         index = 1;
         for pathToNonReportFile in listOfNonReportPaths:
-            print "%s %s" %(ConsoleUtil.colorText("Non-Report File %d: " %(index),"lgreen"), pathToNonReportFile)
+            if (index == 1):
+                (dirPath, filename) = os.path.split(pathToNonReportFile)
+                print "%s %s" %(ConsoleUtil.colorText("Non-Report Files Directory:", "lgreen"), dirPath.replace(homeDirectory, "~"))
+            spacingCount = 7
+            if (index >= 10):
+                spacingCount = 6
+            print "%s %s %s" %(ConsoleUtil.colorText("Non-Report File %d: " %(index),"lgreen"), (" " * spacingCount), pathToNonReportFile.replace(homeDirectory, "~"))
             index += 1;
-        print
+    if (not wasInformationPrintedToConsole):
+        message = "There was zero reports extracted and zero non-report files added."
+        logging.getLogger(sx.MAIN_LOGGER_NAME).warning(message)
 
 # ###############################################################################
 # Main Function
