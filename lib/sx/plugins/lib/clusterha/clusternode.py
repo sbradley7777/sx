@@ -115,7 +115,7 @@ class ClusterStorageFilesystem(FilesysMount):
     def addClusteredSMBSection(self, name, smbSection):
         # Overwrite existing list if it is already in map.
         if (self.__smbClusteredSectionsMap.has_key(name)):
-            smbSectionList = self.__smbClusteredSectionsMap.get(name)
+            self.__smbSectionList = self.__smbClusteredSectionsMap.get(name)
         else:
             self.__smbClusteredSectionsMap[name]  = [smbSection]
 

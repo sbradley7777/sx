@@ -59,7 +59,7 @@ class Storage(sx.plugins.PluginBase):
         @type reports: Array
         """
         message = "Running setup for plugin: %s" %(self.getName())
-        logging.getLogger(sx.MAIN_LOGGER_NAME).log(LogWriter.STATUS_LEVEL, message)
+        logging.getLogger(sx.MAIN_LOGGER_NAME).status(message)
         for report in reports:
             message = "Getting the files for the report for report with  hostname of: %s." %(report.getHostname())
             logging.getLogger(sx.MAIN_LOGGER_NAME).debug(message)
@@ -73,7 +73,7 @@ class Storage(sx.plugins.PluginBase):
         This function will write the data that was analyzed to a file.
         """
         message = "Generating report for plugin: %s" %(self.getName())
-        logging.getLogger(sx.MAIN_LOGGER_NAME).log(LogWriter.STATUS_LEVEL, message)
+        logging.getLogger(sx.MAIN_LOGGER_NAME).status(message)
 
         if (len(self.__listOfStorageData) > 0):
             # Since we are going to run the plugin and create files in

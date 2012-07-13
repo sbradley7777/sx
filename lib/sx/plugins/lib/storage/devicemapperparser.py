@@ -9,10 +9,6 @@ sos_commands/devicemapper
 @version   :  2.10
 @copyright :  GPLv2
 """
-import logging
-
-import sx
-from sx.logwriter import LogWriter
 
 class DeviceMapperParser:
     def parseDMSetupInfoCData(dmSetupInfoCData):
@@ -161,7 +157,7 @@ class PVS_AV:
         return self.__pSize
 
     def getPFree(self):
-        return self.__pfree
+        return self.__pFree
 
     def getDeviceSize(self):
         return self.__deviceSize

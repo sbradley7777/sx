@@ -8,7 +8,6 @@ base class that all report types should inherit.
 @version   :  2.10
 @copyright :  GPLv2
 """
-import string
 import os
 import os.path
 import shutil
@@ -421,7 +420,7 @@ class Report:
         @type extractDir: String
         """
         message = "Extracting the %s: %s" %(self.getName(), extractor.getPathToFile())
-        logging.getLogger(sx.MAIN_LOGGER_NAME).log(LogWriter.STATUS_LEVEL, message)
+        logging.getLogger(sx.MAIN_LOGGER_NAME).status(message)
         if (not len(extractDir) > 0):
             return False
         # Check for duplicate extraction point and rename if it exists.

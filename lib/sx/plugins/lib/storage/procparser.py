@@ -9,11 +9,6 @@ located in the /proc directory.
 @copyright :  GPLv2
 """
 import re
-import logging
-
-import sx
-from sx.logwriter import LogWriter
-
 
 class ProcParser:
     def parseProcPartitionsData(procPartitionsData):

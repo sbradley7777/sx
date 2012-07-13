@@ -14,10 +14,8 @@ import os.path
 import string
 import re
 import logging
-import StringIO
 import shutil
 import hashlib
-import time
 import datetime
 import textwrap
 
@@ -454,7 +452,7 @@ class FileUtil:
         return modTimestamp
     getFileModificationTimestamp = staticmethod(getFileModificationTimestamp)
 
-    def isFilesIdentical(pathToBaseFile, pathToFilesList) :
+    def isFilesIdentical(pathToFilesList) :
         """
         This function uses md5sum to verify that all files in array
         have same md5sum as the base file. If all files have same
@@ -466,9 +464,6 @@ class FileUtil:
         @return: True if cluster.confs are same on ClusterNode's.
         @rtype: Boolean
 
-        @param pathToBaseFile: The path to the base file that all files
-        will be compared against.
-        @type pathToBaseFile: String
         @param pathToFilesList: A list of files that will be
         compared. This can include the base file.
         @type pathToFilesList: Array
@@ -847,7 +842,9 @@ class StringUtil:
                         try:
                             newRows[ccListIndex][currentColIndex] = currentColList[ccListIndex]
                         except IndexError:
-                            newRow = ["" for x in range(len(currentRow))]
+                            newRow = []
+                            for i in range(len(currentRow)):
+                                newRow[i] = ""
                             newRow[currentColIndex] = currentColList[ccListIndex]
                             newRows.append(newRow)
                 currentColIndex = currentColIndex + 1
@@ -868,8 +865,7 @@ class StringUtil:
             headerSeperatorList = []
             for colMaxSize in col_paddings:
                 currentHeaderSeperator = ""
-                for index in range(0, colMaxSize):
-                    currentHeaderSeperator += "-"
+                currentHeaderSeperator += "-" * colMaxSize
                 headerSeperatorList.append(currentHeaderSeperator)
             copyOfTable.insert(1, headerSeperatorList)
         for row in copyOfTable:
@@ -885,4 +881,3 @@ class StringUtil:
                     continue
             tableStringsList.append(tableStrings)
         return tableStringsList
-

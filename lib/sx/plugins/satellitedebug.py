@@ -9,6 +9,7 @@ validation tests.
 @copyright :  GPLv2
 """
 import logging
+import os
 
 import sx
 import sx.plugins
@@ -49,7 +50,7 @@ class Satellitedebug(sx.plugins.PluginBase):
         @type reports: Array
         """
         message = "Running setup for plugin: %s" %(self.getName())
-        logging.getLogger(sx.MAIN_LOGGER_NAME).log(LogWriter.STATUS_LEVEL, message)
+        logging.getLogger(sx.MAIN_LOGGER_NAME).status(message)
         for report in reports:
             if (self.isValidReportType(report)) :
                 timestamp = report.getDataFromFile("timestamp")
@@ -64,7 +65,7 @@ class Satellitedebug(sx.plugins.PluginBase):
         This function will report about the information gather.
         """
         message = "Generating report for plugin: %s" %(self.getName())
-        logging.getLogger(sx.MAIN_LOGGER_NAME).log(LogWriter.STATUS_LEVEL, message)
+        logging.getLogger(sx.MAIN_LOGGER_NAME).status(message)
         if(len(self.__rhnSatDebugReports) > 0):
             # Since we are going to run the plugin and create files in
             # the plugins report directory then we will first remove

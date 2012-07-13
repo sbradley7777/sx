@@ -8,7 +8,6 @@ link in known issues with links to resolution.
 @version   :  2.10
 @copyright :  GPLv2
 """
-import re
 import os.path
 import logging
 

@@ -73,7 +73,7 @@ class Checksysreport(sx.plugins.PluginBase):
             logging.getLogger(sx.MAIN_LOGGER_NAME).error(message)
             return ""
         message = "Running checksysreport against the directory: %s" % (pathToDir)
-        logging.getLogger(sx.MAIN_LOGGER_NAME).log(LogWriter.STATUS_LEVEL, message)
+        logging.getLogger(sx.MAIN_LOGGER_NAME).status(message)
 
         command = [Checksysreport.CHECKSYSREPORT_EXE, "-h"]
         task = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -114,7 +114,7 @@ class Checksysreport(sx.plugins.PluginBase):
                 logging.getLogger(sx.MAIN_LOGGER_NAME).error(message)
                 return ""
             message = "Running checksysreport against the directory: %s" % (pathToDir)
-            logging.getLogger(sx.MAIN_LOGGER_NAME).log(LogWriter.STATUS_LEVEL, message)
+            logging.getLogger(sx.MAIN_LOGGER_NAME).status(message)
             chksys=checksysreport_wrapper.checksysreport_wrapper(pathToDir)
             data = chksys.generate_report()
             # Convert text format to utf8 to avoid unicode errors
@@ -154,7 +154,7 @@ class Checksysreport(sx.plugins.PluginBase):
         @type reports: Array
         """
         message = "Running setup for plugin: %s" %(self.getName())
-        logging.getLogger(sx.MAIN_LOGGER_NAME).log(LogWriter.STATUS_LEVEL, message)
+        logging.getLogger(sx.MAIN_LOGGER_NAME).status(message)
         pathToInstalledRPMSList = ["sos_commands/rpm/rpm_-qa_--qf_NAME_-_VERSION_-_RELEASE_-_ARCH_INSTALLTIME_date_.b",
                                    "sos_commands/rpm/rpm_-qa_--qf_NAME_-_VERSION_-_RELEASE_._ARCH_INSTALLTIME_date_.b",
                                    "sos_commands/rpm/rpm_-qa_--qf_NAME_-_VERSION_-_RELEASE_-_ARCH" ,
@@ -184,7 +184,7 @@ class Checksysreport(sx.plugins.PluginBase):
         "~/.checksysreportrc."
         """
         message = "Running execute for plugin: %s" %(self.getName())
-        logging.getLogger(sx.MAIN_LOGGER_NAME).log(LogWriter.STATUS_LEVEL, message)
+        logging.getLogger(sx.MAIN_LOGGER_NAME).status(message)
         if (not os.path.exists(Checksysreport.CHEKCSYSREPORT_CONFIG_FILE)):
             message = "There was no configuration file for checksysreport, please create the config file: %s." %(Checksysreport.CHEKCSYSREPORT_CONFIG_FILE)
             logging.getLogger(sx.MAIN_LOGGER_NAME).error(message)
@@ -221,7 +221,7 @@ class Checksysreport(sx.plugins.PluginBase):
         This function will write the checksysreport data to a file.
         """
         message = "Generating report for plugin: %s" %(self.getName())
-        logging.getLogger(sx.MAIN_LOGGER_NAME).log(LogWriter.STATUS_LEVEL, message)
+        logging.getLogger(sx.MAIN_LOGGER_NAME).status(message)
         if (len(self.__chksysData.keys()) > 0):
             # Since we are going to run the plugin and create files in
             # the plugins report directory then we will first remove

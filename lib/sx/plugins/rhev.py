@@ -46,7 +46,7 @@ class Rhev(sx.plugins.PluginBase):
         @type reports: Array
         """
         message = "Running setup for plugin: %s" %(self.getName())
-        logging.getLogger(sx.MAIN_LOGGER_NAME).log(LogWriter.STATUS_LEVEL, message)
+        logging.getLogger(sx.MAIN_LOGGER_NAME).status(message)
         for report in reports:
             if ((self.isValidReportType(report))  and
                 ((report.getName().lower() == "sosreport") or (report.getName().lower() == "sysreport"))):
@@ -61,7 +61,7 @@ class Rhev(sx.plugins.PluginBase):
         Does the action for rhev log collector report.
         """
         message = "Performing action for plugin: %s" %(self.getName())
-        logging.getLogger(sx.MAIN_LOGGER_NAME).log(LogWriter.STATUS_LEVEL, message)
+        logging.getLogger(sx.MAIN_LOGGER_NAME).status(message)
 
         if (len(self.__psDataMap.keys()) > 0):
             # Since we are going to run the plugin and create files in

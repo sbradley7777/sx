@@ -13,7 +13,6 @@ $ cp demoreport.py $HOME/.sx/sxreports/
 @copyright :  GPLv2
 """
 import os.path
-import re
 import logging
 
 import sx

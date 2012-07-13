@@ -9,7 +9,6 @@ This contains Global variables for sx.
 """
 import sys
 import os.path
-import re
 import time
 import logging
 
@@ -290,7 +289,7 @@ class SXConfigurationFiles:
                      os.path.join(SXConfigurationFiles.CONFIGURATION_DIR, SXConfigurationFiles.PLUGIN_USER_IMPORT)):
             if not os.access(path, os.F_OK):
                 message = "Creating the configuration directory: %s" % (path)
-                logging.getLogger(MAIN_LOGGER_NAME).log(LogWriter.STATUS_LEVEL, message)
+                logging.getLogger(MAIN_LOGGER_NAME).status(message)
                 try:
                     os.makedirs(path)
                 except IOError:

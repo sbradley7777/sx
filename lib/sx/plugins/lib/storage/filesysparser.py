@@ -9,11 +9,6 @@ located in the sos_commands/filesys directory.
 @copyright :  GPLv2
 """
 import re
-import logging
-
-import sx
-from sx.logwriter import LogWriter
-
 
 class FilesysParser:
     def parseEtcExportsbData(etcExportsData):
@@ -80,15 +75,15 @@ class FilesysParser:
         parsedList = []
         if (etcFstabData == None):
             return parsedList
-
+        # I believe i was looking for supported/unsupported fs. 
+        """
         fsTypesString = ""
         for fsType in fsTypeList:
             if (not len(fsTypesString) == 0):
                 fsTypesString += "|"
             fsTypesString += "%s"%(fsType)
         fsTypesRegex = "(?P<fsType>%s)" %(fsTypesString)
-
-
+        """
         for line in etcFstabData:
             if (not line.startswith("#") and (len(line) > 0)):
                 splitLine = line.strip().split()

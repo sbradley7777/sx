@@ -9,10 +9,6 @@ sos_commands/kernel/
 @version   :  2.10
 @copyright :  GPLv2
 """
-import logging
-
-import sx
-from sx.logwriter import LogWriter
 
 class ModulesParser:
     def parseEtcModprobeConf(etcModprobeConfData):

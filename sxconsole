@@ -105,7 +105,7 @@ def extractReports(caseNumber, al, pathToExtractedReports, listOfReports,
         # Extract reports that have not been archived from the list of reports
         listOfReports = __getListOfReports(listOfReports, pathToReportsDirectory)
         message = "The list of files are being processed to see if they contain any know report types that can be extracted. This could take a while are large reports."
-        logging.getLogger(sx.MAIN_LOGGER_NAME).log(LogWriter.STATUS_LEVEL, message)
+        logging.getLogger(sx.MAIN_LOGGER_NAME).status(message)
         reportsExtracted = __extract(listOfReports, al.getPathToCompressedReports(),
                                      al.getPathToExtractedReports(), includeUserDefinedModules)
         message = "There was %d reports extracted." %(len(reportsExtracted))
@@ -131,7 +131,7 @@ def __load(pathToExtractedReports, includeUserDefinedModules):
     @type includeUserDefinedModules: Boolean
     """
     message = "Loading all the known report types for previously extracted reports."
-    logging.getLogger(sx.MAIN_LOGGER_NAME).log(LogWriter.STATUS_LEVEL, message)
+    logging.getLogger(sx.MAIN_LOGGER_NAME).status(message)
     # Zero out the list because this is new load of reports
     listOfReports = []
     reportsLoader = ReportsLoader()
@@ -216,7 +216,7 @@ def __extract(listOfUnextractedReports, pathToCompressedReports,
                                                                                                            len(listOfUnextractedReports),
                                                                                                            report.getName())
                         message += "to see if contain any other known report types."
-                        logging.getLogger(sx.MAIN_LOGGER_NAME).log(LogWriter.STATUS_LEVEL, message)
+                        logging.getLogger(sx.MAIN_LOGGER_NAME).status(message)
                         # Now do a little recursion
                         reportsWithinReportList += __extract(listOfFilesInExtractedReports, pathToCompressedReports,
                                                              pathToExtractedReports, includeUserDefinedModules)
@@ -444,7 +444,7 @@ def __moveNonReportFiles(nonReportFilesPath, filePathArray) :
             (head, tail) = os.path.split(src)
             dst_filename = os.path.join(nonReportFilesPath, tail)
             message = "Moving the file to the archive directory: %s." %(tail)
-            logging.getLogger(sx.MAIN_LOGGER_NAME).log(LogWriter.STATUS_LEVEL, message)
+            logging.getLogger(sx.MAIN_LOGGER_NAME).status(message)
             try:
                 shutil.move(src, dst_filename)
                 filePathsAdded.append(dst_filename)

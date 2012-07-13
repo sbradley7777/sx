@@ -17,8 +17,6 @@ class LogWriter :
     """
     The Logger Class will log messages to console or to a file.
 
-    @cvar PASSED_LEVEL: Int that represents the message level.
-    @type PASSED_LEVEL: Int
     @cvar STATUS_LEVEL: Int that represents the message level.
     @type STATUS_LEVEL: Int
     @cvar INFO_LEVEL: Int that represents the message level.
@@ -27,8 +25,6 @@ class LogWriter :
     @type ERROR_LEVEL: Int
     @cvar WARNING_LEVEL: Int that represents the message level.
     @type WARNING_LEVEL: Int
-    @cvar FAILED_LEVEL: Int that represents the message level.
-    @type FAILED_LEVEL: Int
     @cvar CRITICAL_LEVEL: Int that represents the message level.
     @type CRITICAL_LEVEL: Int
     @cvar DEBUG_LEVEL: Int that represents the message level.
@@ -39,9 +35,9 @@ class LogWriter :
     CRITICAL_LEVEL = logging.CRITICAL        #50
     ERROR_LEVEL    = logging.ERROR           #40
     WARNING_LEVEL  = logging.WARN            #30
-    FAILED_LEVEL   = logging.WARN + 1        #31
+    # FAILED_LEVEL   = logging.WARN + 1        #31
     STATUS_LEVEL   = logging.INFO + 2        #22
-    PASSED_LEVEL   = logging.INFO + 1        #21
+    # PASSED_LEVEL   = logging.INFO + 1        #21
     INFO_LEVEL     = logging.INFO            #20
     DEBUG_LEVEL    = logging.DEBUG           #10
     DISABLE_LOGGING = logging.NOTSET         #0
@@ -64,16 +60,19 @@ class LogWriter :
         @param disableConsoleLog: This will disable writing to console
         @type disableConsoleLog: Boolean
         """
+        self.__loggerName = loggerName
         # add new custom logging level
-        logging.PASSED = LogWriter.PASSED_LEVEL
+        # logging.PASSED = LogWriter.PASSED_LEVEL
+        # logging.FAILED = LogWriter.FAILED_LEVEL
+        # logging.addLevelName(logging.PASSED, "PASSED")
+        # logging.addLevelName(logging.FAILED, "FAILED")
         logging.STATUS = LogWriter.STATUS_LEVEL
-        logging.FAILED = LogWriter.FAILED_LEVEL
-        logging.addLevelName(logging.PASSED, "PASSED")
         logging.addLevelName(logging.STATUS, "STATUS")
-        logging.addLevelName(logging.FAILED, "FAILED")
-        #logging.root.setLevel([logging.DEBUG, logging.INFO, logging.PASSED, logging.STATUS, logging.WARNING,
-        #                       logging.ERROR, logging.FAILED, logging.CRITICAL]
-
+        logger = logging.getLogger(self.__loggerName)
+        # Create a function for the STATUS_LEVEL since not defined by
+        # python. This means you can call it like the other predefined message
+        # functions. Example: logging.getLogger("loggerName").status(message)
+        setattr(logger, "status", lambda *args: logger.log(LogWriter.STATUS_LEVEL, *args))
         # set formatter
         formatter = logging.Formatter(format)
         # get logger and set format
@@ -203,10 +202,14 @@ class StreamHandlerColorized(logging.StreamHandler):
             msg = self.format(record)
             #find which message level this is
             colorizedMsg = None
-            if (msg.find("PASSED") >= 0) :
-                colorizedMsg = self.__colorizeText("PASSED", "lblue")
-                msg = msg.replace("PASSED", colorizedMsg, 1)
-            elif (msg.find("STATUS") >= 0) :
+            #if (msg.find("PASSED") >= 0) :
+            #    colorizedMsg = self.__colorizeText("PASSED", "lblue")
+            #    msg = msg.replace("PASSED", colorizedMsg, 1)
+            # elif (msg.find("FAILED") >= 0) :
+            #    colorizedMsg = self.__colorizeText("FAILED", "red")
+            #    msg = msg.replace("FAILED", colorizedMsg, 1)
+
+            if (msg.find("STATUS") >= 0) :
                 colorizedMsg = self.__colorizeText("STATUS", "brown")
                 msg = msg.replace("STATUS", colorizedMsg, 1)
             elif (msg.find("INFO") >= 0) :
@@ -218,9 +221,6 @@ class StreamHandlerColorized(logging.StreamHandler):
             elif (msg.find("WARNING") >= 0) :
                 colorizedMsg = self.__colorizeText("WARNING", "yellow")
                 msg = msg.replace("WARNING", colorizedMsg, 1)
-            elif (msg.find("FAILED") >= 0) :
-                colorizedMsg = self.__colorizeText("FAILED", "red")
-                msg = msg.replace("FAILED", colorizedMsg, 1)
             elif (msg.find("CRITICAL") >= 0) :
                 colorizedMsg = self.__colorizeText("CRITICAL", "lred")
                 msg = msg.replace("CRITICAL", colorizedMsg, 1)

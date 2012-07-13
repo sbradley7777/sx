@@ -647,10 +647,10 @@ class ClusterHAConfAnalyzer :
         except AttributeError:
             return False
 
-    def isClusterConfFilesIdentical(self,listOfFiles) :
+    def isClusterConfFilesIdentical(self, listOfFiles) :
         if (not len(listOfFiles) > 1):
             return False
-        return  FileUtil.isFilesIdentical(self.__pathToClusterConf, listOfFiles)
+        return  FileUtil.isFilesIdentical(listOfFiles)
 
     def isQDiskEnabledWithHeurtistics(self):
         """
@@ -1049,13 +1049,13 @@ class ClusterHAConfAnalyzer :
         if (resourceType == "ip"):
             try:
                 address = resourceElement.attrib["address"]
-                return ClusteredResource(resourceType, address, False, attributesMap)
+                return ClusteredResource(resourceType, address, isPrivate, attributesMap)
             except KeyError:
                 return None
         else:
             try:
                 name = resourceElement.attrib["name"]
-                return ClusteredResource(resourceType, name, False, attributesMap)
+                return ClusteredResource(resourceType, name, isPrivate, attributesMap)
             except KeyError:
                 return None
         return None

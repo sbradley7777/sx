@@ -57,7 +57,7 @@ class Opensosreport(sx.plugins.PluginBase):
         @type reports: Array
         """
         message = "Running setup for plugin: %s" %(self.getName())
-        logging.getLogger(sx.MAIN_LOGGER_NAME).log(LogWriter.STATUS_LEVEL, message)
+        logging.getLogger(sx.MAIN_LOGGER_NAME).status(message)
         for report in reports:
             if (self.isValidReportType(report)) :
                 pathToHTMLReportFile = os.path.join(report.getPathToExtractedReport(), "sos_reports/sosreport.html")
@@ -72,12 +72,12 @@ class Opensosreport(sx.plugins.PluginBase):
         tab is created.
         """
         message = "Performing action for plugin: %s" %(self.getName())
-        logging.getLogger(sx.MAIN_LOGGER_NAME).log(LogWriter.STATUS_LEVEL, message)
+        logging.getLogger(sx.MAIN_LOGGER_NAME).status(message)
         keys = self.__pathToHTMLReportMap.keys()
         keys.sort()
         for key in keys:
             message = "Opening a tab that contains the generated html report for sosreport: %s" %(key)
-            logging.getLogger(sx.MAIN_LOGGER_NAME).log(LogWriter.STATUS_LEVEL, message)
+            logging.getLogger(sx.MAIN_LOGGER_NAME).status(message)
             webBrowserName = self.getOptionValue("fileviewer")
             if (len(webBrowserName) > 0):
                 try :

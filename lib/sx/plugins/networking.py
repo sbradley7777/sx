@@ -139,7 +139,7 @@ class Networking(sx.plugins.PluginBase):
         @type reports: Array
         """
         message = "Running setup for plugin: %s" %(self.getName())
-        logging.getLogger(sx.MAIN_LOGGER_NAME).log(LogWriter.STATUS_LEVEL, message)
+        logging.getLogger(sx.MAIN_LOGGER_NAME).status(message)
         for report in reports:
             message = "Getting the files for the report for report with  hostname of: %s." %(report.getHostname())
             logging.getLogger(sx.MAIN_LOGGER_NAME).debug(message)
@@ -186,7 +186,7 @@ class Networking(sx.plugins.PluginBase):
         This function will write the data that was analyzed to a file.
         """
         message = "Generating report for plugin: %s" %(self.getName())
-        logging.getLogger(sx.MAIN_LOGGER_NAME).log(LogWriter.STATUS_LEVEL, message)
+        logging.getLogger(sx.MAIN_LOGGER_NAME).status(message)
 
         stringUtil = StringUtil()
         if (len(self.__listOfNetworkingData) > 0):

@@ -72,7 +72,7 @@ class Clusterha(sx.plugins.PluginBase):
         @type reports: Array
         """
         message = "Running setup for plugin: %s" %(self.getName())
-        logging.getLogger(sx.MAIN_LOGGER_NAME).log(LogWriter.STATUS_LEVEL, message)
+        logging.getLogger(sx.MAIN_LOGGER_NAME).status(message)
         for report in reports:
             if (self.isValidReportType(report)) :
                 # Verify that cluster.conf exists because we need to sort the
@@ -100,7 +100,7 @@ class Clusterha(sx.plugins.PluginBase):
             logging.getLogger(sx.MAIN_LOGGER_NAME).warn(message)
         else:
             message = "Generating report for plugin: %s" %(self.getName())
-            logging.getLogger(sx.MAIN_LOGGER_NAME).log(LogWriter.STATUS_LEVEL, message)
+            logging.getLogger(sx.MAIN_LOGGER_NAME).status(message)
             message = "%s is generating a report for the Cluster(s) that were found." %(self.getName())
             logging.getLogger(sx.MAIN_LOGGER_NAME).info(message)
 
@@ -111,7 +111,7 @@ class Clusterha(sx.plugins.PluginBase):
 
             for clusterName in self.__clusterMap.keys():
                 message = "Analyzing and writing the report for the cluster: %s" %(clusterName)
-                logging.getLogger(sx.MAIN_LOGGER_NAME).log(LogWriter.STATUS_LEVEL, message)
+                logging.getLogger(sx.MAIN_LOGGER_NAME).status(message)
                 cnc = self.__clusterMap.get(clusterName)
                 self.__generateReport(cnc)
 

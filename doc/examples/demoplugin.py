@@ -59,7 +59,7 @@ class Demoplugin(sx.plugins.PluginBase):
         # Always print this message if you going to call this function
         # so that logging is notified that this function has been called.
         message = "Running setup for plugin: %s" %(self.getName())
-        logging.getLogger(sx.MAIN_LOGGER_NAME).log(LogWriter.STATUS_LEVEL, message)
+        logging.getLogger(sx.MAIN_LOGGER_NAME).status(message)
 
 
         # Create some variable to store some value. In most cases
@@ -117,7 +117,7 @@ class Demoplugin(sx.plugins.PluginBase):
         # Always print this message if you going to call this function
         # so that logging is notified that this function has been called.
         message = "Running execute for plugin: %s" %(self.getName())
-        logging.getLogger(sx.MAIN_LOGGER_NAME).log(LogWriter.STATUS_LEVEL, message)
+        logging.getLogger(sx.MAIN_LOGGER_NAME).status(message)
 
     def report(self) :
         """
@@ -127,7 +127,7 @@ class Demoplugin(sx.plugins.PluginBase):
         # Always print this message if you going to call this function
         # so that logging is notified that this function has been called.
         message = "Generating report for plugin: %s" %(self.getName())
-        logging.getLogger(sx.MAIN_LOGGER_NAME).log(LogWriter.STATUS_LEVEL, message)
+        logging.getLogger(sx.MAIN_LOGGER_NAME).status(message)
 
         # #######################################################################
         # Check any options that have been set and that will give
@@ -186,5 +186,5 @@ class Demoplugin(sx.plugins.PluginBase):
         # Always print this message if you going to call this function
         # so that logging is notified that this function has been called.
         message = "Performing action for plugin: %s" %(self.getName())
-        logging.getLogger(sx.MAIN_LOGGER_NAME).log(LogWriter.STATUS_LEVEL, message)
+        logging.getLogger(sx.MAIN_LOGGER_NAME).status(message)
 

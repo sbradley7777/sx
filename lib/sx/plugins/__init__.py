@@ -489,9 +489,9 @@ class PluginBase:
             filemode = "w"
             if (appendToFile):
                 filemode = "a"
-            file = open(pathToFilename, filemode)
-            file.write(data + "\n")
-            file.close()
+            fout = open(pathToFilename, filemode)
+            fout.write(data + "\n")
+            fout.close()
         except UnicodeEncodeError, e:
             # Python 2.6 has "as", 2.5 does not  except UnicodeEncodeError as e:
             message = "There was a unicode encode error on file: %s." %(filename)
@@ -500,30 +500,6 @@ class PluginBase:
         except IOError:
             message = "There was an error writing the file: %s." %(filename)
             logging.getLogger(sx.MAIN_LOGGER_NAME).error(message)
-
-    def writeRow(self, filename, list, colSize=40) :
-        """
-        This function will write a list of items into an evenly space
-        columns.
-
-        @param filename: The filename is a relative path. The function
-        will append the plugin report directory path to the start of
-        the filename to create the fullpath.
-        @type filename: String
-        @param list: This is the list of items that will be written.
-        @type list: Array
-        @param colSize: The maximum size of each column.
-        @type colSize: Int
-        """
-        if (len(list) > 0):
-            rowString = ""
-            for item in list:
-                spacesCol = ""
-                for num in range(0, (colSize - len(item))) :
-                    spacesCol += " "
-                rowString += "%s%s" %(str(item), spacesCol)
-
-            self.write(filename, rowString)
 
     def writeTestResult(self, filename, message, result) :
         """

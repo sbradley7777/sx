@@ -10,10 +10,6 @@ etc/redhat-release
 @copyright :  GPLv2
 """
 import re
-import logging
-
-import sx
-from sx.logwriter import LogWriter
 
 class DistroReleaseParser:
     def parseEtcRedHatReleaseRedhatReleaseData(etcRedHatReleaseData) :
