@@ -16,9 +16,7 @@ import logging
 import sx
 from sx.logwriter import LogWriter
 from sx.modulesloader import PluginsLoader
-from sx import SXConfigurationFiles
 from sx.tools import ConsoleUtil
-
 
 class PluginsHelper:
     def printPluginsList(self, includeUserPlugins=True):

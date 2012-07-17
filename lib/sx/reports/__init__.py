@@ -17,7 +17,6 @@ import logging
 import sx
 from sx.logwriter import LogWriter
 from sx.tools import ConsoleUtil
-from sx import SXConfigurationFiles
 from sx.modulesloader import ReportsLoader
 
 class ReportsHelper:

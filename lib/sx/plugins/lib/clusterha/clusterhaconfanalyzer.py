@@ -12,7 +12,6 @@ import os.path
 import re
 import string
 import logging
-import fileinput
 from xml.etree.ElementTree import XML, fromstring, tostring
 from xml.etree.ElementTree import ElementTree
 from xml.etree.ElementTree import Element

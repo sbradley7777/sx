@@ -7,12 +7,10 @@
 @copyright :  GPLv2
 """
 import os.path
-import string
 import logging
 import mimetypes
 import subprocess
 import shutil
-import time
 
 import sx
 from sx.logwriter import LogWriter

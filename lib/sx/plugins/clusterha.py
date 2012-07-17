@@ -30,6 +30,7 @@ from sx.plugins.lib.clusterha.clusternodes import ClusterNodes
 from sx.plugins.lib.clusterha.clusternode import ClusterNode
 from sx.plugins.lib.clusterha.clusterevaluator import ClusterEvaluator
 from sx.plugins.lib.clusterha.clusterhastretchevaluator import ClusterHAStretchEvaluator
+from sx.plugins.lib.clusterha.clusternodecompare import ClusternodeCompare
 
 from sx.reports.sosreport import Sosreport
 from sx.reports.sysreport import Sysreport
@@ -273,3 +274,21 @@ class Clusterha(sx.plugins.PluginBase):
                     self.write(filenameCE, "      reviewing the cluster.\n")
                     self.write(filenameCE, evaluatorResult.rstrip())
                     self.write(filenameCE, "")
+
+            # ###################################################################
+            # Verify the cluster node configuration
+            # ###################################################################
+            filenameCE = "%s-clusternode_compare.txt" %(cca.getClusterName())
+            clusternodeCompare = ClusternodeCompare(cnc)
+            compareResult = clusternodeCompare.compare()
+            if (len(compareResult) > 0):
+                if (len(missingNodesList) > 0):
+                    self.write(filenameCE, "%s\n\n" %(missingNodesMessage))
+                self.writeSeperator(filenameCE, "Clusternode Comparison");
+                self.write(filenameCE, "The following section will show the difference between the reports when a value in a file is")
+                self.write(filenameCE, "compared against all the reports. The section will list the reports with similar values")
+                self.write(filenameCE, "and ones that are different then the similar values. The similar values is the highest number")
+                self.write(filenameCE, "of reports with the same value.\n")
+
+                self.write(filenameCE, compareResult.rstrip())
+                self.write(filenameCE, "")

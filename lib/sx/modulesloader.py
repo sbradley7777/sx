@@ -11,7 +11,6 @@ PluginsLoader is a child of the ModulesLoader class that loads plugin modules.
 @version   :  2.10
 @copyright :  GPLv2
 """
-import string
 import os
 import os.path
 import logging
@@ -20,7 +19,6 @@ import re
 
 import sx
 from sx.logwriter import LogWriter
-from sx import SXConfigurationFiles
 
 class ModulesLoader :
     """
@@ -162,8 +160,8 @@ class ReportsLoader(ModulesLoader) :
 
         # The report classes
         self.__coreClasses = self.getClasses(self.__pathToBaseDir, sx.REPORT_CORE_IMPORT)
-        self.__userClasses = self.getClasses(SXConfigurationFiles.CONFIGURATION_DIR,
-                                             SXConfigurationFiles.REPORT_USER_IMPORT)
+        self.__userClasses = self.getClasses(sx.SXConfigurationFiles.CONFIGURATION_DIR,
+                                             sx.SXConfigurationFiles.REPORT_USER_IMPORT)
         # Build the regex for searching.
         self.__findRegexCore =self. __buildFindReportRegex(self.__coreClasses)
         self.__findRegexUser =self. __buildFindReportRegex(self.__userClasses)
@@ -300,8 +298,8 @@ class ReportsLoader(ModulesLoader) :
         """
         loadedModules = ModulesLoader.load(self, self.__pathToBaseDir, sx.REPORT_CORE_IMPORT)
         if (includeUserReports):
-            loadedModules += ModulesLoader.load(self, SXConfigurationFiles.CONFIGURATION_DIR,
-                                                SXConfigurationFiles.REPORT_USER_IMPORT)
+            loadedModules += ModulesLoader.load(self, sx.SXConfigurationFiles.CONFIGURATION_DIR,
+                                                sx.SXConfigurationFiles.REPORT_USER_IMPORT)
         return loadedModules
 
 
@@ -332,8 +330,8 @@ class PluginsLoader(ModulesLoader) :
         """
         mClasses = self.getClasses(self.__pathToBaseDir, sx.PLUGIN_CORE_IMPORT)
         if (includeUserPlugins):
-            mClasses += self.getClasses(SXConfigurationFiles.CONFIGURATION_DIR,
-                                       SXConfigurationFiles.PLUGIN_USER_IMPORT)
+            mClasses += self.getClasses(sx.SXConfigurationFiles.CONFIGURATION_DIR,
+                                       sx.SXConfigurationFiles.PLUGIN_USER_IMPORT)
         loadedModules = []
         for mClass in mClasses:
             if (not mClass == None):

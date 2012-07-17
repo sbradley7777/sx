@@ -9,7 +9,6 @@ to console then text will colorize the message type.
 @copyright :  GPLv2
 """
 import logging
-import time
 import os
 import sys
 

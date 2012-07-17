@@ -128,19 +128,19 @@ class ClusterEvaluator():
         if (not quorumd.getUseUptime() == "1"):
             description =  "The changing of the internal timers used by qdisk by setting "
             description += "\"use_uptime\" to a value that is not 1, is not supported."
-            urls = ["https://access.redhat.com/knowledge/articles/113803##The_option_use_uptime_is_not_supported"]
+            urls = []
             rString += StringUtil.formatBulletString(description, urls)
 
         qPriority = int(quorumd.getPriority())
         if (qPriority > quorumd.getPriorityMax(quorumd.getScheduler())):
             description  = "The quorumd \"priority\" %s is set too high and can preempt kernel threads that are being managed by the  " %(qPriority)
             description += "scheduler %s. The maximum value for the scheduler is %s." %(quorumd.getScheduler(), quorumd.getPriorityMax(quorumd.getScheduler()))
-            urls = ["https://access.redhat.com/knowledge/articles/113803###The_priority_is_set_too_high_or_too_low"]
+            urls = []
             rString += StringUtil.formatBulletString(description, urls)
         elif (qPriority < quorumd.getPriorityMin(quorumd.getScheduler())):
             description  = "The quorumd \"priority\" %s is not equal or greater than the minimum priority for the " %(qPriority)
             description += "scheduler %s. The minimum value for the scheduler is %s." %(quorumd.getScheduler(), quorumd.getPriorityMin(quorumd.getScheduler()))
-            urls = ["https://access.redhat.com/knowledge/articles/113803###The_priority_is_set_too_high_or_too_low"]
+            urls = []
             rString += StringUtil.formatBulletString(description, urls)
 
         """
@@ -176,7 +176,7 @@ class ClusterEvaluator():
         if ((int(quorumd.getVotes()) > 0) and (cca.isCmanTwoNodeEnabled())):
             description =  "The cluster has the option \"cman/@two_nodes\" enabled and also"
             description += "have set \"quorumd/@votes\" greater than 0 which is unsupported."
-            urls = ["https://access.redhat.com/knowledge/articles/113803###The_option_two_nodes_should_not_be_enabled"]
+            urls = []
             rString += StringUtil.formatBulletString(description, urls)
 
         # ###################################################################
@@ -193,14 +193,14 @@ class ClusterEvaluator():
             description += "rebooting on loss of score. The option does not change whether qdiskd "
             description += "reboots the host as a result of hanging for too long and getting "
             description += "evicted by other nodes in the cluster."
-            urls = ["https://access.redhat.com/knowledge/articles/113803#The_reboot_option_only_effects_loss_of_score"]
+            urls = []
             rString += StringUtil.formatBulletString(description, urls)
         if (quorumd.getAllowKill() == "0"):
             description =  "If the quorumd option allow_kill is set to 0 (off), qdiskd will not instruct cman to kill "
             description += "the cluster nodes that openais or corosync think are dead cluster nodes. Cluster nodes "
             description += "are still evicted via the qdiskd which will cause a reboot to occur. By default this option "
             description += "is set to 1."
-            urls = ["https://access.redhat.com/knowledge/articles/113803##The_allow_kill_is_for_handling_dead_nodes_detected_by_openais_and_corosync"]
+            urls = []
             rString += StringUtil.formatBulletString(description, urls)
 
         # ###################################################################

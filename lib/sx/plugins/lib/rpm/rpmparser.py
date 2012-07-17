@@ -61,7 +61,7 @@ class InstalledRPMS:
         self.__packageName = packageName
         self.__majorVersion = majorVersion
         self.__minorVersion = minorVersion
-
+        self.__releaseVersion = releaseVersion
         self.__distroVersion = distoVersion
         self.__arch = arch
 
@@ -80,11 +80,15 @@ class InstalledRPMS:
     def getMinorVersion(self):
         return self.__minorVersion
 
+    def getReleaseVersion(self):
+        return self.__releaseVersion
+
     def getDistroVersion(self):
         return self.__distroVersion
 
     def getArch(self):
         return self.__arch
+
 class RPMUtils:
     def getPackageVersion(installedRPMSData, packageList) :
         """

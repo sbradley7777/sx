@@ -15,13 +15,10 @@ http://bugs.python.org/issue6715
 """
 import os
 import os.path
-import string
 import logging
-import mimetypes
 import subprocess
 import shutil
 import time
-import re
 
 import sx
 from sx.logwriter import LogWriter

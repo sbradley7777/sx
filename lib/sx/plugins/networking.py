@@ -230,8 +230,9 @@ class Networking(sx.plugins.PluginBase):
             bridgedInterfaceTable = []
             for networkMap in networkMaps.getListOfBridgedNetworkMaps():
                 virtualBridgeNetworkMap = networkMap.getVirtualBridgedNetworkMap()
-                bridgedInterfaceTable.append([networkMap.getInterface(), virtualBridgeNetworkMap.getInterface(),
-                                             virtualBridgeNetworkMap.getIPv4Address()])
+                if (not virtualBridgeNetworkMap == None):
+                    bridgedInterfaceTable.append([networkMap.getInterface(), virtualBridgeNetworkMap.getInterface(),
+                                                  virtualBridgeNetworkMap.getIPv4Address()])
             if (len(bridgedInterfaceTable) > 0):
                 self.writeSeperator(filenameSummary, "Bridged Summary", True)
                 tableHeader = ["bridge_device", "virtual_bridge_device", "ipv4_addr"]
