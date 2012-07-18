@@ -30,6 +30,7 @@ lib/sx/plugins/lib/clusterha/clusterevaluator.py
 lib/sx/plugins/lib/clusterha/clusterhaconfanalyzer.py
 lib/sx/plugins/lib/clusterha/clusterhastretchevaluator.py
 lib/sx/plugins/lib/clusterha/clusternode.py
+lib/sx/plugins/lib/clusterha/clusternodecompare.py
 lib/sx/plugins/lib/clusterha/clusternodes.py
 lib/sx/plugins/lib/general/__init__.py
 lib/sx/plugins/lib/general/distroreleaseparser.py
