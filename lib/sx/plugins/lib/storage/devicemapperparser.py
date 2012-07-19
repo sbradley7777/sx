@@ -205,6 +205,12 @@ class VolumeGroups:
         attributesMap["clustered"] = attributesAsList[5]
         return attributesMap
 
+    def getAttribute(self, attributeName):
+        attributesMap = self.getAttributesMap()
+        if (attributesMap.has_key("clustered")):
+            return attributesMap.get("clustered")
+        return ""
+
     def getExtendSize(self):
         return self.__extendSize
 
@@ -225,6 +231,9 @@ class VolumeGroups:
 
     def getUUID(self):
         return self.__uuid
+
+    def isClusteredBitEnabled(self):
+        return (self.getAttribute("clustered") == "c")
 
 class LVSDevices:
     def __init__(self, pathToDevice, vgName, lvName, attributes, lSize):

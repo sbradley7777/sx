@@ -1,4 +1,6 @@
-* Tue Apr 18 2012 Shane Bradley <sbradley@redhat.com>- 2.11-0.0
+* Tue Jul 18 2012 Shane Bradley <sbradley@redhat.com>- 2.12-0.0
+* Add detection for GFS/GFS2 using clustered lvm filesystem.
+* Tue Jul 17 2012 Shane Bradley <sbradley@redhat.com>- 2.11-0.0
 - Added new comparision class for comparing clusternodes.
 - Added check for cluster names longer than 16 characters.
 - Added parser for sos_commands/devicemapper/[lvs_-a_-o_devices | vgs_-v | pvs_-a_-v]

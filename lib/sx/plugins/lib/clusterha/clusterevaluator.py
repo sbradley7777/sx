@@ -334,17 +334,41 @@ class ClusterEvaluator():
             rString += StringUtil.formatBulletString(description, urls)
         return rString
 
-    def __evaluateServiceIsEnabled(self, clusternode, serviceName):
-        rString = ""
-        for chkConfigItem in clusternode.getChkConfigList():
-            if (chkConfigItem.getName() == serviceName):
-                if(chkConfigItem.isEnabledRunlevel3()):
-                    rString += "3 "
-                if(chkConfigItem.isEnabledRunlevel4()):
-                    rString += "4 "
-                if(chkConfigItem.isEnabledRunlevel5()):
-                    rString += "5 "
-        return rString
+
+    def __getVolumeGroupForDevice(self, pathToDevice, vgsDevices, lvsDevices):
+        for lvs in lvsDevices:
+            vgName = lvs.getVGName().strip().rstrip()
+            lvName = lvs.getLVName().strip().rstrip()
+            # Possible vglv paths
+            pathToVGLVList = [os.path.join("/dev/mapper", "%s-%s" %(vgName, lvName)),
+                              os.path.join("/dev", "%s/%s" %(vgName, lvName))]
+            if (pathToDevice in pathToVGLVList):
+                for vgs in vgsDevices:
+                    if (vgs.getVGName() == vgName):
+                        return vgs
+        return None
+
+    def __isClusteredLVMFilesystem(self, clusternodeName, filesystem):
+        # Need to get all the different permutations of lvm device naming
+        pathToDevice = str(filesystem.getDeviceName().strip().rstrip())
+        devicemapperCommandsMap =  self.__cnc.getStorageData(clusternodeName).getDMCommandsMap()
+        vgsDevices = DeviceMapperParser.parseVGSVData(devicemapperCommandsMap.get("vgs_-v"))
+        lvsDevices = DeviceMapperParser.parseLVSDevicesData(devicemapperCommandsMap.get("lvs_-a_-o_devices"))
+
+        # This assumes that volume is in the list and vg will be found.
+        vg = self.__getVolumeGroupForDevice(pathToDevice, vgsDevices, lvsDevices)
+        if (not vg == None):
+            return vg.isClusteredBitEnabled()
+        # Return False if vg is not found.
+        return False
+
+    def __isLVMVolumeListEnabled(self):
+
+        return True
+
+    def __isLVMVolumeHALVM(self, clusternodeName, filesystem):
+
+        return True
 
     def __evaluateClusterStorage(self, cca):
         # Is active/active nfs supported? Sorta
@@ -376,6 +400,9 @@ class ClusterEvaluator():
             tableHeader = ["device_name", "mount_point", "nfs_mp", "smb_mp"]
             fsTable = []
             for csFilesystem in listOfClusterStorageFilesystems:
+                # Verify that the clustered filesystem has clusterbit set.
+                result = self.__isClusteredLVMFilesystem(clusternode.getClusterNodeName(), csFilesystem)
+                print "Cluster bit is set on %s: %s" %(csFilesystem.getDeviceName(), str(result))
                 # There are 4 ways of mounting gfs via nfs/smb at same time that
                 # needs to be checked:
 
@@ -494,6 +521,24 @@ class ClusterEvaluator():
                 else:
                     rString += "%s(Cluster Node ID: %s):\n%s\n\n" %(clusternode.getClusterNodeName(), clusternode.getClusterNodeID(), clusterNodeEvalString.rstrip())
         # Return the string
+        return rString
+
+
+    def __evaluateClusteredFilesystemResources(self):
+        rString = ""
+
+        return rString
+
+    def __evaluateServiceIsEnabled(self, clusternode, serviceName):
+        rString = ""
+        for chkConfigItem in clusternode.getChkConfigList():
+            if (chkConfigItem.getName() == serviceName):
+                if(chkConfigItem.isEnabledRunlevel3()):
+                    rString += "3 "
+                if(chkConfigItem.isEnabledRunlevel4()):
+                    rString += "4 "
+                if(chkConfigItem.isEnabledRunlevel5()):
+                    rString += "5 "
         return rString
 
     # #######################################################################
