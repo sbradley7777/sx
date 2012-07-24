@@ -211,15 +211,36 @@ class QuorumdHeuristic:
         return self.__tko
 
 class ClusterConfMount(FilesysMount):
-    def __init__(self, deviceName, mountPoint, fsType, mountOptions, resourceName, fsid):
+    def __init__(self, deviceName, mountPoint, fsType, mountOptions, resourceName, resourceType, fsid):
         # /etc/fstab does not have attributes section so we just set to empty string.
         FilesysMount.__init__(self, deviceName, mountPoint, fsType, "", mountOptions)
 
         self.__resourceName = resourceName
+        self.__resourceType = resourceType
         self.__fsid = fsid
+
+    def __eq__(self, clusterConfMount):
+        return self.__cmp__(clusterConfMount)
+
+    def __ne__(self, clusterConfMount):
+        return (not self.__cmp__(clusterConfMount))
+
+    def __cmp__(self, clusterConfMount):
+        # If the resourceNames, device, mountpoint are the same then this should
+        # be same ClusterConfMount object or duplicate object.
+        if (clusterConfMount == None):
+            return False
+        elif ((self.getResourceName() == clusterConfMount.getResourceName()) and
+              (self.getDeviceName() == clusterConfMount.getDeviceName()) and
+              (self.getMountPoint() == clusterConfMount.getMountPoint())):
+            return True
+        return False
 
     def getResourceName(self):
         return self.__resourceName
+
+    def getResourceType(self):
+        return self.__resourceType
 
     def getFSID(self):
         return self.__fsid
@@ -980,43 +1001,70 @@ class ClusterHAConfAnalyzer :
                                              cmanMulticastAddress, cnFenceDevicesList)
         return None
 
-    def getClusterStorageFilesystemList(self):
-        clusterStorageFilesystemList = []
-        for cnResourceElement in self.__ccRootElement.findall("rm/resources/") :
-            if (cnResourceElement.tag == "clusterfs"):
-                name = ""
-                device = ""
-                mountPoint = ""
-                fsType = ""
-                mountOptions = ""
-                fsid = ""
-                try:
-                    # These are required options
-                    name = cnResourceElement.attrib["name"]
-                    device = cnResourceElement.attrib["device"]
-                    mountPoint = cnResourceElement.attrib["mountpoint"]
-                    fsType = cnResourceElement.attrib["fstype"]
-                    if (not ((fsType == "gfs") or (fsType == "gfs2"))):
-                        continue
-                except KeyError:
-                    continue
-                except AttributeError:
-                    continue
+    def __generateClusterConfMount(self, clusterResource, clusterConfResourceType):
+        validFSResourceFSTypes = ["ext2", "ext3", "ext4", "btrfs", "jfs", "xfs", "reiserfs", "vfat", "tmpfs", "vxfs"]
+        validClusterFSResourceFSTypes = ["gfs", "gfs2"]
+        device = clusterResource.getAttribute("device")
+        mountPoint = clusterResource.getAttribute("mountpoint")
+        fsType = clusterResource.getAttribute("fstype")
+        mountOptions = clusterResource.getAttribute("options")
+        fsid = clusterResource.getAttribute("fsid")
+        if ((len(device) > 0) and (len(mountPoint) > 0) and (len(fsType) > 0)):
+            if ((clusterConfResourceType == "clusterfs") and (not fsType in validClusterFSResourceFSTypes)):
+                # The fsType was invalid, but should i return anyhow so i can search for this error.
+                return None
+            elif ((clusterConfResourceType == "fs") and (not fsType in validFSResourceFSTypes)):
+                # The fsType was invalid, but should i return anyhow so i can search for this error.
+                return None
+            return ClusterConfMount(device, mountPoint, fsType, mountOptions, clusterResource.getName(), clusterResource.getType(), fsid)
+        return None
 
-                try:
-                    mountOptions = cnResourceElement.attrib["options"]
-                except KeyError:
-                    pass
-                except AttributeError:
-                    pass
-                try:
-                    fsid= cnResourceElement.attrib["fsid"]
-                except KeyError:
-                    pass
-                except AttributeError:
-                    pass
-                clusterStorageFilesystemList.append(ClusterConfMount(device, mountPoint, fsType, mountOptions, name, fsid))
-        return clusterStorageFilesystemList
+    def __parseSharedResourcesForFilesystemResources(self, clusterConfResourceType):
+        filesystemResourcesList = []
+        # Find all shared resources
+        for clusterResource in self.getSharedClusterResources():
+            if (clusterResource.getType() == clusterConfResourceType):
+                clusterConfMount = self.__generateClusterConfMount(clusterResource, clusterConfResourceType)
+                if (not clusterConfMount == None):
+                    if (not clusterConfMount in filesystemResourcesList):
+                        # Add if it does not already exist
+                        filesystemResourcesList.append(clusterConfMount)
+        return filesystemResourcesList
+
+    def __parsePrivateResourcesForFilesystemResources(self, clusterConfResourceType):
+        filesystemResourcesList = []
+        clusterServices = self.getClusteredServices()
+        for clusterService in clusterServices:
+            clusterResources = clusterService.getFlatListOfClusterResources()
+            for clusterResource in clusterResources:
+                if (clusterResource.getType() == clusterConfResourceType):
+                    clusterConfMount = self.__generateClusterConfMount(clusterResource, clusterConfResourceType)
+                    if (not clusterConfMount == None):
+                        if (not clusterConfMount in filesystemResourcesList):
+                            # Add if it does not already exist
+                            filesystemResourcesList.append(clusterConfMount)
+        return filesystemResourcesList
+
+    def __getFilesystemResourcesList(self, clusterConfResourceType):
+        sharedFilesystemResourcesList = self.__parseSharedResourcesForFilesystemResources(clusterConfResourceType)
+        filesystemResourcesList = self.__parsePrivateResourcesForFilesystemResources(clusterConfResourceType)
+        # Find all shared resources that were not included in a service.
+        for sharedFilesystemResource in sharedFilesystemResourcesList :
+            matchFound = False
+            #if (sharedFilesystemResource in filesystemResourcesList) :
+            if (sharedFilesystemResource in filesystemResourcesList):
+                matchFound = True
+            if (not matchFound):
+                filesystemResourcesList.append(sharedFilesystemResource)
+        return filesystemResourcesList
+
+    def getClusterFilesystemResourcesList(self):
+        clusterConfResourceType = "clusterfs"
+        return self.__getFilesystemResourcesList(clusterConfResourceType)
+
+    def getFilesystemResourcesList(self):
+        clusterConfResourceType = "fs"
+        return self.__getFilesystemResourcesList(clusterConfResourceType)
 
     # #######################################################################
     # Builds a view of the Resources and Services

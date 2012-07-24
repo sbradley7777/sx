@@ -220,7 +220,7 @@ class ClusterNodes:
 
         if (not pathToClusterConf == None):
             cca = ClusterHAConfAnalyzer(pathToClusterConf)
-            for fs in cca.getClusterStorageFilesystemList():
+            for fs in cca.getClusterFilesystemResourcesList():
                 key = fs.getMountPoint()
                 if (not csFSMap.has_key(key)):
                     csFSMap[key] = ClusterStorageFilesystem(fs.getDeviceName(),

@@ -1,5 +1,6 @@
 * Tue Jul 18 2012 Shane Bradley <sbradley@redhat.com>- 2.12-0.0
-* Add detection for GFS/GFS2 using clustered lvm filesystem.
+- Add detection for GFS/GFS2 using clustered lvm filesystem.
+- Add detection for fs.sh resources and verify that HALVM is being used.
 * Tue Jul 17 2012 Shane Bradley <sbradley@redhat.com>- 2.11-0.0
 - Added new comparision class for comparing clusternodes.
 - Added check for cluster names longer than 16 characters.

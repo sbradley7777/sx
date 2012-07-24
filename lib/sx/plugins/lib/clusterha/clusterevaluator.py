@@ -27,6 +27,7 @@ from sx.plugins.lib.clusterha.clusternode import ClusterStorageFilesystem
 # For finding quorum disk.
 from sx.plugins.lib.storage.devicemapperparser import DeviceMapperParser
 from sx.plugins.lib.storage.devicemapperparser import DMSetupInfoC
+from sx.plugins.lib.storage.lvm import LVM
 from sx.plugins.lib.clusterha.clustercommandsparser import ClusterCommandsParser
 
 class ClusterEvaluator():
@@ -334,43 +335,7 @@ class ClusterEvaluator():
             rString += StringUtil.formatBulletString(description, urls)
         return rString
 
-
-    def __getVolumeGroupForDevice(self, pathToDevice, vgsDevices, lvsDevices):
-        for lvs in lvsDevices:
-            vgName = lvs.getVGName().strip().rstrip()
-            lvName = lvs.getLVName().strip().rstrip()
-            # Possible vglv paths
-            pathToVGLVList = [os.path.join("/dev/mapper", "%s-%s" %(vgName, lvName)),
-                              os.path.join("/dev", "%s/%s" %(vgName, lvName))]
-            if (pathToDevice in pathToVGLVList):
-                for vgs in vgsDevices:
-                    if (vgs.getVGName() == vgName):
-                        return vgs
-        return None
-
-    def __isClusteredLVMFilesystem(self, clusternodeName, filesystem):
-        # Need to get all the different permutations of lvm device naming
-        pathToDevice = str(filesystem.getDeviceName().strip().rstrip())
-        devicemapperCommandsMap =  self.__cnc.getStorageData(clusternodeName).getDMCommandsMap()
-        vgsDevices = DeviceMapperParser.parseVGSVData(devicemapperCommandsMap.get("vgs_-v"))
-        lvsDevices = DeviceMapperParser.parseLVSDevicesData(devicemapperCommandsMap.get("lvs_-a_-o_devices"))
-
-        # This assumes that volume is in the list and vg will be found.
-        vg = self.__getVolumeGroupForDevice(pathToDevice, vgsDevices, lvsDevices)
-        if (not vg == None):
-            return vg.isClusteredBitEnabled()
-        # Return False if vg is not found.
-        return False
-
-    def __isLVMVolumeListEnabled(self):
-
-        return True
-
-    def __isLVMVolumeHALVM(self, clusternodeName, filesystem):
-
-        return True
-
-    def __evaluateClusterStorage(self, cca):
+    def __evaluateClusteredFilesystems(self, cca):
         # Is active/active nfs supported? Sorta
         # urls = ["https://access.redhat.com/knowledge/solutions/59498"]
         rString = ""
@@ -396,13 +361,38 @@ class ClusterEvaluator():
             listOfClusterStorageFilesystems = clusternode.getClusterStorageFilesystemList()
             stringUtil = StringUtil()
 
-            # Check to see if they are exporting a gfs/gfs2 fs via samba and nfs.
+            # ###################################################################
+            # Verify that GFS/GFS2 filesystem is using lvm with cluster bit set
+            # ###################################################################
+            fsTable = []
+            for csFilesystem in listOfClusterStorageFilesystems:
+                pathToDevice = str(csFilesystem.getDeviceName().strip().rstrip())
+                # Verify that the clustered filesystem has clusterbit set.
+                devicemapperCommandsMap =  self.__cnc.getStorageData(clusternode.getClusterNodeName()).getDMCommandsMap()
+                lvm = LVM(pathToDevice,
+                          DeviceMapperParser.parseVGSVData(devicemapperCommandsMap.get("vgs_-v")),
+                          DeviceMapperParser.parseLVSAODevicesData(devicemapperCommandsMap.get("lvs_-a_-o_devices")),
+                          self.__cnc.getStorageData(clusternode.getClusterNodeName()).getLVMConfData())
+                if (not lvm.isClusteredLVMDevice()):
+                    currentFS = [pathToDevice, csFilesystem.getMountPoint(), csFilesystem.getFSType()]
+                    if (not currentFS in fsTable):
+                        fsTable.append(currentFS)
+            if (len(fsTable) > 0):
+                # Should flag for vgs with no c bit set and no lvm on device path.
+                # NEED TO ADD TO LIST
+                stringUtil = StringUtil()
+                description = "The following filesystems appears not to be on a clustered LVM volume. A clustered LVM volume is required for GFS/GFS2 fileystems."
+                tableHeader = ["device_name", "mount_point", "fs_type"]
+                tableOfStrings = stringUtil.toTableStringsList(fsTable, tableHeader)
+                urls = ["https://access.redhat.com/knowledge/solutions/46637"]
+                clusterNodeEvalString += StringUtil.formatBulletString(description, urls, tableOfStrings)
+
+            # ###################################################################
+            # Verify they are exporting a gfs/gfs2 fs via samba and nfs correctly
+            # ###################################################################
             tableHeader = ["device_name", "mount_point", "nfs_mp", "smb_mp"]
             fsTable = []
             for csFilesystem in listOfClusterStorageFilesystems:
-                # Verify that the clustered filesystem has clusterbit set.
-                result = self.__isClusteredLVMFilesystem(clusternode.getClusterNodeName(), csFilesystem)
-                print "Cluster bit is set on %s: %s" %(csFilesystem.getDeviceName(), str(result))
                 # There are 4 ways of mounting gfs via nfs/smb at same time that
                 # needs to be checked:
 
@@ -523,10 +513,44 @@ class ClusterEvaluator():
         # Return the string
         return rString
 
+    def __evaluateFilesystemResources(self, cca):
+        """
+        This functions verifies that all fs resources are using HALVM. This
+        checks to see if clusterbit on lvm vg is set or if they are using
+        "volume_list" method in /etc/lvm/lvm.conf.
 
-    def __evaluateClusteredFilesystemResources(self):
+        Do note that tags in "volume_list" option are not checked.
+        """
         rString = ""
-
+        fsTable = []
+        filesystemResourcesList = cca.getFilesystemResourcesList()
+        for clusternode in self.__cnc.getClusterNodes():
+            clusterNodeEvalString = ""
+            if (not clusternode.isClusterNode()):
+                continue
+            for clusterConfMount in filesystemResourcesList:
+                # Check to see if device is either has volume_list set or has cluster bit set.
+                devicemapperCommandsMap =  self.__cnc.getStorageData(clusternode.getClusterNodeName()).getDMCommandsMap()
+                lvm = LVM(str(clusterConfMount.getDeviceName().strip().rstrip()),
+                              DeviceMapperParser.parseVGSVData(devicemapperCommandsMap.get("vgs_-v")),
+                              DeviceMapperParser.parseLVSAODevicesData(devicemapperCommandsMap.get("lvs_-a_-o_devices")),
+                              self.__cnc.getStorageData(clusternode.getClusterNodeName()).getLVMConfData())
+                #print "%s: %s" %(str(clusterConfMount.getDeviceName().strip().rstrip()), str(lvm.isLVMVolumeHALVM()))
+                if (not lvm.isLVMVolumeHALVM()):
+                    currentFS = [clusterConfMount.getDeviceName(), clusterConfMount.getMountPoint(), clusterConfMount.getFSType()]
+                    if (not currentFS in fsTable):
+                        fsTable.append(currentFS)
+        if (len(fsTable) > 0):
+            # Should flag for vgs with no c bit set and no lvm on device path.
+            # NEED TO ADD TO LIST
+            stringUtil = StringUtil()
+            description =  "The following filesystems appears to not be on a HALVM volume using one of the methods outlined in the article below. "
+            description += "A HALVM volume is recommoned for all fs resources. Do note that LVM tags were not searched and compared if they were "
+            description += "used in the \"volume_list\" option of the /etc/lvm/lvm.conf file:"
+            tableHeader = ["device_name", "mount_point", "fs_type"]
+            tableOfStrings = stringUtil.toTableStringsList(fsTable, tableHeader)
+            urls = ["https://access.redhat.com/knowledge/solutions/3067"]
+            rString += StringUtil.formatBulletString(description, urls, tableOfStrings)
         return rString
 
     def __evaluateServiceIsEnabled(self, clusternode, serviceName):
@@ -580,15 +604,6 @@ class ClusterEvaluator():
                     return pathToQuroumDisk
         return ""
 
-    def __isLVMDevice(self, pathToDevice, lvsDevices):
-        filenameOfDevice = os.path.basename(pathToDevice)
-        for lvsDevice in lvsDevices:
-            if ((pathToDevice.endswith("%s-%s" %(lvsDevice.getVGName(), lvsDevice.getLVName()))) or
-                (pathToDevice.endswith("%s/%s" %(lvsDevice.getVGName(), lvsDevice.getLVName())))):
-                # vgName-lvName or /dev/vgName/lvName or /dev/mapper/vgName-lvName
-                return True
-        return False
-
     def __isQDiskLVMDevice(self, pathToDevice):
         if (not len(pathToDevice) > 0):
             return False
@@ -630,7 +645,6 @@ class ClusterEvaluator():
         # ###################################################################
         quorumdConfigString = ""
         pathToQuroumDisk = self.__getPathToQuorumDisk(cca)
-        #print "Is LVM Device %s? %s" %(pathToQuroumDisk, str(self.__isLVMDevice(pathToQuroumDisk)))
         if (self.__isQDiskLVMDevice(pathToQuroumDisk)):
             description =  "The quorum disk %s cannot be an lvm device." %(pathToQuroumDisk)
             urls = ["https://access.redhat.com/knowledge/solutions/41726"]
@@ -755,7 +769,15 @@ class ClusterEvaluator():
         # ###################################################################
         # Evaluate the Cluster Storage
         # ###################################################################
-        resultString = self.__evaluateClusterStorage(cca)
+        resultString = self.__evaluateClusteredFilesystems(cca)
         if (len(resultString) > 0):
             rstring += resultString
+        # ###################################################################
+        # Check if the fs resources are using HALVM
+        # ###################################################################
+        resultString = self.__evaluateFilesystemResources(cca)
+        if (len(resultString) > 0):
+            rstring += resultString
+        # ###################################################################
+        # Return the result
         return rstring

@@ -39,7 +39,7 @@ from sx.modulesloader import ExtractorsLoader
 @cvar VERSION_NUMBER: The current version number of sxconsole.
 @type VERSION_NUMBER: String
 """
-VERSION_NUMBER = "2.11-1"
+VERSION_NUMBER = "2.11-2"
 
 def getArchiveLayout(caseNumber, pathToArchiveDirectory, pathToExtractedReports,
                      isModifiedArchiveLayoutEnabled) :

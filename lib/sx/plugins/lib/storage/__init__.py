@@ -27,8 +27,8 @@ from sx.plugins.lib.log.syslogparser import VarLogMessages
 
 class StorageData:
     def __init__(self, hostname, uptime, distroRelease, uname,
-                 lsMod, multipathConf, dmCommandsMap, varLogMessages,
-                 blockDeviceTree):
+                 lsMod, lvmConf, multipathConf, dmCommandsMap,
+                 varLogMessages, blockDeviceTree):
         """
         These are all the files that we know will be present.
         """
@@ -41,6 +41,9 @@ class StorageData:
         # set functions
 
         self.__lsMod = lsMod
+        self.__lvmConfData = []
+        if (not lvmConf == None):
+            self.__lvmConfData = lvmConf
 
         self.__multipathConfData = []
         if (not multipathConf == None):
@@ -101,6 +104,15 @@ class StorageData:
         @rtype: Array
         """
         return self.__lsMod
+
+    def getLVMConfData(self):
+        lvmConfDataNoComments = []
+        for line in self.__lvmConfData:
+            # Do not include comments and empty lines.
+            if ((not line.strip().startswith("#")) and (len(line.strip()) > 0)):
+                lvmConfDataNoComments.append(line.rstrip())
+        return lvmConfDataNoComments
+
 
     def getMultipathConfData(self):
         """
@@ -217,12 +229,13 @@ class StorageDataGenerator:
                                           filesysMountsList,
                                           dmCommandsMap.get("dmsetup_info_-c"),
                                           dmCommandsMap.get("dmsetup_table"))
-
+        lvmConfData = report.getDataFromFile("etc/lvm/lvm.conf")
         storageData = StorageData(report.getHostname(),
                                   report.getUptime(),
                                   distroRelease,
                                   report.getUname(),
                                   ModulesParser.parseLSModData(report.getDataFromFile("sos_commands/kernel/lsmod")),
+                                  lvmConfData,
                                   report.getDataFromFile("etc/multipath.conf"),
                                   report.getDataFromDir("sos_commands/devicemapper"),
                                   varLogMessagesList,

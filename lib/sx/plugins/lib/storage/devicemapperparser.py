@@ -9,6 +9,9 @@ sos_commands/devicemapper
 @version   :  2.11
 @copyright :  GPLv2
 """
+from sx.plugins.lib.storage.lvm import PVS_AV
+from sx.plugins.lib.storage.lvm import VGS_V
+from sx.plugins.lib.storage.lvm import LVS_AO
 
 class DeviceMapperParser:
     def parseDMSetupInfoCData(dmSetupInfoCData):
@@ -101,15 +104,15 @@ class DeviceMapperParser:
                 if (not len(splitLine) >= 2):
                     continue
                 elif ((len(splitLine) == 9) and (foundHeader)):
-                        parsedList.append(VolumeGroups(splitLine[0], splitLine[1], splitLine[2], splitLine[3], splitLine[4],
-                                                       splitLine[5], splitLine[6], splitLine[7], splitLine[8]))
+                        parsedList.append(VGS_V(splitLine[0], splitLine[1], splitLine[2], splitLine[3], splitLine[4],
+                                                splitLine[5], splitLine[6], splitLine[7], splitLine[8]))
                 elif ((splitLine[0].strip() == "VG") and (splitLine[1].strip() == "Attr")):
                     foundHeader = True
                     continue
         return parsedList
     parseVGSVData = staticmethod(parseVGSVData)
 
-    def parseLVSDevicesData(lvsDevicesData):
+    def parseLVSAODevicesData(lvsDevicesData):
         parsedList = []
         if (lvsDevicesData == None):
             return parsedList
@@ -123,172 +126,9 @@ class DeviceMapperParser:
                         foundHeader = True
                         continue
                     elif (foundHeader):
-                        parsedList.append(LVSDevices(splitLine[(len(splitLine) - 1)], splitLine[1], splitLine[0], splitLine[2], splitLine[3]))
+                        parsedList.append(LVS_AO(splitLine[(len(splitLine) - 1)], splitLine[1], splitLine[0], splitLine[2], splitLine[3]))
         return parsedList
-    parseLVSDevicesData = staticmethod(parseLVSDevicesData)
-
-class PVS_AV:
-    def __init__(self, pvName, vgName, formatType, attributes, pSize, pFree, deviceSize, pvUUID):
-        self.__pvName = pvName
-        self.__vgName = vgName
-        self.__formatType = formatType
-        self.__attributes = attributes
-        self.__pSize = pSize
-        self.__pFree = pFree
-        self.__deviceSize = deviceSize
-        self.__pvUUID = pvUUID
-
-    def __str__(self):
-        return "%s %s %s %s %s %s %s %s" %(self.__pvName, self.__vgName, self.__formatType, self.__attributes,
-                                           self.__pSize, self.__pFree, self.__deviceSize, self.__pvUUID)
-    def getPVName(self):
-        return self.__pvName
-
-    def getVGName(self):
-        return self.__vgName
-
-    def getFormatType(self):
-        return self.__formatType
-
-    def getAttributes(self):
-        return self.__attributes
-
-    def getPSize(self):
-        return self.__pSize
-
-    def getPFree(self):
-        return self.__pFree
-
-    def getDeviceSize(self):
-        return self.__deviceSize
-
-    def getPVUUID(self):
-        return self.__pvUUID
-
-class VolumeGroups:
-    def __init__(self, vgName, attributes, extendSize, pvCount, lvCount, snapShotCount, vgSize, vgFree, uuid):
-        # used with sos_commands/devicemapper/vgs_-v
-        # output information is at: http://git.fedorahosted.org/git/?p=lvm2.git --> lib/report/columns.h
-        self.__vgName = vgName
-        self.__attributes = attributes
-        self.__extendSize = extendSize
-        self.__pvCount = int(pvCount)
-        self.__lvCount = int(lvCount)
-        self.__snapShotCount = int(snapShotCount)
-        self.__vgSize = vgSize
-        self.__vgFree = vgFree
-        self.__uuid = uuid
-
-    def __str__(self):
-        return "%s(%s)" %(self.__vgName, self.__uuid)
-
-    def getVGName(self):
-        return self.__vgName
-
-    def getAttributes(self):
-        return self.__attributes
-
-    def getAttributesMap(self):
-        attributesMap = {}
-        attributesAsList = list(self.__attributes)
-        # Permissions: (w)riteable, (r)ead-only
-        attributesMap["permissions"] = attributesAsList[0]
-        # Resi(z)eable
-        attributesMap["resizeable"] = attributesAsList[1]
-        # E(x)ported
-        attributesMap["exported"] = attributesAsList[2]
-        # (p)artial: one or more physical volumes belonging to the volume group are missing from the system
-        attributesMap["partial"] = attributesAsList[3]
-        # Allocation policy: (c)ontiguous, c(l)ing, (n)ormal, (a)nywhere, (i)nherited
-        attributesMap["allocation_policy"] = attributesAsList[4]
-        # (c)lustered
-        attributesMap["clustered"] = attributesAsList[5]
-        return attributesMap
-
-    def getAttribute(self, attributeName):
-        attributesMap = self.getAttributesMap()
-        if (attributesMap.has_key("clustered")):
-            return attributesMap.get("clustered")
-        return ""
-
-    def getExtendSize(self):
-        return self.__extendSize
-
-    def getPVCount(self):
-        return self.__pvCount
-
-    def getLVCount(self):
-        return self.__lvCount
-
-    def getSnapShotCount(self):
-        return self.__snapShotCount
-
-    def getVGSize(self):
-        return self.__vgSize
-
-    def getVGFree(self):
-        return self.__vgFree
-
-    def getUUID(self):
-        return self.__uuid
-
-    def isClusteredBitEnabled(self):
-        return (self.getAttribute("clustered") == "c")
-
-class LVSDevices:
-    def __init__(self, pathToDevice, vgName, lvName, attributes, lSize):
-        splitPathToDevice = pathToDevice.split("(")
-        self.__pathToDevice = splitPathToDevice[0]
-        self.__physicalExtendSize = splitPathToDevice[1].rstrip(")")
-        self.__vgName = vgName
-        self.__lvName = lvName
-        self.__attributes = attributes
-        self.__lSize = lSize
-
-    def __str__(self):
-        return "%s --> %s/%s" %(self.__pathToDevice, self.__vgName, self.__lvName)
-
-    def getPathToDevice(self):
-        return self.__pathToDevice
-
-    def getVGName(self):
-        return self.__vgName
-
-    def getLVName(self):
-        return self.__lvName
-
-    def getAttributes(self):
-        return self.__attributes
-
-    def getAttributesMap(self):
-        attributesMap = {}
-        attributesAsList = list(self.__attributes)
-        # Volume type: (m)irrored, (M)irrored without initial sync, (o)rigin,
-        # (O)rigin with merging snapshot, (s)napshot, merging (S)napshot,
-        # (p)vmove, (v)irtual, mirror (i)mage, mirror (I)mage out-of-sync, under
-        # (c)onversion
-        attributesMap["volume_type"] = attributesAsList[0]
-        # Permissions: (w)riteable, (r)ead-only
-        attributesMap["permissions"] = attributesAsList[1]
-        # Allocation policy: (c)ontiguous, c(l)ing, (n)ormal, (a)nywhere,
-        # (i)nherited This is capitalised if the volume is currently locked
-        # against allocation changes, for example during pvmove
-        attributesMap["allocation_policy"] = attributesAsList[2]
-        # fixed (m)inor
-        attributesMap["fixed"] = attributesAsList[3]
-        # State: (a)ctive, (s)uspended, (I)nvalid snapshot, invalid (S)uspended
-        # snapshot, mapped (d)evice present without tables, mapped device
-        # present with (i)nactive table
-        attributesMap["state"] = attributesAsList[4]
-        # device (o)p
-        attributesMap["device"] = attributesAsList[5]
-        return attributesMap
-
-    def getLSize(self):
-        return self.__lSize
-
-    def getPhysicalExtendSize(self):
-        return self.__physicalExtendSize
+    parseLVSAODevicesData = staticmethod(parseLVSAODevicesData)
 
 class DMSetupInfoC:
     def __init__(self, deviceMapperName, majorNumber, minorNumber, attributes,
