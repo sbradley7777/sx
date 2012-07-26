@@ -341,8 +341,6 @@ class ClusterEvaluator():
         rString = ""
         for clusternode in self.__cnc.getClusterNodes():
             clusterNodeEvalString = ""
-            if (not clusternode.isClusterNode()):
-                continue
             # ###################################################################
             # Distro Specific evaluations
             # ###################################################################
@@ -365,21 +363,26 @@ class ClusterEvaluator():
             # Verify that GFS/GFS2 filesystem is using lvm with cluster bit set
             # ###################################################################
             fsTable = []
-            for csFilesystem in listOfClusterStorageFilesystems:
-                pathToDevice = str(csFilesystem.getDeviceName().strip().rstrip())
-                # Verify that the clustered filesystem has clusterbit set.
+            # Verify the locking_type is set to 3 cause built-in cluster locking is required.
+            if (len(listOfClusterStorageFilesystems) > 0):
                 devicemapperCommandsMap =  self.__cnc.getStorageData(clusternode.getClusterNodeName()).getDMCommandsMap()
-                lvm = LVM(pathToDevice,
-                          DeviceMapperParser.parseVGSVData(devicemapperCommandsMap.get("vgs_-v")),
+                lvm = LVM(DeviceMapperParser.parseVGSVData(devicemapperCommandsMap.get("vgs_-v")),
                           DeviceMapperParser.parseLVSAODevicesData(devicemapperCommandsMap.get("lvs_-a_-o_devices")),
                           self.__cnc.getStorageData(clusternode.getClusterNodeName()).getLVMConfData())
-                if (not lvm.isClusteredLVMDevice()):
+                if (not lvm.isLockingTypeClustering()):
+                    description =  "The locking_type is not set to type 3 for built-in cluster locking. A GFS/GFS2 filesystem requires the filesystem be on a "
+                    description += "clustered LVM volume with locking_type 3 enabled in the /etc/lvm/lvm.conf."
+                    urls = ["https://access.redhat.com/knowledge/solutions/46637"]
+                    clusterNodeEvalString += StringUtil.formatBulletString(description, urls)
+
+            # Verify that the clustered filesystem has clusterbit set on the vg.
+            for csFilesystem in listOfClusterStorageFilesystems:
+                pathToDevice = str(csFilesystem.getDeviceName().strip().rstrip())
+                if (not lvm.isClusteredLVMDevice(pathToDevice)):
                     currentFS = [pathToDevice, csFilesystem.getMountPoint(), csFilesystem.getFSType()]
                     if (not currentFS in fsTable):
                         fsTable.append(currentFS)
             if (len(fsTable) > 0):
-                # Should flag for vgs with no c bit set and no lvm on device path.
-                # NEED TO ADD TO LIST
                 stringUtil = StringUtil()
                 description = "The following filesystems appears not to be on a clustered LVM volume. A clustered LVM volume is required for GFS/GFS2 fileystems."
                 tableHeader = ["device_name", "mount_point", "fs_type"]
@@ -465,7 +468,9 @@ class ClusterEvaluator():
                 urls = ["https://access.redhat.com/knowledge/solutions/39855"]
                 clusterNodeEvalString += StringUtil.formatBulletString(description, urls, tableOfStrings)
 
+            # ###################################################################
             # Check for localflocks if they are exporting nfs.
+            # ###################################################################
             fsTable = []
             for csFilesystem in listOfClusterStorageFilesystems:
                 # If a GFS or GFS2 fs is in /etc/exports or has a child that is
@@ -483,7 +488,9 @@ class ClusterEvaluator():
                 urls = ["https://access.redhat.com/knowledge/solutions/20327", "http://docs.redhat.com/docs/en-US/Red_Hat_Enterprise_Linux/5/html-single/Configuration_Example_-_NFS_Over_GFS/index.html#locking_considerations"]
                 clusterNodeEvalString += StringUtil.formatBulletString(description, urls, tableOfStrings)
 
+            # ###################################################################
             # Check to see if the GFS/GFS2 fs has certain mount options enabled.
+            # ###################################################################
             fsTable = []
             for csFilesystem in listOfClusterStorageFilesystems:
                 csFilesystemOptions = csFilesystem.getAllMountOptions()
@@ -526,23 +533,29 @@ class ClusterEvaluator():
         filesystemResourcesList = cca.getFilesystemResourcesList()
         for clusternode in self.__cnc.getClusterNodes():
             clusterNodeEvalString = ""
-            if (not clusternode.isClusterNode()):
-                continue
-            for clusterConfMount in filesystemResourcesList:
-                # Check to see if device is either has volume_list set or has cluster bit set.
+            # Check to see if volume_list and locking_type 3 is set for cluster
+            # locking.
+            if (len(filesystemResourcesList) > 0):
                 devicemapperCommandsMap =  self.__cnc.getStorageData(clusternode.getClusterNodeName()).getDMCommandsMap()
-                lvm = LVM(str(clusterConfMount.getDeviceName().strip().rstrip()),
-                              DeviceMapperParser.parseVGSVData(devicemapperCommandsMap.get("vgs_-v")),
-                              DeviceMapperParser.parseLVSAODevicesData(devicemapperCommandsMap.get("lvs_-a_-o_devices")),
-                              self.__cnc.getStorageData(clusternode.getClusterNodeName()).getLVMConfData())
-                #print "%s: %s" %(str(clusterConfMount.getDeviceName().strip().rstrip()), str(lvm.isLVMVolumeHALVM()))
-                if (not lvm.isLVMVolumeHALVM()):
+                lvm = LVM(DeviceMapperParser.parseVGSVData(devicemapperCommandsMap.get("vgs_-v")),
+                          DeviceMapperParser.parseLVSAODevicesData(devicemapperCommandsMap.get("lvs_-a_-o_devices")),
+                          self.__cnc.getStorageData(clusternode.getClusterNodeName()).getLVMConfData())
+                if (lvm.isVolumeListEnabled() and lvm.isLockingTypeClustering()):
+                    description =  "The option \"volume_list\" and \"locking_type = 3\" in /etc/lvm/lvm.conf are both in use. Using "
+                    description += "both options at the same time is supported, but not recommended except for certain configurations. "
+                    description += "This configuration should be reviewed to verify that configuration is correct."
+                    urls = ["https://access.redhat.com/knowledge/solutions/3067"]
+                    clusterNodeEvalString += StringUtil.formatBulletString(description, urls)
+            # Check to see if device is either has volume_list set or has
+            # cluster bit set on each fs resource.
+            for clusterConfMount in filesystemResourcesList:
+                pathToDevice = str(clusterConfMount.getDeviceName().strip().rstrip())
+                if (not lvm.isLVMVolumeHALVM(pathToDevice)):
                     currentFS = [clusterConfMount.getDeviceName(), clusterConfMount.getMountPoint(), clusterConfMount.getFSType()]
                     if (not currentFS in fsTable):
                         fsTable.append(currentFS)
         if (len(fsTable) > 0):
             # Should flag for vgs with no c bit set and no lvm on device path.
-            # NEED TO ADD TO LIST
             stringUtil = StringUtil()
             description =  "The following filesystems appears to not be on a HALVM volume using one of the methods outlined in the article below. "
             description += "A HALVM volume is recommoned for all fs resources. Do note that LVM tags were not searched and compared if they were "
@@ -609,12 +622,11 @@ class ClusterEvaluator():
             return False
         # Cycle through all the nodes till you find a match.
         for clusternode in self.__cnc.getClusterNodes():
-            clusternodeName = clusternode.getClusterNodeName()
-            storageData = self.__cnc.getStorageData(clusternodeName)
-            devicemapperCommandsMap =  storageData.getDMCommandsMap()
-            lvsDevices = DeviceMapperParser.parseLVSDevicesData(devicemapperCommandsMap.get("lvs_-a_-o_devices"))
-            if (self.__isLVMDevice(pathToDevice, lvsDevices)):
-                return True
+            devicemapperCommandsMap =  self.__cnc.getStorageData(clusternode.getClusterNodeName()).getDMCommandsMap()
+            lvm = LVM(DeviceMapperParser.parseVGSVData(devicemapperCommandsMap.get("vgs_-v")),
+                      DeviceMapperParser.parseLVSAODevicesData(devicemapperCommandsMap.get("lvs_-a_-o_devices")),
+                      self.__cnc.getStorageData(clusternode.getClusterNodeName()).getLVMConfData())
+            return lvm.isLVMDevice(pathToDevice)
         return False
 
     # #######################################################################

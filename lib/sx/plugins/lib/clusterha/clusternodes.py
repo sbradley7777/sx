@@ -667,7 +667,7 @@ class ClusterNodes:
             if (fsMap.has_key(clusternodeName)):
                 listOfFileystems = fsMap.get(clusternodeName)
                 if (len(listOfFileystems) > 0):
-                    tableString = "%s\n%s\n\n" %(clusternodeName, stringUtil.toTableString(listOfFileystems, fsListHeader))
+                    tableString = "%s(%d mounted GFS or GFS2 file-systems)\n%s\n\n" %(clusternodeName, len(listOfFileystems), stringUtil.toTableString(listOfFileystems, fsListHeader))
                     rString += tableString
         if (len(rString) > 0):
             legend = "C = file-system is in /etc/cluster/cluster.conf\nF = file-system is in /etc/fstab\nM = file-system is mounted\n\n"

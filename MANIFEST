@@ -47,6 +47,7 @@ lib/sx/plugins/lib/storage/__init__.py
 lib/sx/plugins/lib/storage/blockdevicetree.py
 lib/sx/plugins/lib/storage/devicemapperparser.py
 lib/sx/plugins/lib/storage/filesysparser.py
+lib/sx/plugins/lib/storage/lvm.py
 lib/sx/plugins/lib/storage/procparser.py
 lib/sx/plugins/lib/storage/storageevaluator.py
 lib/sx/reports/__init__.py

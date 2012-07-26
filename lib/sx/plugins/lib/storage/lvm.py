@@ -172,8 +172,7 @@ class LVS_AO:
         return self.__physicalExtendSize
 
 class LVM:
-    def __init__(self, pathToDevice, vgsvList, lvsaoList, lvmConfData):
-        self.__pathToDevice = pathToDevice
+    def __init__(self, vgsvList, lvsaoList, lvmConfData):
         # This is a list of object from sparsed output of the command: "vgs_-v"
         self.__vgsvList = vgsvList
         # This is a list of object from sparsed output of the command:
@@ -182,49 +181,10 @@ class LVM:
         # Parse lvm.conf file in a list of lines.
         self.__lvmConfData = lvmConfData
 
-    def getPathToDevice(self):
-        return self.__pathToDevice
-
     # #######################################################################
-    # LVM helper functions - EVENTUALLY NEED TO MOVE TO STORAGE LIB
+    # Private LVM helper functions
     # #######################################################################
-    def getVolumeGroupForDevice(self):
-        for lvs in self.__lvsaoList:
-            vgName = lvs.getVGName().strip().rstrip()
-            lvName = lvs.getLVName().strip().rstrip()
-            # Possible vglv paths
-            pathToVGLVList = [os.path.join("/dev/mapper", "%s-%s" %(vgName, lvName)),
-                              os.path.join("/dev", "%s/%s" %(vgName, lvName))]
-            if (self.__pathToDevice in pathToVGLVList):
-                for vgs in self.__vgsvList:
-                    if (vgs.getVGName() == vgName):
-                        return vgs
-        return None
-
-    def getLogicalVolumeForDevice(self):
-        filenameOfDevice = os.path.basename(self.__pathToDevice)
-        for lvs in self.__lvsaoList:
-            vgName = lvs.getVGName().strip().rstrip()
-            lvName = lvs.getLVName().strip().rstrip()
-            # Possible vglv paths
-            pathToVGLVList = [os.path.join("/dev/mapper", "%s-%s" %(vgName, lvName)),
-                              os.path.join("/dev", "%s/%s" %(vgName, lvName))]
-            if (self.__pathToDevice in pathToVGLVList):
-                return lvs
-        return None
-
-    def isLVMDevice(self):
-        return (self.getLogicalVolumeForDevice() == None)
-
-    def isClusteredLVMDevice(self):
-        # This assumes that volume is in the list and vg will be found.
-        vg = self.getVolumeGroupForDevice()
-        if (not vg == None):
-            return vg.isClusteredBitEnabled()
-        # Return False if vg is not found.
-        return False
-
-    def getVolumelistValues(self):
+    def __getVolumelistValues(self):
         volumelistValues = []
         volumelistLine = ""
         for line in self.__lvmConfData:
@@ -243,7 +203,108 @@ class LVM:
                 volumelistValues = configValues.split(",")
         return volumelistValues
 
-    def isLVMVolumeInVolumelist(self, volumelistValues, lvs):
+    # #######################################################################
+    # Public LVM functions
+    # #######################################################################
+    def getVolumeGroupForDevice(self, pathToDevice):
+        for lvs in self.__lvsaoList:
+            vgName = lvs.getVGName().strip().rstrip()
+            lvName = lvs.getLVName().strip().rstrip()
+            # Possible vglv paths. If there is dashes in the path, then it will
+            # replace them with double dashes.
+            pathToVGLVList = [os.path.join("/dev/mapper", "%s-%s" %(vgName.replace("-", "--"), lvName.replace("-", "--"))),
+                              os.path.join("/dev", "%s/%s" %(vgName, lvName))]
+            if (pathToDevice in pathToVGLVList):
+                for vgs in self.__vgsvList:
+                    if (vgs.getVGName() == vgName):
+                        return vgs
+        return None
+
+    def getLogicalVolumeForDevice(self, pathToDevice):
+        filenameOfDevice = os.path.basename(pathToDevice)
+        for lvs in self.__lvsaoList:
+            vgName = lvs.getVGName().strip().rstrip()
+            lvName = lvs.getLVName().strip().rstrip()
+            # Possible vglv paths
+            pathToVGLVList = [os.path.join("/dev/mapper", "%s-%s" %(vgName, lvName)),
+                              os.path.join("/dev", "%s/%s" %(vgName, lvName))]
+            if (pathToDevice in pathToVGLVList):
+                return lvs
+        return None
+
+    def isVolumeListEnabled(self):
+        # If volume_list has values set then it is enabled.
+        return (len(self.__getVolumelistValues()) > 0)
+
+    def getLockingTypeValue(self):
+        lockingTypeLine = ""
+        for line in self.__lvmConfData:
+            currentLine = line.strip().rstrip()
+            if (currentLine.startswith("locking_type")):
+                # Set the most recent occurance
+                lockingTypeLine= currentLine
+        if (len(lockingTypeLine) > 0):
+            splitLine = lockingTypeLine.split("=")
+            if (len(splitLine) == 2):
+                return splitLine[1].strip().rstrip()
+        return ""
+
+    def isLockingTypeDisabled(self):
+        # Turn locking off by setting to 0 (dangerous: risks metadata corruption
+        # if LVM2 commands get run concurrently).
+        lockingTypeValue = self.getLockingTypeValue()
+        if (len(lockingTypeValue) > 0):
+            return (lockingTypeValue == "0")
+        return False
+
+    def isLockingTypeFileBased(self):
+        # Type of locking to use. Defaults to local file-based locking (1).
+        lockingTypeValue = self.getLockingTypeValue()
+        if (len(lockingTypeValue) > 0):
+            return (lockingTypeValue == "1")
+        return False
+
+    def isLockingTypeExternalLib(self):
+        # Type 2 uses the external shared library locking_library.
+        lockingTypeValue = self.getLockingTypeValue()
+        if (len(lockingTypeValue) > 0):
+            return (lockingTypeValue == "2")
+        return False
+
+    def isLockingTypeClustering(self):
+        # Type 3 uses built-in clustered locking.
+        lockingTypeValue = self.getLockingTypeValue()
+        if (len(lockingTypeValue) > 0):
+            return (lockingTypeValue == "3")
+        return False
+
+    def isLockingTypeReadOnly(self):
+        # Type 4 uses read-only locking which forbids any operations that might
+        # change metadata.
+        lockingTypeValue = self.getLockingTypeValue()
+        if (len(lockingTypeValue) > 0):
+            return (lockingTypeValue == "4")
+        return False
+
+    def isLVMDevice(self, pathToDevice):
+        return (self.getLogicalVolumeForDevice(pathToDevice) == None)
+
+    def isClusteredLVMDevice(self, pathToDevice):
+        # This assumes that volume is in the list and vg will be found.
+        vg = self.getVolumeGroupForDevice(pathToDevice)
+        if (not vg == None):
+            return vg.isClusteredBitEnabled()
+        # Return False if vg is not found.
+        return False
+
+    def isLVMVolumeInVolumelist(self, lvs):
+        """
+        Returns True if the vg, vg/lv, or @* are values for the volume_list
+        option. Will return False if volume_list is not enabled.
+
+        Do tags are currently not supported.
+        """
+        volumelistValues = self.__getVolumelistValues()
         if (len(volumelistValues) > 0):
             vgName = lvs.getVGName().strip().rstrip()
             lvName = lvs.getLVName().strip().rstrip()
@@ -265,24 +326,19 @@ class LVM:
             # Current matching tags and vg/lv is not supported.
         return False
 
-    def isLVMVolumeHALVM(self):
+    def isLVMVolumeHALVM(self, pathToDevice):
         # This assumes that volume is in the list and vg will be found.
-        if (self.isClusteredLVMDevice()):
+        if (self.isClusteredLVMDevice(pathToDevice)):
             # Might want to check the release since CLVMD support was not added to version 5.6.
             return True
         # The vg does not have the cluster bit set, so check to see if
         # volume_list is set.
-        vgs = self.getVolumeGroupForDevice()
-        if (vgs == None):
-            return False
-        lvs = self.getLogicalVolumeForDevice()
+        lvs = self.getLogicalVolumeForDevice(pathToDevice)
         if (lvs == None):
             return False
-        volumelistValues = self.getVolumelistValues()
-        if (len(volumelistValues) > 0):
-            # If volume_list is defined and the vg or vg/lv is not defined in
-            # volume_list return True. Now rgmanager(clusterHA clustered service manager
-            # uses tags so that it adds the hostname as tag and then adds that
-            # tag to the volume_group.
-            return (not self.isLVMVolumeInVolumelist(volumelistValues, lvs))
-        return False
+
+        # If volume_list is defined and the vg or vg/lv is not defined in
+        # volume_list return True. Now rgmanager(clusterHA clustered service manager
+        # uses tags so that it adds the hostname as tag and then adds that
+        # tag to the volume_group.
+        return (not self.isLVMVolumeInVolumelist(lvs))
