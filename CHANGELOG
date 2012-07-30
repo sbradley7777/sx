@@ -1,4 +1,5 @@
 * Tue Jul 18 2012 Shane Bradley <sbradley@redhat.com>- 2.12-0.0
+- Moved some of the cluster.conf fencing sections to global section for checks that only need cluster.conf.
 - Add detection for GFS/GFS2 using clustered lvm filesystem.
 - Add detection for fs.sh resources and verify that HALVM is being used.
 * Tue Jul 17 2012 Shane Bradley <sbradley@redhat.com>- 2.11-0.0

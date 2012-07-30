@@ -111,6 +111,37 @@ class ClusterEvaluator():
             message = "There was only %d cluster.conf compared for the %d node cluster." %(len(self.__cnc.getPathToClusterConfFiles()),
                                                                                            len(cca.getClusterNodeNames()))
             logging.getLogger(sx.MAIN_LOGGER_NAME).warning(message)
+        # ###################################################################
+        # Fencing evaluations that only require a cluster.conf file.
+        # ###################################################################
+        result = self.__evaluateClusterNodesFencing(cca)
+        if (len(result) > 0):
+            rString += result
+        return rString
+
+    def __evaluateClusterNodesFencing(self, cca):
+        """
+        Evaluation on all the clusternodes that do not need report and only need the cluster.conf.
+        """
+        rString = ""
+        for clusternodeName in cca.getClusterNodeNames():
+            cnFenceDeviceList = cca.getClusterNodeFenceDevicesList(clusternodeName)
+            if (len(cnFenceDeviceList) > 0):
+                # Check if fence_manual is enabled on a node
+                if (cca.isFenceDeviceAgentEnabledOnClusterNode(clusternodeName, "fence_manual")):
+                    description = "The fence device \"fence_manual\" is defined as a fence agent for the clusternode %s which is an unsupported fencing method." %(clusternodeName)
+                    urls = ["https://access.redhat.com/knowledge/articles/36302"]
+                    rString += StringUtil.formatBulletString(description, urls)
+                # Check to make sure that fence_vmware is not enabled on node
+                if (cca.isFenceDeviceAgentEnabledOnClusterNode(clusternodeName, "fence_vmware")):
+                        description =  "The fence device \"fence_vmware\" is defined as a fence agent for the clusternode %s which is an unsupported fencing method. " %(clusternodeName)
+                        description += "The only supported fencing method for VMWare is fence_vmware_soap and fence_scsi."
+                        urls = ["https://access.redhat.com/knowledge/articles/29440"]
+                        rString += StringUtil.formatBulletString(description, urls)
+            else:
+                description = "There was no fence device defined for the clusternode %s. A fence device is required for each clusternode." %(clusternodeName)
+                urls = ["https://access.redhat.com/knowledge/solutions/15575"]
+                rString += StringUtil.formatBulletString(description, urls)
         return rString
 
     def __evaluateQuorumdConfiguration(self, cca, distroRelease):
@@ -301,15 +332,20 @@ class ClusterEvaluator():
         return rString
 
     def __evaluateClusterNodeFencing(self, cca, clusternode):
+        """
+        Evaluation on a clusternode for fencing that requires a report. There
+        are other evaluations that are done in global section.
+        """
         rString = ""
         cnp = clusternode.getClusterNodeProperties()
         fenceDevicesList = cnp.getFenceDevicesList()
+        clusternodeName = clusternode.getClusterNodeName()
         if (len(fenceDevicesList) > 0):
             # Check if acpi is disabled if sys mgmt card is fence device
             smFenceDevicesList = ["fence_bladecenter", "fence_drac", "fence_drac5", "fence_ilo",
                                   "fence_ilo_mp", "fence_ipmi", "fence_ipmilan", "fence_rsa"]
 
-            cnFenceDeviceList = cca.getClusterNodeFenceDevicesList(clusternode.getClusterNodeName())
+            cnFenceDeviceList = cca.getClusterNodeFenceDevicesList(clusternodeName)
             for fd in cnFenceDeviceList:
                 if ((fd.getAgent() in smFenceDevicesList) and (not clusternode.isAcpiDisabledinRunlevel())):
                     description = "The service \"acpid\" is not disabled on all runlevels(0 - 6). " + \
@@ -318,21 +354,6 @@ class ClusterEvaluator():
                     urls = ["https://access.redhat.com/knowledge/solutions/5414"]
                     rString += StringUtil.formatBulletString(description, urls)
                     break;
-            # Check if fence_manual is enabled on a node
-            if (cca.isFenceDeviceAgentEnabledOnClusterNode(clusternode.getClusterNodeName(), "fence_manual")):
-                description = "The fence device \"fence_manual\" is defined as a fence agent for this node which is an unsupported fencing method."
-                urls = ["https://access.redhat.com/knowledge/articles/36302"]
-                rString += StringUtil.formatBulletString(description, urls)
-            # Check to make sure that fence_vmware is not enabled on node
-            if (cca.isFenceDeviceAgentEnabledOnClusterNode(clusternode.getClusterNodeName(), "fence_vmware")):
-                description =  "The fence device \"fence_vmware\" is defined as a fence agent for this node which is an unsupported fencing method. "
-                description += "The only supported fencing method for VMWare is fence_vmware_soap and fence_scsi."
-                urls = ["https://access.redhat.com/knowledge/articles/29440"]
-                rString += StringUtil.formatBulletString(description, urls)
-        else:
-            description = "There was no fence device defined for the clusternode. A fence device is required for each clusternode."
-            urls = ["https://access.redhat.com/knowledge/solutions/15575"]
-            rString += StringUtil.formatBulletString(description, urls)
         return rString
 
     def __evaluateClusteredFilesystems(self, cca):
