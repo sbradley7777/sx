@@ -31,6 +31,7 @@ from sx.plugins.lib.clusterha.clusternode import ClusterNode
 from sx.plugins.lib.clusterha.clusterevaluator import ClusterEvaluator
 from sx.plugins.lib.clusterha.clusterhastretchevaluator import ClusterHAStretchEvaluator
 from sx.plugins.lib.clusterha.clusternodecompare import ClusternodeCompare
+from sx.plugins.lib.clusterha.clusterhastorage import ClusterHAStorage
 
 from sx.reports.sosreport import Sosreport
 from sx.reports.sysreport import Sysreport
@@ -199,44 +200,45 @@ class Clusterha(sx.plugins.PluginBase):
                 self.write(filename, result)
                 self.write(filename, "")
 
-            result = cnc.getClusterStorageSummary()
-            if (len(result) > 0):
-                self.writeSeperator(filename, "Cluster Storage Summary for GFS/GFS2");
-                self.write(filename, result)
-                self.write(filename, "")
+            #result = cnc.getClusterStorageSummary()
+            #if (len(result) > 0):
+            #    self.writeSeperator(filename, "Cluster Storage Summary for GFS/GFS2");
+            #    self.write(filename, result)
+            #    self.write(filename, "")
 
             # ###################################################################
             # Check the cluster node services summary
             # ###################################################################
-            self.writeSeperator(filename, "Cluster Services Summary");
-            self.write(filename, "NOTE: The state(Enabled/Disabled) of each service can vary with each")
-            self.write(filename, "      cluster, since some configurations do not need all services.")
-            self.write(filename, "      The following articles explains the cluster services:")
-            self.write(filename, "      -  https://access.redhat.com/knowledge/solutions/5898 \n")
-            self.write(filename, "NOTE: The following services are required to be disabled because")
-            self.write(filename, "      the service cman will start and stop these services:")
-            self.write(filename, "      RHEL 5: openais")
-            self.write(filename, "      RHEL 6: corosync\n")
-
+            rString = ""
             for clusternode in cnc.getClusterNodes():
                 chkConfigClusterServiceList = clusternode.getChkConfigClusterServicesStatus()
                 if (not len(chkConfigClusterServiceList) > 0):
                     # If there is no chkconfig data then skip
                     continue
-                self.write(filename, "%s:" %(clusternode.getHostname()))
-
+                currentDisabledServices = ""
                 sortedChkConfigClusterServicesList = sorted(chkConfigClusterServiceList, key=lambda k: k.getStartOrderNumber())
                 for chkConfigClusterService in sortedChkConfigClusterServicesList:
+                    if ((chkConfigClusterService.getName() == "openais") or (chkConfigClusterService.getName() == "corosync")
+                        or (chkConfigClusterService.getName() == "scsi_reserve")):
+                        # These services are checked in evaluator if they are disabled.
+                        continue
                     serviceEnabled = False
-                    if (chkConfigClusterService.isEnabledRunlevel3() and
+                    if (not (chkConfigClusterService.isEnabledRunlevel3() and
                         chkConfigClusterService.isEnabledRunlevel4() and
-                        chkConfigClusterService.isEnabledRunlevel5()):
-                        serviceEnabled = True
-                    message = "Testing if the service \"%s\" is enabled for runlevels 3-5."%(chkConfigClusterService.getName())
-                    self.writeEnabledResult(filename, message.rstrip(), serviceEnabled)
+                        chkConfigClusterService.isEnabledRunlevel5())):
+                        currentDisabledServices += " %s |" %(chkConfigClusterService.getName())
+                if (len(currentDisabledServices) > 0):
+                    rString += "%s:\n  %s\n\n" %(clusternode.getHostname(), currentDisabledServices.rstrip("|"))
+            self.writeSeperator(filename, "Cluster Services Summary");
+            if (len(rString) > 0):
+                header =  "The following services were disabled at boot.\n"
+                header += "-  https://access.redhat.com/knowledge/solutions/5898 \n"
+                self.write(filename, header)
+                self.write(filename, rString.rstrip())
+            else:
+                self.write(filename, "There was either an error finding the services used by Cluster HA or there was none installed.")
+                self.write(filename, "- https://access.redhat.com/knowledge/solutions/5898")
 
-                # Add newline to separate the node stanzas
-                self.write(filename, "")
             # ###################################################################
             # Verify the cluster node configuration
             # ###################################################################
@@ -254,6 +256,19 @@ class Clusterha(sx.plugins.PluginBase):
                 self.write(filenameCE, "      reviewing the cluster.\n")
                 self.write(filenameCE, evaluatorResult.rstrip())
                 self.write(filenameCE, "")
+
+            # ###################################################################
+            # Write out a storage summary which includes GFS/GFS2 and clustered
+            # filesystem resources.
+            # ###################################################################
+            filenameCS = "%s-clusterhastorage_summary.txt" %(cca.getClusterName())
+            clusterHAStorage = ClusterHAStorage(cnc)
+            result = clusterHAStorage.evaluate()
+            if (len(result) > 0):
+                if (len(missingNodesList) > 0):
+                    self.write(filenameCS, "%s\n\n" %(missingNodesMessage))
+                self.write(filenameCS, result.rstrip())
+                self.write(filenameCS, "")
 
             # ###################################################################
             # Evaluate the reports as stretch cluster if that option is enabled.

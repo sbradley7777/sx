@@ -105,8 +105,9 @@ class ClusterEvaluator():
             # Need more than 1 node to compare cluster.confs
             message =  "There was only 1 cluster.conf file found for a %d node cluster. " %(len(cca.getClusterNodeNames()))
             message += "The comparing of cluster.conf files will be skipped since there is not enough files to compare."
-            message += "Please verify that a cluster.conf files exists for all cluster nodes and that they are identical."
             logging.getLogger(sx.MAIN_LOGGER_NAME).warning(message)
+            message = "Please verify that a cluster.conf files exists for all cluster nodes and that they are identical."
+            logging.getLogger(sx.MAIN_LOGGER_NAME).info(message)
         elif (not  len(cca.getClusterNodeNames()) == len(self.__cnc.getClusterNodes())):
             message = "There was only %d cluster.conf compared for the %d node cluster." %(len(self.__cnc.getPathToClusterConfFiles()),
                                                                                            len(cca.getClusterNodeNames()))
@@ -122,26 +123,50 @@ class ClusterEvaluator():
     def __evaluateClusterNodesFencing(self, cca):
         """
         Evaluation on all the clusternodes that do not need report and only need the cluster.conf.
+
+        Could make this easier by using 1 loop, but not sure i want all the list
+        or map floating. Probably should create a map so there is just 1 loop.
         """
         rString = ""
+        # Check if there is no fence defined  on the cluster nodes.
+        fsTable = []
         for clusternodeName in cca.getClusterNodeNames():
             cnFenceDeviceList = cca.getClusterNodeFenceDevicesList(clusternodeName)
-            if (len(cnFenceDeviceList) > 0):
-                # Check if fence_manual is enabled on a node
-                if (cca.isFenceDeviceAgentEnabledOnClusterNode(clusternodeName, "fence_manual")):
-                    description = "The fence device \"fence_manual\" is defined as a fence agent for the clusternode %s which is an unsupported fencing method." %(clusternodeName)
-                    urls = ["https://access.redhat.com/knowledge/articles/36302"]
-                    rString += StringUtil.formatBulletString(description, urls)
-                # Check to make sure that fence_vmware is not enabled on node
-                if (cca.isFenceDeviceAgentEnabledOnClusterNode(clusternodeName, "fence_vmware")):
-                        description =  "The fence device \"fence_vmware\" is defined as a fence agent for the clusternode %s which is an unsupported fencing method. " %(clusternodeName)
-                        description += "The only supported fencing method for VMWare is fence_vmware_soap and fence_scsi."
-                        urls = ["https://access.redhat.com/knowledge/articles/29440"]
-                        rString += StringUtil.formatBulletString(description, urls)
-            else:
-                description = "There was no fence device defined for the clusternode %s. A fence device is required for each clusternode." %(clusternodeName)
-                urls = ["https://access.redhat.com/knowledge/solutions/15575"]
-                rString += StringUtil.formatBulletString(description, urls)
+            if (not len(cnFenceDeviceList) > 0):
+                fsTable.append([clusternodeName])
+        if (len(fsTable) > 0):
+            description = "There was no fence device defined for the following clusternodes. A fence device is required for each clusternode."
+            urls = ["https://access.redhat.com/knowledge/solutions/15575"]
+            stringUtil = StringUtil()
+            tableOfStrings = stringUtil.toTableStringsList(fsTable, ["clusternode_name"])
+            rString += StringUtil.formatBulletString(description, urls, tableOfStrings)
+
+        # Check if fence_manual is defined on a cluster_node.
+        fsTable = []
+        for clusternodeName in cca.getClusterNodeNames():
+            # Check if fence_manual is enabled on a node
+            if (cca.isFenceDeviceAgentEnabledOnClusterNode(clusternodeName, "fence_manual")):
+                fsTable.append([clusternodeName])
+        if (len(fsTable) > 0):
+            description = "The fence device \"fence_manual\" is defined as a fence agent for the following clusternodes which is an unsupported fencing method."
+            urls = ["https://access.redhat.com/knowledge/articles/36302"]
+            stringUtil = StringUtil()
+            tableOfStrings = stringUtil.toTableStringsList(fsTable, ["clusternode_name"])
+            rString += StringUtil.formatBulletString(description, urls, tableOfStrings)
+
+        # Check to make sure that fence_vmware is not enabled on node
+        fsTable = []
+        for clusternodeName in cca.getClusterNodeNames():
+            # Check if fence_manual is enabled on a node
+            if (cca.isFenceDeviceAgentEnabledOnClusterNode(clusternodeName, "fence_vmware")):
+                fsTable.append([clusternodeName])
+        if (len(fsTable) > 0):
+            description =  "The fence device \"fence_vmware\" is defined as a fence agent for the following clusternodes which is an unsupported fencing method. "
+            description += "The only supported fencing method for VMWare is fence_vmware_soap and fence_scsi."
+            urls = ["https://access.redhat.com/knowledge/articles/29440"]
+            stringUtil = StringUtil()
+            tableOfStrings = stringUtil.toTableStringsList(fsTable, ["clusternode_name"])
+            rString += StringUtil.formatBulletString(description, urls, tableOfStrings)
         return rString
 
     def __evaluateQuorumdConfiguration(self, cca, distroRelease):
@@ -485,8 +510,8 @@ class ClusterEvaluator():
                 description += "nfs export via /etc/cluster/cluster.conf (CN)                                                       "
                 description += "samba export via /etc/exports for samba (ES)                                                        "
                 description += "samba export via /etc/cluster/cluster.conf for samba (CS)"
-                tableOfStrings = stringUtil.toTableStringsList(fsTable, tableHeader)
                 urls = ["https://access.redhat.com/knowledge/solutions/39855"]
+                tableOfStrings = stringUtil.toTableStringsList(fsTable, tableHeader)
                 clusterNodeEvalString += StringUtil.formatBulletString(description, urls, tableOfStrings)
 
             # ###################################################################
@@ -806,11 +831,11 @@ class ClusterEvaluator():
         if (len(resultString) > 0):
             rstring += resultString
         # ###################################################################
-        # Check if the fs resources are using HALVM
+        # Check if the fs resources are using HALVM (Disable for now cause
+        # having problems with accuracy if files for vg/lv do not exist.
         # ###################################################################
-        resultString = self.__evaluateFilesystemResources(cca)
-        if (len(resultString) > 0):
-            rstring += resultString
+        # resultString = self.__evaluateFilesystemResources(cca) if
+        # (len(resultString) > 0): rstring += resultString
         # ###################################################################
         # Return the result
         return rstring

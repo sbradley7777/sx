@@ -611,12 +611,12 @@ class ClusterNodes:
             keys = packages.keys()
             keys.sort()
             if (not len(keys) > 0) :
-                rstring += "\n\t      No Cluster Packages Found"
+                rstring += "\n  No Cluster Packages Found"
             for key in keys:
                 cPackages = packages[key]
                 cPackages.sort()
                 for cPackage in cPackages:
-                    rstring += "\n\t      %s" %(cPackage)
+                    rstring += "\n  %s" %(cPackage)
             rstring += ("\n")
 
             # Verify cluster-storage package
@@ -624,12 +624,12 @@ class ClusterNodes:
             keys = packages.keys()
             keys.sort()
             if (not len(keys) > 0) :
-                rstring += "\n\t      No Cluster Storage Module Packages Found."
+                rstring += "\n  No Cluster Storage Module Packages Found."
             for key in keys:
                 cPackages = packages[key]
                 cPackages.sort()
                 for cPackage in cPackages:
-                    rstring += "\n\t      %s" %(cPackage)
+                    rstring += "\n  %s" %(cPackage)
             rstring += "\n"
         # Remove an extra newline
         rstring = rstring.rstrip("\n")
@@ -673,6 +673,7 @@ class ClusterNodes:
             legend = "C = file-system is in /etc/cluster/cluster.conf\nF = file-system is in /etc/fstab\nM = file-system is mounted\n\n"
             rString = "%s%s" %(legend, rString)
         return rString.strip()
+
 
     # #######################################################################
     # Helper functions

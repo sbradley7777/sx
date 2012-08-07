@@ -31,6 +31,7 @@ class RunLevelParser:
                 mo = remStanza.match(item)
                 if mo:
                     chkConfigServiceStatus = ChkConfigServiceStatus(mo.group("name"),
+                                                                    item,
                                                                     mo.group("runlevel0"),
                                                                     mo.group("runlevel1"),
                                                                     mo.group("runlevel2"),
@@ -47,8 +48,10 @@ class ChkConfigServiceStatus:
     Container for data from chkconfig --list. On is True, off is
     False.
     """
-    def __init__(self, name, rl0, rl1, rl2, rl3, rl4, rl5, rl6):
+    def __init__(self, name, rawStatus, rl0, rl1, rl2, rl3, rl4, rl5, rl6):
         self.__name = name
+        # The actual line of service
+        self.__rawStatus = rawStatus.rstrip()
         self.__rl0 = self.__convertBooleanString(rl0.strip())
         self.__rl1 = self.__convertBooleanString(rl1.strip())
         self.__rl2 = self.__convertBooleanString(rl2.strip())
@@ -104,6 +107,9 @@ class ChkConfigServiceStatus:
     def getName(self):
         return self.__name
 
+    def getRawStatus(self):
+        return self.__rawStatus
+
     def isEnabledRunlevel0(self):
         return self.__rl0
 
@@ -140,4 +146,3 @@ class ChkConfigServiceStatus:
 
     def getStopOrderNumber(self):
         return self.__stopOrderNumber
-

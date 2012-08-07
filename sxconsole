@@ -39,7 +39,7 @@ from sx.modulesloader import ExtractorsLoader
 @cvar VERSION_NUMBER: The current version number of sxconsole.
 @type VERSION_NUMBER: String
 """
-VERSION_NUMBER = "2.11-3"
+VERSION_NUMBER = "2.11-4"
 
 def getArchiveLayout(caseNumber, pathToArchiveDirectory, pathToExtractedReports,
                      isModifiedArchiveLayoutEnabled) :
@@ -599,7 +599,7 @@ class OptionParserExtended(OptionParser):
 
         examplesMessage =  "Examples:\n\n"
         examplesMessage += "To list the different plugin and report types:\n"
-        examplesMessage += "$ %s -l\n\n" %(self.__commandName)
+        examplesMessage += "$ %s -m\n\n" %(self.__commandName)
         examplesMessage += "To run default plugins on selected reports and disable user defined reports/plugins:\n"
         examplesMessage += "$ %s 15555553 -r ~/tmp/rh4node1-sysreport.tar.bz2 -r ~/tmp/rh4node2-sysreport.tar.bz2 -U\n\n" %(self.__commandName)
         examplesMessage += "To run default plugins on directory of reports(non-reports will not be processed):\n"

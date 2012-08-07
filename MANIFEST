@@ -28,6 +28,7 @@ lib/sx/plugins/lib/clusterha/__init__.py
 lib/sx/plugins/lib/clusterha/clustercommandsparser.py
 lib/sx/plugins/lib/clusterha/clusterevaluator.py
 lib/sx/plugins/lib/clusterha/clusterhaconfanalyzer.py
+lib/sx/plugins/lib/clusterha/clusterhastorage.py
 lib/sx/plugins/lib/clusterha/clusterhastretchevaluator.py
 lib/sx/plugins/lib/clusterha/clusternode.py
 lib/sx/plugins/lib/clusterha/clusternodecompare.py

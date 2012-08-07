@@ -182,9 +182,9 @@ class LVM:
         self.__lvmConfData = lvmConfData
 
     # #######################################################################
-    # Private LVM helper functions
+    # Public LVM functions
     # #######################################################################
-    def __getVolumelistValues(self):
+    def getVolumeListValues(self):
         volumelistValues = []
         volumelistLine = ""
         for line in self.__lvmConfData:
@@ -203,38 +203,9 @@ class LVM:
                 volumelistValues = configValues.split(",")
         return volumelistValues
 
-    # #######################################################################
-    # Public LVM functions
-    # #######################################################################
-    def getVolumeGroupForDevice(self, pathToDevice):
-        for lvs in self.__lvsaoList:
-            vgName = lvs.getVGName().strip().rstrip()
-            lvName = lvs.getLVName().strip().rstrip()
-            # Possible vglv paths. If there is dashes in the path, then it will
-            # replace them with double dashes.
-            pathToVGLVList = [os.path.join("/dev/mapper", "%s-%s" %(vgName.replace("-", "--"), lvName.replace("-", "--"))),
-                              os.path.join("/dev", "%s/%s" %(vgName, lvName))]
-            if (pathToDevice in pathToVGLVList):
-                for vgs in self.__vgsvList:
-                    if (vgs.getVGName() == vgName):
-                        return vgs
-        return None
-
-    def getLogicalVolumeForDevice(self, pathToDevice):
-        filenameOfDevice = os.path.basename(pathToDevice)
-        for lvs in self.__lvsaoList:
-            vgName = lvs.getVGName().strip().rstrip()
-            lvName = lvs.getLVName().strip().rstrip()
-            # Possible vglv paths
-            pathToVGLVList = [os.path.join("/dev/mapper", "%s-%s" %(vgName, lvName)),
-                              os.path.join("/dev", "%s/%s" %(vgName, lvName))]
-            if (pathToDevice in pathToVGLVList):
-                return lvs
-        return None
-
     def isVolumeListEnabled(self):
         # If volume_list has values set then it is enabled.
-        return (len(self.__getVolumelistValues()) > 0)
+        return (len(self.getVolumeListValues()) > 0)
 
     def getLockingTypeValue(self):
         lockingTypeLine = ""
@@ -286,8 +257,35 @@ class LVM:
             return (lockingTypeValue == "4")
         return False
 
+    def getVolumeGroupForDevice(self, pathToDevice):
+        for lvs in self.__lvsaoList:
+            vgName = lvs.getVGName().strip().rstrip()
+            lvName = lvs.getLVName().strip().rstrip()
+            # Possible vglv paths. If there is dashes in the path, then it will
+            # replace them with double dashes.
+            pathToVGLVList = [os.path.join("/dev/mapper", "%s-%s" %(vgName.replace("-", "--"), lvName.replace("-", "--"))),
+                              os.path.join("/dev", "%s/%s" %(vgName, lvName))]
+            if (pathToDevice in pathToVGLVList):
+                for vgs in self.__vgsvList:
+                    if (vgs.getVGName() == vgName):
+                        return vgs
+        return None
+
+    def getLogicalVolumeForDevice(self, pathToDevice):
+        filenameOfDevice = os.path.basename(pathToDevice)
+        for lvs in self.__lvsaoList:
+            vgName = lvs.getVGName().strip().rstrip()
+            lvName = lvs.getLVName().strip().rstrip()
+            # Possible vglv paths
+            pathToVGLVList = [os.path.join("/dev/mapper", "%s-%s" %(vgName, lvName)),
+                              os.path.join("/dev", "%s/%s" %(vgName, lvName))]
+            if (pathToDevice in pathToVGLVList):
+                return lvs
+        return None
+
     def isLVMDevice(self, pathToDevice):
-        return (self.getLogicalVolumeForDevice(pathToDevice) == None)
+        # If no object created then none was found, but what if vg/lv was empty.
+        return (not self.getLogicalVolumeForDevice(pathToDevice) == None)
 
     def isClusteredLVMDevice(self, pathToDevice):
         # This assumes that volume is in the list and vg will be found.
@@ -304,7 +302,7 @@ class LVM:
 
         Do tags are currently not supported.
         """
-        volumelistValues = self.__getVolumelistValues()
+        volumelistValues = self.getVolumeListValues()
         if (len(volumelistValues) > 0):
             vgName = lvs.getVGName().strip().rstrip()
             lvName = lvs.getLVName().strip().rstrip()

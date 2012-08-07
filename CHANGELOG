@@ -1,7 +1,9 @@
 * Tue Jul 18 2012 Shane Bradley <sbradley@redhat.com>- 2.12-0.0
+- Created a cluster storage report file for fs.sh and GFS/GFS2 filesystem summary info. Which includes lvm info.
+- Cleaned up the cluster service summary information.
 - Moved some of the cluster.conf fencing sections to global section for checks that only need cluster.conf.
-- Add detection for GFS/GFS2 using clustered lvm filesystem.
-- Add detection for fs.sh resources and verify that HALVM is being used.
+- Add detection for GFS/GFS2 using clustered lvm filesystem but currently disabled. Functions are there.
+- Add detection for fs.sh resources and verify that HALVM is being used but currently disabled. Functions are there.
 * Tue Jul 17 2012 Shane Bradley <sbradley@redhat.com>- 2.11-0.0
 - Added new comparision class for comparing clusternodes.
 - Added check for cluster names longer than 16 characters.

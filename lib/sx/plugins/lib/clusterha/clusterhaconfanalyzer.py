@@ -1140,25 +1140,27 @@ class ClusterHAConfAnalyzer :
         failoverDomainsList.append(FailoverDomain("Default Failover Domain", 0, 0, defaultFailoverDomain))
         for fdElement in self.__ccRootElement.findall("rm/failoverdomains/failoverdomain"):
             try:
+                # Map of prio and members:
+                # {'rh5node1.examplerh.com': '1', 'rh5node2.examplerh.com': '2'}
                 fdMembersMap = {}
                 for childElement in fdElement:
+                    ordered = "0"
+                    restricted = "0"
                     try:
                         fdMembersMap[childElement.attrib["name"]] = childElement.attrib["priority"]
                     except KeyError:
                         pass
-                    ordered = "0"
                     try:
                         ordered = fdElement.attrib["ordered"]
                     except KeyError:
                         pass
-                    restricted = "0"
                     try:
                         restricted = fdElement.attrib["restricted"]
                     except KeyError:
                         pass
-                failoverDomainsList.append(FailoverDomain(fdElement.attrib["name"],
-                                                          ordered, restricted,
-                                                          fdMembersMap))
+                    failoverDomainsList.append(FailoverDomain(fdElement.attrib["name"],
+                                                              ordered, restricted,
+                                                              fdMembersMap))
             except KeyError:
                 continue
         return failoverDomainsList
