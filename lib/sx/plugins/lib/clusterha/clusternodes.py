@@ -635,49 +635,28 @@ class ClusterNodes:
         rstring = rstring.rstrip("\n")
         return rstring
 
-    def getClusterStorageSummary(self) :
-        """
-        Returns a string that contains information about the GFS1 and
-        GFS2 filesystems found.
-
-        @return: A string that contains information about the GFS1 and
-        GFS2 filesystems found.
-        @rtype: String
-        """
-        fsMap = {}
-        for clusternode in self.getClusterNodes():
-            clusternodeName = clusternode.getClusterNodeName()
-            csFilesystemList = clusternode.getClusterStorageFilesystemList()
-            for fs in csFilesystemList:
-                locationFound = ""
-                if (fs.isEtcFstabMount()):
-                    locationFound += "F"
-                if (fs.isFilesysMount()):
-                    locationFound += "M"
-                if (fs.isClusterConfMount()):
-                    locationFound += "C"
-                if (not fsMap.has_key(clusternodeName)):
-                    fsMap[clusternodeName] = []
-                fsMap.get(clusternodeName).append([fs.getDeviceName(), fs.getMountPoint(), fs.getFSType(), locationFound])
-        rString  = ""
-        fsListHeader = ["device", "mount_point", "fs_type", "location_found"]
-        stringUtil = StringUtil()
-        for clusternodeName in self.getClusterNodeNames():
-            # In the future I should probably add a way to only print once if they are all the same .
-            if (fsMap.has_key(clusternodeName)):
-                listOfFileystems = fsMap.get(clusternodeName)
-                if (len(listOfFileystems) > 0):
-                    tableString = "%s(%d mounted GFS or GFS2 file-systems)\n%s\n\n" %(clusternodeName, len(listOfFileystems), stringUtil.toTableString(listOfFileystems, fsListHeader))
-                    rString += tableString
-        if (len(rString) > 0):
-            legend = "C = file-system is in /etc/cluster/cluster.conf\nF = file-system is in /etc/fstab\nM = file-system is mounted\n\n"
-            rString = "%s%s" %(legend, rString)
-        return rString.strip()
-
-
     # #######################################################################
     # Helper functions
     # #######################################################################
+    def getPathToQuorumDisk(self):
+        baseClusterNode = self.getBaseClusterNode()
+        if (baseClusterNode == None):
+            # Should never occur since node count should be checked first.
+            return ""
+        cca = ClusterHAConfAnalyzer(baseClusterNode.getPathToClusterConf())
+        quorumd = cca.getQuorumd()
+        if (not quorumd == None):
+            # Check to see if the qdisk is an lvm device.
+            pathToQuroumDisk = quorumd.getDevice()
+            quorumDiskLabel = quorumd.getLabel()
+            for clusternode in self.getClusterNodes():
+                # Find out qdisk device if there is one
+                clustatCommand = ClusterCommandsParser.parseClustatData(clusternode.getClusterCommandData("clustat"))
+                pathToQuroumDisk = clustatCommand.findQuorumDisk()
+                if ((pathToQuroumDisk) > 0):
+                    return pathToQuroumDisk
+        return ""
+
     def isClusterNodeNamesInHostsFile(self, clusternodeNames, networkMaps) :
         """
         This function returns True if all the node names that are in

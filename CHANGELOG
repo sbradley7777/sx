@@ -1,4 +1,5 @@
 * Tue Jul 18 2012 Shane Bradley <sbradley@redhat.com>- 2.12-0.0
+- Added a gluster plugin gluster.py and some libraries for the plugin.
 - Created a cluster storage report file for fs.sh and GFS/GFS2 filesystem summary info. Which includes lvm info.
 - Cleaned up the cluster service summary information.
 - Moved some of the cluster.conf fencing sections to global section for checks that only need cluster.conf.

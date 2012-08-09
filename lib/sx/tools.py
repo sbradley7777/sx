@@ -637,6 +637,22 @@ class FileUtil:
 
 class StringUtil:
 
+    def wrapParagraph(s, width=98, newline=True):
+        rString = textwrap.fill(s, width=98).rstrip()
+        if (newline):
+            return "%s\n" %(rString)
+        return rString
+    wrapParagraph = staticmethod(wrapParagraph)
+
+    def wrapParagraphURLs(s, urls, width=98, newline=True):
+        rString = StringUtil.wrapParagraph(s, width, newline=False).rstrip()
+        for url in urls:
+            rString += "\n- %s" %(url)
+        if (newline):
+            return "%s\n" %(rString)
+        return rString
+    wrapParagraphURLs = staticmethod(wrapParagraphURLs)
+
     def formatBulletString(description, urls, tableOfStrings=None, indentChar="*", indentSize=3, width=98) :
         # Orginal width was 65.
         # Only the first character will be used for the bullet. If no

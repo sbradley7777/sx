@@ -1,9 +1,6 @@
 #!/usr/bin/env python
 """
 
-This plugin is documented here:
-- https://fedorahosted.org/sx/wiki/SX_clusterplugin
-
 @author    :  Shane Bradley
 @contact   :  sbradley@redhat.com
 @version   :  2.11
@@ -32,8 +29,47 @@ class ClusterHAStorage():
         # Seperator between sections:
         self.__seperator = "-------------------------------------------------------------------------------------------------"
 
-    def getClusterNodes(self):
-        return self.__cnc
+    def getClusterStorageSummary(self) :
+        """
+        Returns a string that contains information about the GFS1 and
+        GFS2 filesystems found.
+
+        @return: A string that contains information about the GFS1 and
+        GFS2 filesystems found.
+        @rtype: String
+        """
+        fsMap = {}
+        for clusternode in self.__cnc.getClusterNodes():
+            clusternodeName = clusternode.getClusterNodeName()
+            csFilesystemList = clusternode.getClusterStorageFilesystemList()
+            for fs in csFilesystemList:
+                locationFound = ""
+                if (fs.isEtcFstabMount()):
+                    locationFound += "F"
+                if (fs.isFilesysMount()):
+                    locationFound += "M"
+                if (fs.isClusterConfMount()):
+                    locationFound += "C"
+                if (not fsMap.has_key(clusternodeName)):
+                    fsMap[clusternodeName] = []
+                fsMap.get(clusternodeName).append([fs.getDeviceName(), fs.getMountPoint(), fs.getFSType(), locationFound])
+        rString  = ""
+        fsListHeader = ["device", "mount_point", "fs_type", "location_found"]
+        stringUtil = StringUtil()
+        for clusternodeName in self.__cnc.getClusterNodeNames():
+            # In the future I should probably add a way to only print once if they are all the same .
+            if (fsMap.has_key(clusternodeName)):
+                listOfFileystems = fsMap.get(clusternodeName)
+                if (len(listOfFileystems) > 0):
+                    tableString = "%s(%d mounted GFS or GFS2 file-systems)\n%s\n\n" %(clusternodeName, len(listOfFileystems), stringUtil.toTableString(listOfFileystems, fsListHeader))
+                    rString += tableString
+        if (len(rString) > 0):
+            description =  "All GFS or GFS2 filesystem are required to be created on a clustered lvm(clvm) device. All GFS or GFS2 filesystems "
+            description += "should be verified that they meet this requirement. The following article describes this requirement:"
+            urls = ["https://access.redhat.com/knowledge/solutions/46637"]
+            legend = "C = file-system is in /etc/cluster/cluster.conf\nF = file-system is in /etc/fstab\nM = file-system is mounted\n"
+            rString = "%s\n%s\n%s" %(StringUtil.wrapParagraphURLs(description, urls), legend, rString)
+        return rString.strip()
 
     # #######################################################################
     # Evaluate Function
@@ -51,7 +87,7 @@ class ClusterHAStorage():
         # ###################################################################
         # Get the GFS/GFS2 storage summary
         # ###################################################################
-        result = self.__cnc.getClusterStorageSummary()
+        result = self.getClusterStorageSummary()
         if (len(result) > 0):
             sectionHeader = "%s\nGFS and GFS2 Filesystem Summary\n%s" %(self.__seperator, self.__seperator)
             rString += "%s\n%s\n\n" %(sectionHeader, result)
@@ -75,7 +111,10 @@ class ClusterHAStorage():
             sectionHeader =  "%s\nFilesystem and Clustered-Filesystem cluster.conf Summary\n%s" %(self.__seperator, self.__seperator)
             tableHeader = ["device_name", "mount_point", "fs_type"]
             tableOfStrings = stringUtil.toTableString(fsTable, tableHeader)
-            rString += "%s\n%s\n\n" %(sectionHeader, tableOfStrings)
+            description =  "It is recommended that all filesystem resources(fs.sh) are created on a HALVM device."
+            description += "The following article describes this procedure:"
+            urls = ["https://access.redhat.com/knowledge/solutions/3067"]
+            rString += "%s\n%s\n%s\n\n" %(sectionHeader, StringUtil.wrapParagraphURLs(description, urls), tableOfStrings)
 
         # ###################################################################
         # Write summary of status of HALVM and CLVM

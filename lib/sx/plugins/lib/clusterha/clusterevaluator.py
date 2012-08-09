@@ -231,8 +231,8 @@ class ClusterEvaluator():
         # cman/@two_node: Must be set to 0 when qiskd is in use with one EXCEPTION and
         # that is if quorumd/@votes is set to 0, two_node is allowed.
         if ((int(quorumd.getVotes()) > 0) and (cca.isCmanTwoNodeEnabled())):
-            description =  "The cluster has the option \"cman/@two_nodes\" enabled and also"
-            description += "have set \"quorumd/@votes\" greater than 0 which is unsupported."
+            description =  "The cluster has the option \"cman/@two_nodes\" enabled and also "
+            description += "has set the option \"quorumd/@votes\" greater than 0 which is unsupported."
             urls = []
             rString += StringUtil.formatBulletString(description, urls)
 
@@ -386,6 +386,7 @@ class ClusterEvaluator():
         # urls = ["https://access.redhat.com/knowledge/solutions/59498"]
         rString = ""
         for clusternode in self.__cnc.getClusterNodes():
+            stringUtil = StringUtil()
             clusterNodeEvalString = ""
             # ###################################################################
             # Distro Specific evaluations
@@ -403,7 +404,6 @@ class ClusterEvaluator():
             # Analyze the Clustered Storage
             # ###################################################################
             listOfClusterStorageFilesystems = clusternode.getClusterStorageFilesystemList()
-            stringUtil = StringUtil()
 
             # ###################################################################
             # Verify that GFS/GFS2 filesystem is using lvm with cluster bit set
@@ -421,6 +421,8 @@ class ClusterEvaluator():
                     urls = ["https://access.redhat.com/knowledge/solutions/46637"]
                     clusterNodeEvalString += StringUtil.formatBulletString(description, urls)
 
+            # Disabling this check for now cause still working on how to do it.
+            """
             # Verify that the clustered filesystem has clusterbit set on the vg.
             for csFilesystem in listOfClusterStorageFilesystems:
                 pathToDevice = str(csFilesystem.getDeviceName().strip().rstrip())
@@ -435,7 +437,7 @@ class ClusterEvaluator():
                 tableOfStrings = stringUtil.toTableStringsList(fsTable, tableHeader)
                 urls = ["https://access.redhat.com/knowledge/solutions/46637"]
                 clusterNodeEvalString += StringUtil.formatBulletString(description, urls, tableOfStrings)
-
+            """
             # ###################################################################
             # Verify they are exporting a gfs/gfs2 fs via samba and nfs correctly
             # ###################################################################
@@ -649,20 +651,8 @@ class ClusterEvaluator():
                         return True
         return False
 
-    def __getPathToQuorumDisk(self, cca):
-        quorumd = cca.getQuorumd()
-        if (not quorumd == None):
-            # Check to see if the qdisk is an lvm device.
-            pathToQuroumDisk = quorumd.getDevice()
-            quorumDiskLabel = quorumd.getLabel()
-            for clusternode in self.__cnc.getClusterNodes():
-                # Find out qdisk device if there is one
-                clustatCommand = ClusterCommandsParser.parseClustatData(clusternode.getClusterCommandData("clustat"))
-                pathToQuroumDisk = clustatCommand.findQuorumDisk()
-                if ((pathToQuroumDisk) > 0):
-                    return pathToQuroumDisk
-        return ""
-
+    # Disabling this for now cause it cannot be accurate all the time.
+    """
     def __isQDiskLVMDevice(self, pathToDevice):
         if (not len(pathToDevice) > 0):
             return False
@@ -674,7 +664,7 @@ class ClusterEvaluator():
                       self.__cnc.getStorageData(clusternode.getClusterNodeName()).getLVMConfData())
             return lvm.isLVMDevice(pathToDevice)
         return False
-
+    """
     # #######################################################################
     # Evaluate Function
     # #######################################################################
@@ -702,11 +692,12 @@ class ClusterEvaluator():
         # Check qdisk configuration:
         # ###################################################################
         quorumdConfigString = ""
-        pathToQuroumDisk = self.__getPathToQuorumDisk(cca)
-        if (self.__isQDiskLVMDevice(pathToQuroumDisk)):
-            description =  "The quorum disk %s cannot be an lvm device." %(pathToQuroumDisk)
-            urls = ["https://access.redhat.com/knowledge/solutions/41726"]
-            quorumdConfigString += StringUtil.formatBulletString(description, urls)
+        # Disabling this for now cause it cannot be accurate all the time.
+        #pathToQuroumDisk = self.__cnc.getPathToQuorumDisk()
+        #if (self.__isQDiskLVMDevice(pathToQuroumDisk)):
+        #    description =  "The quorum disk %s cannot be an lvm device." %(pathToQuroumDisk)
+        #    urls = ["https://access.redhat.com/knowledge/solutions/41726"]
+        #    quorumdConfigString += StringUtil.formatBulletString(description, urls)
 
         distroRelease = baseClusterNode.getDistroRelease()
         quorumdConfigString += self.__evaluateQuorumdConfiguration(cca, distroRelease)

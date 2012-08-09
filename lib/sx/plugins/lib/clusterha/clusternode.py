@@ -420,6 +420,7 @@ class ClusterNode:
         @rtype: String
         """
         return self.__uname_a
+
     def getHostname(self) :
         """
         Returns the hostname.
