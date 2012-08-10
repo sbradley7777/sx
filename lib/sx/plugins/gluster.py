@@ -5,6 +5,17 @@ This plugin will analyze and summarize a collection of sosreports that are using
 This plugin only supports RHEL 6+ using gluster currently.
 - https://bugzilla.redhat.com/show_bug.cgi?id=818149
 
+* /etc/glusterd was replaced by /var/lib/glusterfs and /etc/glusterd is used in
+  RHSSA-3.2, /var/lib/glusterfs in RHS-2.0
+
+* /var/lib/glusterd/vols/*/*-fuse.vol should be the same on all nodes, error if they are not.
+* /var/lib/glusterd/vols/*/*/info file should be the same on all nodes, error if they are not.
+* md5sum `find . -name cksum|paste -s`
+* grep -i state ./gfs0{1..6}/etc/glusterd/peers/*
+* gawk '/gfid self-heal/ || /selfhealing/ || /split brain/ || / E /' *
+
+
+
 @author    :  Shane Bradley
 @contact   :  sbradley@redhat.com
 @version   :  2.08
@@ -75,10 +86,86 @@ class Gluster(sx.plugins.PluginBase):
             # ###################################################################
             # Summary of each node in collection
             # ###################################################################
-            result = self.__glusterPeerNodes.getGlusterPeerNodesSystemSummary()
+            result = self.__getHostsSummary()
             if (len(result) > 0):
                 self.writeSeperator(filename, "Gluster Peer Nodes Summary");
                 self.write(filename, result.rstrip())
                 self.write(filename, "")
-            for glusterPeerNode in self.__glusterPeerNodes.getGlusterPeerNodes():
-                pass
+
+            # ###################################################################
+            # Write out all the gluster peer nodes
+            # ###################################################################
+            result = self.__getPeerNodesSummary()
+            if (len(result) > 0):
+                self.writeSeperator(filename, "Gluster Peer Nodes Summary");
+                self.write(filename, result.rstrip())
+                self.write(filename, "")
+
+            # ###################################################################
+            # Write out all the gluster processes
+            # ###################################################################
+            result = self.__getProcessesSummary()
+            if (len(result) > 0):
+                self.writeSeperator(filename, "Gluster Peer Nodes Process Summary");
+                self.write(filename, result.rstrip())
+                self.write(filename, "")
+
+
+    # #######################################################################
+    # Private functions to create a string of summary information
+    # #######################################################################
+    def __getPeerNodesSummary(self) :
+        stringUtil = StringUtil()
+        pTable = []
+        rString  = ""
+        for glusterPeerNode in self.__glusterPeerNodes.getGlusterPeerNodes():
+            pTable = []
+            for peerNodeMap in glusterPeerNode.getPeerNodes():
+                pnHostname1 = ""
+                if (peerNodeMap.has_key("hostname1")):
+                    pnHostname1 = peerNodeMap.get("hostname1")
+                pnUUID = ""
+                if (peerNodeMap.has_key("uuid")):
+                    pnUUID = peerNodeMap.get("uuid")
+                pnState = ""
+                if (peerNodeMap.has_key("state")):
+                    pnState = peerNodeMap.get("state")
+                pTable.append([pnHostname1, pnUUID, pnState])
+            if (len(pTable) > 0):
+                rString += "%s(%d peers):\n%s\n\n" %(glusterPeerNode.getHostname(), len(pTable), stringUtil.toTableString(pTable, ["hostname1", "uuid", "state"]))
+        return rString
+
+    def __getProcessesSummary(self) :
+        stringUtil = StringUtil()
+        rString  = ""
+        for glusterPeerNode in self.__glusterPeerNodes.getGlusterPeerNodes():
+            pTable = []
+            for process in glusterPeerNode.getGlusterProcesses():
+                command = process.getCommand()
+                if (len(command) > 70):
+                    endStringIndex = len(command.split()[0]) + 50
+                    command = command[0:endStringIndex]
+                pTable.append([process.getPID(), process.getCPUPercentage(), process.getMemoryPercentage(), "%s ...." %(command)])
+            if (len(pTable) > 0):
+                rString += "%s(%d processes):\n%s\n\n" %(glusterPeerNode.getHostname(), len(pTable), stringUtil.toTableString(pTable, ["pid", "cpu%", "mem%", "command"]))
+        return rString
+
+    def __getHostsSummary(self) :
+        rString  = ""
+        for glusterPeerNode in self.__glusterPeerNodes.getGlusterPeerNodes():
+            if (len(rString) > 0):
+                rString += "\n"
+            unameASplit = glusterPeerNode.getUnameA().split()
+            unameA = ""
+            for i in range (0, len(unameASplit)):
+                if (i == 5) :
+                    unameA += "\n\t      "
+                unameA += "%s " %(unameASplit[i])
+                i = i + 1
+            rString += "Hostname:     %s\n" %(glusterPeerNode.getHostname())
+            rString += "Date:         %s\n" %(glusterPeerNode.getDate())
+            rString += "RH Release:   %s\n" %(glusterPeerNode.getDistroRelease())
+            rString += "Uptime:       %s\n" %(glusterPeerNode.getUptime())
+            rString += "Uname -a:     %s\n" %(unameA)
+            rString += "UUID:         %s\n" %(glusterPeerNode.getUUID())
+        return rString

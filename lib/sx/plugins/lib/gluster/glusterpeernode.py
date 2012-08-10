@@ -10,12 +10,14 @@ import logging
 
 import sx
 from sx.logwriter import LogWriter
+from sx.plugins.lib.general.processparser import PS
 
 
 class GlusterPeerNode:
     def __init__(self, distroRelease, date, uname_a, hostname,
                  uptime, networkMaps, chkConfigList, installedRPMS,
-                 filesysMountsList, etcFstabList):
+                 filesysMountsList, etcFstabList, processList,
+                 gpnUUID, listOfPeerNodes):
         self.__distroRelease = distroRelease
         self.__date = date
         self.__uname_a = uname_a
@@ -26,6 +28,9 @@ class GlusterPeerNode:
         self.__installedRPMS = installedRPMS
         self.__filesysMountList = filesysMountsList
         self.__etcFstabList = etcFstabList
+        self.__processList = processList
+        self.__gpnUUID = gpnUUID
+        self.__listOfPeerNodes = listOfPeerNodes
 
     def getDistroRelease(self) :
         return self.__distroRelease
@@ -38,7 +43,6 @@ class GlusterPeerNode:
 
     def getHostname(self) :
         return self.__hostname
-
 
     def getUptime(self) :
         return self.__uptime
@@ -57,3 +61,22 @@ class GlusterPeerNode:
 
     def getEtcFstabList(self):
         return self.__etcFstabList
+
+    def getProcessList(self):
+        return self.__processList
+
+    def getUUID(self):
+        return self.__gpnUUID
+
+    def getPeerNodes(self):
+        return self.__listOfPeerNodes
+
+    # ###############################################################
+    # Public Helper functions
+    # ###############################################################
+    def getGlusterProcesses(self):
+        processList = []
+        for process in self.getProcessList():
+            if (process.getCommand().find("/usr/sbin/glusterfs") >= 0):
+                processList.append(process)
+        return processList

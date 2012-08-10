@@ -10,6 +10,7 @@ import logging
 
 import sx
 from sx.logwriter import LogWriter
+from sx.tools import ConfigurationFileParser
 from sx.plugins.lib.gluster.glusterpeernode import GlusterPeerNode
 from sx.plugins.lib.networking.networkdeviceparser import NetworkDeviceParser
 from sx.plugins.lib.networking.networkdeviceparser import NetworkMap
@@ -24,6 +25,8 @@ from sx.plugins.lib.storage.filesysparser import FilesysParser
 from sx.plugins.lib.storage.filesysparser import FilesysMount
 from sx.plugins.lib.storage.procparser import ProcParser
 from sx.plugins.lib.storage.procparser import ProcFilesystems
+
+from sx.plugins.lib.general.processparser import ProcessParser
 
 class GlusterPeerNodes:
     def __init__(self):
@@ -99,6 +102,36 @@ class GlusterPeerNodes:
         etcFstabList = FilesysParser.parseEtcFstabData(report.getDataFromFile("etc/fstab"))
 
         # ###############################################################
+        # Get Processes
+        # ###############################################################
+        psData = report.getDataFromFile("ps")
+        if (psData == None):
+            psData = report.getDataFromFile("sos_commands/process/ps_auxwww")
+        psList = ProcessParser.parsePSData(psData)
+
+        # ###############################################################
+        # Grab configuration files for gpn(GlusterPeerNode)
+        # ###############################################################
+
+        # The config files directory can be located in two places, if uuid if
+        # found then that will be the config dir base path.
+        glusterRootDir = "var/lib/glusterd"
+        glusterdInfoData = report.getDataFromFile("%s/glusterd.info" %(glusterRootDir))
+        if (glusterdInfoData == None):
+            glusterRootDir = "etc"
+            glusterdInfoData = report.getDataFromFile("%s/glusterd.info" %(glusterRootDir))
+        # If there was no glusterd.info file found then return False.
+        if (not len(glusterdInfoData) > 0):
+            return False
+
+        gpnUUID = glusterdInfoData[0].split("=")[1]
+        gpnPeersMap = report.getDataFromDir("%s/peers" %(glusterRootDir))
+        listOfPeerNodes = []
+        for key in gpnPeersMap.keys():
+            configFileParser = ConfigurationFileParser(gpnPeersMap.get(key), {}, enforceEmptyValues=False)
+            gpnPeerMap = configFileParser.getMap()
+            listOfPeerNodes.append(gpnPeerMap)
+        # ###############################################################
         # Create the node since it is valid then append to collection
         # ###############################################################
         glusterPeerNode = GlusterPeerNode(distroRelease,
@@ -110,33 +143,14 @@ class GlusterPeerNodes:
                                           chkConfigList,
                                           report.getInstalledRPMSData(),
                                           filesysMountsList,
-                                          etcFstabList)
+                                          etcFstabList,
+                                          psList,
+                                          gpnUUID,
+                                          listOfPeerNodes)
         # ###############################################################
         # Now append the fully formed object to the node and resort the
         # nodes so they are kept in node id order.
         # ###############################################################
         self.__glusterPeerNodes.append(glusterPeerNode)
+        self.__glusterPeerNodes.sort(key=lambda g: str(g.getHostname()))
         return True
-
-    # #######################################################################
-    # Public string functions for returning a string that is a summary
-    # of all the clusternodes.
-    # #######################################################################
-    def getGlusterPeerNodesSystemSummary(self) :
-        rstring  = ""
-        for glusterPeerNode in self.getGlusterPeerNodes():
-            if (len(rstring) > 0):
-                rstring += "\n"
-            unameASplit = glusterPeerNode.getUnameA().split()
-            unameA = ""
-            for i in range (0, len(unameASplit)):
-                if (i == 5) :
-                    unameA += "\n\t      "
-                unameA += "%s " %(unameASplit[i])
-                i = i + 1
-            rstring += "Hostname:     %s\n" %(glusterPeerNode.getHostname())
-            rstring += "Date:         %s\n" %(glusterPeerNode.getDate())
-            rstring += "RH Release:   %s\n" %(glusterPeerNode.getDistroRelease())
-            rstring += "Uptime:       %s\n" %(glusterPeerNode.getUptime())
-            rstring += "Uname -a:     %s\n" %(unameA)
-        return rstring
