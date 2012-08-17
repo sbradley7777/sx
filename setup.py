@@ -23,7 +23,7 @@ if __name__ == "__main__":
         packages=["sx", "sx.plugins", "sx.plugins.lib",  "sx.reports", "sx.extractors",
                   "sx.plugins.lib.clusterha", "sx.plugins.lib.storage", "sx.plugins.lib.log",
                   "sx.plugins.lib.kernel", "sx.plugins.lib.networking", "sx.plugins.lib.general",
-                  "sx.plugins.lib.rpm"],
+                  "sx.plugins.lib.rpm", "sx.plugins.lib.gluster"],
         scripts=["sxconsole"],
         package_dir={"":"lib",}
     )

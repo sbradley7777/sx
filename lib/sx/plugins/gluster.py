@@ -3,22 +3,16 @@
 This plugin will analyze and summarize a collection of sosreports that are using gluster.
 
 This plugin only supports RHEL 6+ using gluster currently.
-- https://bugzilla.redhat.com/show_bug.cgi?id=818149
 
-* /etc/glusterd was replaced by /var/lib/glusterfs and /etc/glusterd is used in
-  RHSSA-3.2, /var/lib/glusterfs in RHS-2.0
-
+TODO:
 * /var/lib/glusterd/vols/*/*-fuse.vol should be the same on all nodes, error if they are not.
 * /var/lib/glusterd/vols/*/*/info file should be the same on all nodes, error if they are not.
 * md5sum `find . -name cksum|paste -s`
-* grep -i state ./gfs0{1..6}/etc/glusterd/peers/*
 * gawk '/gfid self-heal/ || /selfhealing/ || /split brain/ || / E /' *
-
-
 
 @author    :  Shane Bradley
 @contact   :  sbradley@redhat.com
-@version   :  2.08
+@version   :  2.11
 @copyright :  GPLv2
 """
 import string
@@ -40,7 +34,7 @@ class Gluster(sx.plugins.PluginBase):
     def __init__(self, pathToPluginReportDir="") :
         sx.plugins.PluginBase.__init__(self, "Gluster",
                                        "This plugin will analyze sosreports that are using gluster.",
-                                       ["Sosreport"], False, True, {},
+                                       ["Sosreport"], True, True, {},
                                        pathToPluginReportDir)
 
         self.__glusterPeerNodes = GlusterPeerNodes()

@@ -49,15 +49,12 @@ class Report:
     This class is a container for different kind of reports. This is
     the base class that all report types should inherit.
     """
-    def __init__(self, name, description, disableReadCopy=True, stripDirectoriesDepth=1) :
+    def __init__(self, name, description, stripDirectoriesDepth=1) :
         """
         @param name: The name of the report.
         @type name: String
         @param description: A description of the report.
         @type description: String
-        @param disableReadCopy: The boolean that if True will not copy a
-        file to tmp location before reading it.
-        @type disableReadCopy: Boolean
         @param stripDirectoriesDepth: This value will strip the root
         directories of the report to a depth that is given. Default is 1.
         @type stripDirectoriesDepth: Int
@@ -70,10 +67,6 @@ class Report:
 
         self.__pathToExtractedReport = ""
         self.__pathToTmpExtractedReport = ""
-
-        # This option is for enabling/disabling copying a file to tmp
-        # directory before reading it so that it is preserved.
-        self.__disableReadCopy = disableReadCopy
 
     def __str__(self) :
         """
@@ -132,68 +125,22 @@ class Report:
         (head, tail) = os.path.split(self.__pathToExtractedReport)
         self.__pathToTmpExtractedReport = os.path.join(head, ".%s" %(tail))
 
+    def includesOtherReports(self):
+        """
+        By default it will return False. If the other report contains
+        other report types then set to True. The reason is that if
+        True we can add the reports within the report to extraction
+        process.
+
+        @return: Returns True if there are other report types within
+        this report that should be extracted.
+        @rtype: Boolean
+        """
+        return False
+
     # ##########################################################################
     # Helper action functions
     # ##########################################################################
-    def __copy(self, src, dst) :
-        """
-        Returns the path to the file that was copied from src to dst
-        path. Empty string is returned if no file was copied because
-        of an error.
-
-        This function makes a temporary copy of the file, it does not
-        return the actual path to the extracted report. This is an
-        extact duplicate of the extracted report. The temporary
-        directory of files is dynamically created as requests are
-        made. If file is already copied then it does not create it
-        again.
-
-        @return: Returns the path to the file that was copied from
-        src to dst path. Empty String is returned if copy was not completed.
-        @rtype: String
-
-        @param src: The path to the source file to copy.
-        @type src: String
-        @param dst: The path to the destination file to copy src file
-        to.
-        @type dst: String
-
-        """
-        if (os.path.isfile(src)) :
-            pDir,filename = os.path.split(dst)
-            try:
-                if not os.access(pDir, os.F_OK):
-                    os.makedirs(pDir)
-            except (IOError, os.error):
-                message =  "Cannot create directory: %s" % (pDir)
-                logging.getLogger(sx.MAIN_LOGGER_NAME).error(message)
-                return ""
-            try:
-                # If file already exist then do not overwrite it, just
-                # return the dst.
-                if not (os.path.isfile(dst)) :
-                    shutil.copyfile(src, dst)
-                return dst
-            except (IOError, os.error):
-                message = "IOerror occured copying the file %s to destination \n\t%s" % (src, dst)
-                logging.getLogger(sx.MAIN_LOGGER_NAME).error(message)
-                return ""
-        elif (os.path.isdir(src)):
-            try:
-                if not os.access(dst, os.F_OK):
-                    os.makedirs(dst)
-            except (IOError, os.error):
-                message =  "Cannot create directory: %s" %(pDir)
-                logging.getLogger(sx.MAIN_LOGGER_NAME).error(message)
-                return ""
-            for f in os.listdir(src):
-                srcPath = os.path.join(src, f)
-                dstPath = os.path.join(dst, f)
-                self.__copy(srcPath, dstPath)
-            return dst
-        # Return empty string if file/dir does not exist
-        return ""
-
     def clean(self) :
         """
         Remove the temporary location of files that were copied from
@@ -209,18 +156,18 @@ class Report:
     # ##########################################################################
     # Extract File/Data from extracted sreports functions
     # ##########################################################################
-    def includesOtherReports(self):
+    def getFileListing(self, pathToDir):
         """
-        By default it will return False. If the other report contains
-        other report types then set to True. The reason is that if
-        True we can add the reports within the report to extraction
-        process.
-
-        @return: Returns True if there are other report types within
-        this report that should be extracted.
-        @rtype: Boolean
+        Returns a list of file path for all the files in the directory. If no
+        files are found in directory or is a file then empty list is
+        returned. Hidden files are not returned in the listing.
         """
-        return False
+        listOfFiles = []
+        fullPathToDir = self.getPathForFile(pathToDir)
+        if ((os.path.isdir(fullPathToDir)) and (len(fullPathToDir) > 0)):
+            for filename in os.listdir(fullPathToDir):
+                listOfFiles.append(os.path.join(fullPathToDir, filename))
+        return listOfFiles
 
     def getDataFromFile(self, pathToFile) :
         """
@@ -376,21 +323,9 @@ class Report:
         """
         if (len(pathToFile) > 0):
             src = os.path.join(self.__pathToExtractedReport, pathToFile).strip()
-            dst = os.path.join(self.__pathToTmpExtractedReport, pathToFile)
             # Cannot check if file cause we have symlinks in report
             if (os.path.exists(src)):
-                if (self.__disableReadCopy):
                     return src
-                else:
-                    # A copy of the file will be made so that orginal file is
-                    # preserved. After the copy function is complete the path
-                    # of new file will be returned.
-                    pathToSrcCopy = self.__copy(src,dst)
-                    if (os.path.exists(pathToSrcCopy)):
-                        return pathToSrcCopy
-                    else:
-                        message = "The path to the copied file does not exist: %s." %(pathToSrcCopy)
-                        logging.getLogger(sx.MAIN_LOGGER_NAME).warn(message)
         return ""
 
     def extract(self, extractor, extractDir):
@@ -442,5 +377,3 @@ class Report:
             logging.getLogger(sx.MAIN_LOGGER_NAME).error(message)
             return False
         return extractor.extract(self.__pathToExtractedReport, self.__stripDirectoriesDepth)
-
-

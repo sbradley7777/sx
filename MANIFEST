@@ -18,6 +18,7 @@ lib/sx/extractors/zipextractor.py
 lib/sx/plugins/__init__.py
 lib/sx/plugins/checksysreport.py
 lib/sx/plugins/clusterha.py
+lib/sx/plugins/gluster.py
 lib/sx/plugins/networking.py
 lib/sx/plugins/opensosreport.py
 lib/sx/plugins/rhev.py
@@ -35,7 +36,11 @@ lib/sx/plugins/lib/clusterha/clusternodecompare.py
 lib/sx/plugins/lib/clusterha/clusternodes.py
 lib/sx/plugins/lib/general/__init__.py
 lib/sx/plugins/lib/general/distroreleaseparser.py
+lib/sx/plugins/lib/general/processparser.py
 lib/sx/plugins/lib/general/runlevelserviceparser.py
+lib/sx/plugins/lib/gluster/__init__.py
+lib/sx/plugins/lib/gluster/glusterpeernode.py
+lib/sx/plugins/lib/gluster/glusterpeernodes.py
 lib/sx/plugins/lib/kernel/__init__.py
 lib/sx/plugins/lib/kernel/modulesparser.py
 lib/sx/plugins/lib/log/__init__.py

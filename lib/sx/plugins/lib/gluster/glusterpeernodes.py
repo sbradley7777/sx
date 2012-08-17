@@ -114,7 +114,9 @@ class GlusterPeerNodes:
         # ###############################################################
 
         # The config files directory can be located in two places, if uuid if
-        # found then that will be the config dir base path.
+        # found then that will be the config dir base path.  /etc/glusterd was
+        # replaced by /var/lib/glusterd. /etc/glusterd is used in RHSSA-3.2,
+        # /var/lib/glusterd in RHS-2.0.
         glusterRootDir = "var/lib/glusterd"
         glusterdInfoData = report.getDataFromFile("%s/glusterd.info" %(glusterRootDir))
         if (glusterdInfoData == None):
@@ -131,6 +133,11 @@ class GlusterPeerNodes:
             configFileParser = ConfigurationFileParser(gpnPeersMap.get(key), {}, enforceEmptyValues=False)
             gpnPeerMap = configFileParser.getMap()
             listOfPeerNodes.append(gpnPeerMap)
+
+        #gpnVolsList = {}
+        #for pathToFilename in report.getFileListing("%s/vols" %(glusterRootDir)):
+        #    print pathToFilename
+
         # ###############################################################
         # Create the node since it is valid then append to collection
         # ###############################################################
