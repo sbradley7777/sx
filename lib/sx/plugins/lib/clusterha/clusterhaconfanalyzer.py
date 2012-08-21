@@ -20,8 +20,17 @@ import sx
 from sx.tools import FileUtil
 from sx.plugins.lib.storage.filesysparser import FilesysMount
 
+# Elemtree throws different exception in python 2.6(pyexpat.error)
+# versus what is thrown in python2.7(ParseError). 
+from sys import exc_type as ParseError
+try:
+    from xml.etree.ElementTree import ParseError
+except ImportError:
+    from xml.parsers.expat import ExpatError as ParseError
+
 class Quorumd:
     def __init__(self, quorumdAttributes, clusternodesCount):
+
         self.__quorumdAttributes = quorumdAttributes
         self.__quorumdHeuristics = []
         self.__clusternodesCount = clusternodesCount
@@ -618,7 +627,6 @@ class ClusterHAConfAnalyzer :
                 # #######################################################################
                 # Try to do xml parsing with elementtree instead of libxml2.
                 # #######################################################################
-                from xml.etree.ElementTree import ParseError
                 try:
                     self.__ccRootElement = fromstring(clusterConfString)
                 except IOError:
