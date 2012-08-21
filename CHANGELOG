@@ -1,7 +1,7 @@
 * Tue Jul 18 2012 Shane Bradley <sbradley@redhat.com>- 2.12-0.0
 - RHEL6 does not have the class ParseError in elementtree so I now catch the exception and handle correctly.
 - Added a gluster plugin gluster.py and some libraries for the plugin.
-- Created a cluster storage report file for fs.sh and GFS/GFS2 filesystem summary info. Which includes lvm info.
+- Added lvm, gfs*, and cluster.conf fs resource detection and information summary.
 - Cleaned up the cluster service summary information.
 - Moved some of the cluster.conf fencing sections to global section for checks that only need cluster.conf.
 - Add detection for GFS/GFS2 using clustered lvm filesystem but currently disabled. Functions are there.

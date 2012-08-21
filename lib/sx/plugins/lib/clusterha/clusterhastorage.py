@@ -83,7 +83,6 @@ class ClusterHAStorage():
             # Should never occur since node count should be checked first.
             return ""
         cca = ClusterHAConfAnalyzer(baseClusterNode.getPathToClusterConf())
-        filename = "%s-storage_summary.txt" %(cca.getClusterName())
         # ###################################################################
         # Get the GFS/GFS2 storage summary
         # ###################################################################

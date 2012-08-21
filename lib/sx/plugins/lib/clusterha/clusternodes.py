@@ -601,6 +601,7 @@ class ClusterNodes:
         @rtype: String
         """
         rstring  = ""
+        stringUtil = StringUtil()
         for clusternode in self.getClusterNodes():
             if (len(rstring) > 0):
                 rstring += "\n"
@@ -610,27 +611,61 @@ class ClusterNodes:
             packages = clusternode.getClusterPackagesVersion()
             keys = packages.keys()
             keys.sort()
-            if (not len(keys) > 0) :
-                rstring += "\n  No Cluster Packages Found"
+            index = 0
+            fsTable  = []
+            currentTable = []
             for key in keys:
                 cPackages = packages[key]
                 cPackages.sort()
                 for cPackage in cPackages:
-                    rstring += "\n  %s" %(cPackage)
-            rstring += ("\n")
+                    if (index % 2 == 0):
+                        if (len(currentTable) > 0):
+                            fsTable.append(currentTable)
+                        currentTable = []
+                        currentTable.append("%s      " %(cPackage))
+                    else:
+                        currentTable.append(cPackage)
+                    index += 1
+            if (len(currentTable) > 0):
+                startIndex = len(currentTable)
+                for i in range(len(currentTable), 2):
+                    currentTable.append(" ")
+                fsTable.append(currentTable)
+            if (len(fsTable) > 0):
+                packageTableString = stringUtil.toTableString(fsTable)
+                rstring += ("\n%s\n") %(packageTableString)
+            else:
+                rstring += "\nThere was no High Availability Packages Found.\n"
 
             # Verify cluster-storage package
             packages = clusternode.getClusterModulePackagesVersion()
             keys = packages.keys()
             keys.sort()
-            if (not len(keys) > 0) :
-                rstring += "\n  No Cluster Storage Module Packages Found."
+            index = 0
+            fsTable  = []
+            currentTable = []
             for key in keys:
                 cPackages = packages[key]
                 cPackages.sort()
                 for cPackage in cPackages:
-                    rstring += "\n  %s" %(cPackage)
-            rstring += "\n"
+                    if (index % 2 == 0):
+                        if (len(currentTable) > 0):
+                            fsTable.append(currentTable)
+                        currentTable = []
+                        currentTable.append("%s      " %(cPackage))
+                    else:
+                        currentTable.append(cPackage)
+                    index += 1
+            if (len(currentTable) > 0):
+                startIndex = len(currentTable)
+                for i in range(len(currentTable), 2):
+                    currentTable.append(" ")
+                fsTable.append(currentTable)
+            if (len(fsTable) > 0):
+                packageTableString = stringUtil.toTableString(fsTable)
+                rstring += ("\n%s\n") %(packageTableString)
+            else:
+                rstring += "\nThere was no Resilient Storage Packages Found.\n"
         # Remove an extra newline
         rstring = rstring.rstrip("\n")
         return rstring

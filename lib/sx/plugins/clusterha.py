@@ -200,11 +200,11 @@ class Clusterha(sx.plugins.PluginBase):
                 self.write(filename, result)
                 self.write(filename, "")
 
-            #result = cnc.getClusterStorageSummary()
-            #if (len(result) > 0):
-            #    self.writeSeperator(filename, "Cluster Storage Summary for GFS/GFS2");
-            #    self.write(filename, result)
-            #    self.write(filename, "")
+            clusterHAStorage = ClusterHAStorage(cnc)
+            result = clusterHAStorage.evaluate()
+            if (len(result) > 0):
+                self.write(filename, result.rstrip())
+                self.write(filename, "")
 
             # ###################################################################
             # Check the cluster node services summary
@@ -256,19 +256,6 @@ class Clusterha(sx.plugins.PluginBase):
                 self.write(filenameCE, "      reviewing the cluster.\n")
                 self.write(filenameCE, evaluatorResult.rstrip())
                 self.write(filenameCE, "")
-
-            # ###################################################################
-            # Write out a storage summary which includes GFS/GFS2 and clustered
-            # filesystem resources.
-            # ###################################################################
-            filenameCS = "%s-clusterhastorage_summary.txt" %(cca.getClusterName())
-            clusterHAStorage = ClusterHAStorage(cnc)
-            result = clusterHAStorage.evaluate()
-            if (len(result) > 0):
-                if (len(missingNodesList) > 0):
-                    self.write(filenameCS, "%s\n\n" %(missingNodesMessage))
-                self.write(filenameCS, result.rstrip())
-                self.write(filenameCS, "")
 
             # ###################################################################
             # Evaluate the reports as stretch cluster if that option is enabled.
