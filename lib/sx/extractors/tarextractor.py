@@ -55,12 +55,8 @@ class Tarextractor(Extractor) :
         if (not self.isValidMimeType()):
             return None;
         compressionType = mimetypes.guess_type(self.getPathToFile())[1]
-        if (compressionType == "gzip"):
-            return "ztf"
-        elif (compressionType == "bzip2") :
-            return "jtf"
-        elif (compressionType == "xz") :
-            return "Jtf"
+        if (compressionType in ["gzip", "bzip2", "xz"]):
+            return "atf"
         elif (compressionType == None):
             return "tf"
         return None
@@ -69,12 +65,8 @@ class Tarextractor(Extractor) :
         if (not self.isValidMimeType()):
             return None;
         compressionType = mimetypes.guess_type(self.getPathToFile())[1]
-        if (compressionType == "gzip"):
-            return "zxpf"
-        elif (compressionType == "bzip2") :
-            return "jxpf"
-        elif (compressionType == "xz") :
-            return "Jxpf"
+        if (compressionType in ["gzip", "bzip2", "xz"]):
+            return "axpf"
         elif (compressionType == None):
             return "xpf"
         return None
