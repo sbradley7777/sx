@@ -104,8 +104,10 @@ def extractReports(caseNumber, al, pathToExtractedReports, listOfReports,
     else:
         # Extract reports that have not been archived from the list of reports
         listOfReports = __getListOfReports(listOfReports, pathToReportsDirectory)
-        message = "The list of files are being processed to see if they contain any know report types that can be extracted. This could take a while are large reports."
+        message = "The list of files are being processed to see if they contain any know report types that can be extracted."
         logging.getLogger(sx.MAIN_LOGGER_NAME).status(message)
+        message = "This process could take a while on large reports."
+        logging.getLogger(sx.MAIN_LOGGER_NAME).info(message)
         reportsExtracted = __extract(listOfReports, al.getPathToCompressedReports(),
                                      al.getPathToExtractedReports(), includeUserDefinedModules)
         message = "There was %d reports extracted." %(len(reportsExtracted))

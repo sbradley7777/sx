@@ -1,0 +1,98 @@
+#!/usr/bin/env python
+"""
+This is the main script that will extract reports and then run various
+plugins on them.
+
+All reports have to be a a compressed tarfile of type bzip2/gunzip.
+
+TODO:
+* Would it be better to add long file list, files in dir, or dir?
+
+@author    :  Shane Bradley
+@contact   :  sbradley@redhat.com
+@version   :  2.10
+@copyright :  GPLv2
+"""
+import sys
+import string
+import os
+import os.path
+import subprocess
+import mimetypes
+
+PATH_TO_PYCHECKER = "/bin/pychecker"
+PATH_TO_PYTHON_SOURCE_CODE = os.path.join(os.environ['HOME'],"git/sx")
+
+def __executeBinary(pathToPythonFiles) :
+    if (not os.path.exists(PATH_TO_PYCHECKER)):
+        message = "The command is not installed in its default location: %s. The scan will be aborted." %(PATH_TO_PYCHECKER)
+        print message
+        return ""
+    command = [PATH_TO_PYCHECKER, pathToPythonFiles]
+    task = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    (stdout, stderr) = task.communicate()
+    return stdout
+
+# ###############################################################################
+# Main Function
+# ###############################################################################
+if __name__ == "__main__":
+    if (not os.path.exists(PATH_TO_PYCHECKER)):
+        message = "The command is not installed in its default location: %s. The application will exit since binary was not found." %(PATH_TO_PYCHECKER)
+        print message
+        sys.exit(1)
+
+    pythonFilenamesMap = {}
+    # Manually add in single files. Full path to file or glob(/path/*.py).
+    pythonFilenamesMap["/home/sbradley-devel/git/sx/sxconsole"] = ""
+    try:
+        print "Building the list of directories that will be scanned by pychecker.py"
+        for root, dirs, files in os.walk(PATH_TO_PYTHON_SOURCE_CODE):
+            srcDirStripped = root.strip(PATH_TO_PYTHON_SOURCE_CODE)
+            if (not srcDirStripped.startswith(".")):
+                # Add in all the python files.
+                for filename in files:
+                    fullPathToFilename = os.path.join(root, filename)
+                    mimeType = mimetypes.guess_type(fullPathToFilename)
+                    if (((mimeType[0] == "application/x-python-code") or (mimeType[0] == "text/x-python")) and
+                        (not fullPathToFilename.endswith(".pyc")) and
+                        (not filename == "setup.py")):
+                        pythonFilenamesMap[fullPathToFilename] = ""
+        if (len(pythonFilenamesMap.keys()) > 0):
+            print "Scanning all the sub-directories in the path \"%s\"." %(PATH_TO_PYTHON_SOURCE_CODE)
+            keys = pythonFilenamesMap.keys()
+            keys.sort()
+            for key in keys:
+                pythonFilenamesMap[key] = __executeBinary(key)
+
+            print "\nResults of the scan of the directories within \"%s\" with the tool \"%s\"." %(PATH_TO_PYTHON_SOURCE_CODE, PATH_TO_PYCHECKER)
+            warningsCount = 0
+            for key in keys:
+                value = pythonFilenamesMap[key]
+                lines = []
+                # Strip and create list based on newline.
+                for line in value.split("\n"):
+                    lineStripped = line.strip().rstrip()
+                    # IGNORE LINE TILL I FIGURE THIS ONE OUT ON HOW TO FIX.
+                    if (((not line.endswith("No module attribute (STATUS) found")) and (len(lineStripped) > 0)) and
+                        (not line.endswith("Members (CRITICAL_LEVEL, DEBUG_LEVEL, DISABLE_LOGGING, ERROR_LEVEL, INFO_LEVEL, WARNING_LEVEL) not used in class (LogWriter)"))):
+                        lines.append(lineStripped)
+                if (len(lines) > 0):
+                    print "%s:\n\t The following warnings were detected." %(key)
+                    for line in lines:
+                        if (len(line) > 0):
+                            print "\t %s" %(line)
+                            warningsCount += 1
+                            # else:
+                            #   print "%s:\n\t There was no warnings detected.\n" %(key)
+                    print
+            print "There was %d warning(s) found." %(warningsCount)
+    except KeyboardInterrupt:
+        print ""
+        message =  "This script will exit since control-c was executed by end user."
+        logging.getLogger(sx.MAIN_LOGGER_NAME).error(message)
+        sys.exit(2)
+    # #######################################################################
+    # Exit the application with zero exit code since we cleanly exited.
+    # #######################################################################
+    sys.exit()
