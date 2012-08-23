@@ -23,6 +23,7 @@ from sx.plugins.lib.clusterha.clusterhaconfanalyzer import ClusterHAConfAnalyzer
 from sx.plugins.lib.clusterha.clusternode import ClusterNode
 from sx.plugins.lib.clusterha.clusternode import ClusterNodeNetworkMap
 from sx.plugins.lib.clusterha.clusternode import ClusterStorageFilesystem
+from sx.plugins.lib.rpm.rpmparser import RPMUtils
 
 # For finding quorum disk.
 from sx.plugins.lib.storage.devicemapperparser import DeviceMapperParser
@@ -757,6 +758,25 @@ class ClusterEvaluator():
                         # Break out because if we find a vm then we break out
                         # cause we just need one instance.
                         break;
+
+            # ###################################################################
+            # Verify that lvm an lvm2-cluster are same major and minor version.
+            # ###################################################################
+            lvm2PackageMap = RPMUtils.getPackageVersion(clusternode.getInstalledRPMS(), ["lvm2", "lvm2-cluster"])
+            if (lvm2PackageMap.has_key("lvm2-cluster")):
+                lvm2clusterPackage = lvm2PackageMap.get("lvm2-cluster")[0]
+                # Dont going to handle lvm2 not found cause that is highly unlikely.
+                if (lvm2PackageMap.has_key("lvm2")):
+                    lvm2Package = lvm2PackageMap.get("lvm2")[0]
+                    lvm2clusterVersion = lvm2clusterVersion.replace("lvm2-cluster-", "").split(".el5")[0].split("-")[0].strip()
+                    lvm2Version = lvm2Version.replace("lvm2-", "").split(".el5")[0].split("-")[0].strip()
+                    if (not lvm2clusterVersion == lvm2Version):
+                        description = "The packages %s and %s need to be on the same major/minor version number. " %(lvm2Package, lvm2clusterPackage)
+                        description += "If they do not have the major/minor version number then there could be communications issues or "
+                        description += "problems starting clvmd which is part of the lvm2-cluster package."
+                        urls = ["https://access.redhat.com/knowledge/solutions/169913", "https://access.redhat.com/knowledge/solutions/18999"]
+                        clusterNodeEvalString += StringUtil.formatBulletString(description, urls)
+
             # ###################################################################
             # Distro specfic evaluations
             # ###################################################################
