@@ -13,7 +13,7 @@ fixed latter for just True on the plugin name and not class name.
 
 @author    :  Shane Bradley
 @contact   :  sbradley@redhat.com
-@version   :  2.11
+@version   :  2.12
 @copyright :  GPLv2
 """
 import string

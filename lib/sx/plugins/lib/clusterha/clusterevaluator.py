@@ -8,7 +8,7 @@ This plugin is documented here:
 
 @author    :  Shane Bradley
 @contact   :  sbradley@redhat.com
-@version   :  2.11
+@version   :  2.12
 @copyright :  GPLv2
 """
 import re
@@ -44,7 +44,7 @@ class ClusterEvaluator():
         if (clusterNameCharSize > 16):
             description = "The name of the cluster cannot be more than 16 characters in size. The cluster's name "
             description += "\%s\" is %d characters long." %(cca.getClusterName(), clusterNameCharSize)
-            urls = ["https://access.redhat.com/knowledge/solutions/32111"]
+            urls = ["https://access.redhat.com/knowledge/solutions/32.12"]
             rString += StringUtil.formatBulletString(description, urls)
 
         if (cca.isCleanStartEnabled()):

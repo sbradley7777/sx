@@ -7,7 +7,7 @@ All reports have to be a a compressed tarfile of type bzip2/gunzip.
 
 @author    :  Shane Bradley
 @contact   :  sbradley@redhat.com
-@version   :  2.11
+@version   :  2.12
 @copyright :  GPLv2
 """
 import sys
@@ -39,7 +39,7 @@ from sx.modulesloader import ExtractorsLoader
 @cvar VERSION_NUMBER: The current version number of sxconsole.
 @type VERSION_NUMBER: String
 """
-VERSION_NUMBER = "2.11-13"
+VERSION_NUMBER = "2.12-14"
 
 def getArchiveLayout(caseNumber, pathToArchiveDirectory, pathToExtractedReports,
                      isModifiedArchiveLayoutEnabled) :
@@ -588,16 +588,16 @@ class OptionParserExtended(OptionParser):
         self.print_version()
         layoutDescription = "\n\nArchive Layout Description:\n\n"
         layoutDescription += "The default layout of the archive files looks like the following:\n"
-        layoutDescription += "\tCompressed Reports Path:   ~/sxarchive/creports/15555553/2011-04-18_123703\n"
-        layoutDescription += "\tExtracted Reports Path:    ~/sxarchive/ereports/15555553/2011-04-18_123703\n"
+        layoutDescription += "\tCompressed Reports Path:   ~/sxarchive/creports/15555553/2.12-04-18_123703\n"
+        layoutDescription += "\tExtracted Reports Path:    ~/sxarchive/ereports/15555553/2.12-04-18_123703\n"
         layoutDescription += "\tNon-report Files Path:     ~/sxarchive/ereports/15555553/files\n"
-        layoutDescription += "\tPlugin Report Files Path:  ~/sxarchive/ereports/15555553/2011-04-18_123703/reports\n\n"
+        layoutDescription += "\tPlugin Report Files Path:  ~/sxarchive/ereports/15555553/2.12-04-18_123703/reports\n\n"
 
         layoutDescription += "The modified layout of the archive files looks like the following(when -M option is enabled):\n"
-        layoutDescription += "\tCompressed Reports Path:   ~/sxarchive/15555553/2011-04-18_123703/.creports\n"
-        layoutDescription += "\tExtracted Reports Path:    ~/sxarchive/15555553/2011-04-18_123703\n"
+        layoutDescription += "\tCompressed Reports Path:   ~/sxarchive/15555553/2.12-04-18_123703/.creports\n"
+        layoutDescription += "\tExtracted Reports Path:    ~/sxarchive/15555553/2.12-04-18_123703\n"
         layoutDescription += "\tNon-report Files Path:     ~/sxarchive/15555553/files\n"
-        layoutDescription += "\tPlugin Report Files Path:  ~/sxarchive/15555553/2011-04-18_123703/reports\n\n"
+        layoutDescription += "\tPlugin Report Files Path:  ~/sxarchive/15555553/2.12-04-18_123703/reports\n\n"
 
         examplesMessage =  "Examples:\n\n"
         examplesMessage += "To list the different plugin and report types:\n"
@@ -621,11 +621,11 @@ class OptionParserExtended(OptionParser):
         examplesMessage += "After extraction is complete then open with a fileviewer and pass the option for a particular fileviewer.\n"
         examplesMessage += "$ %s 15555553 -e OpenSOSReport -o OpenSOSReport.fileviewer=konqueror\n\n" %(self.__commandName)
         examplesMessage += "To run the cluster and the checksysreport plugin against a previously extracted report:\n"
-        examplesMessage += "$ %s -p ~/sxarchive/ereports/15555553/2011-01-26_160247 -e cluster,checksysreport\n\n" %(self.__commandName)
+        examplesMessage += "$ %s -p ~/sxarchive/ereports/15555553/2.12-01-26_160247 -e cluster,checksysreport\n\n" %(self.__commandName)
         examplesMessage += "To run default plugins on directory of reports(non-reports will not be processed) and use the modified archived layout:\n"
         examplesMessage += "$ %s 15555553 -R ~/tmp/ -M\n\n" %(self.__commandName)
         examplesMessage += "To run the cluster and the checksysreport plugin against a previously extracted report that used the modified layout scheme:\n"
-        examplesMessage += "$ %s -p ~/sxarchive/ereports/15555553/2011-01-26_160247 -e cluster,checksysreport -M\n\n" %(self.__commandName)
+        examplesMessage += "$ %s -p ~/sxarchive/ereports/15555553/2.12-01-26_160247 -e cluster,checksysreport -M\n\n" %(self.__commandName)
         OptionParser.print_help(self)
         print layoutDescription
         print examplesMessage
