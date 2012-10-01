@@ -123,7 +123,9 @@ class GlusterPeerNodes:
             glusterRootDir = "etc"
             glusterdInfoData = report.getDataFromFile("%s/glusterd.info" %(glusterRootDir))
         # If there was no glusterd.info file found then return False.
-        if (not len(glusterdInfoData) > 0):
+        if (glusterdInfoData == None):
+            return False
+        elif (not len(glusterdInfoData) > 0):
             return False
 
         gpnUUID = glusterdInfoData[0].split("=")[1]

@@ -43,11 +43,11 @@ class ClusterStorageFilesystem(FilesysMount):
         # sections.
         self.__smbClusteredSectionsMap = {}
 
-    def __cmp__(self, fs):
+    def __eq__(self, fs):
         return  ((fs.getDeviceName() == self.getDeviceName()) and (fs.getMountPoint() == self.getMountPoint()))
 
-    def compare(self, fs):
-        return  self.__cmp__(fs)
+    def equal(self, fs):
+        return  self.__eq__(fs)
 
     def isFilesysMount(self):
         return (not self.__filesysMount == None)

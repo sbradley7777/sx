@@ -283,7 +283,10 @@ class SimpleUtil:
         @type sVar: String
         """
         cVar = None
-        if (sVar.isalnum()):
+        if (isinstance(sVar, int)):
+            # If sVar is already an int then just return then int back.
+            return sVar
+        elif (sVar.isalnum()):
             try:
                 cVar = int(sVar)
             except(ValueError):

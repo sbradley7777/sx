@@ -63,16 +63,17 @@ class CompareData:
         compareValueCountTuples = self.__getCompareValueCountTuples(self.__compareMap)
         compareValueCountTuples.reverse()
         rMap = {}
-        maxCountValue = compareValueCountTuples[0][1]
-        for cTuple in compareValueCountTuples:
-            currentCountKey = cTuple[0]
-            currentCountValue = cTuple[1]
-            if (currentCountValue < maxCountValue):
-                valueCopy = deepcopy(self.__compareMap.get(currentCountKey))
-                if (rMap.has_key(currentCountKey)):
-                    rMap[currentCountKey].append(valueCopy)
-                else:
-                    rMap[currentCountKey] = valueCopy
+        if (len(compareValueCountTuples) > 0):
+            maxCountValue = compareValueCountTuples[0][1]
+            for cTuple in compareValueCountTuples:
+                currentCountKey = cTuple[0]
+                currentCountValue = cTuple[1]
+                if (currentCountValue < maxCountValue):
+                    valueCopy = deepcopy(self.__compareMap.get(currentCountKey))
+                    if (rMap.has_key(currentCountKey)):
+                        rMap[currentCountKey].append(valueCopy)
+                    else:
+                        rMap[currentCountKey] = valueCopy
         return rMap
 
     def getBaseCompareMap(self):
@@ -309,10 +310,9 @@ class ClusternodeCompare():
         compareDistroReleaseVersion = CompareData("Compare Red Hat Release", "Compares the Red Hat release file.")
         comparePackagesVersion = ComparePackages("Compare Cluster Packages Installed", "Compares the cluster packages installed.")
         for clusternode in self.__cnc.getClusterNodes():
-            uname = clusternode.getUnameA().strip()
-            unameSplit = uname.split()
-            compareKernelVersion.add(unameSplit[2].strip(), clusternode.getClusterNodeName())
-            compareArchVersion.add(unameSplit[11].strip(), clusternode.getClusterNodeName())
+            unameA = clusternode.getUnameA()
+            compareKernelVersion.add(str(unameA), clusternode.getClusterNodeName())
+            compareArchVersion.add(unameA.getProcessorType(), clusternode.getClusterNodeName())
             compareDistroReleaseVersion.add(str(clusternode.getDistroRelease()), clusternode.getClusterNodeName())
             comparePackagesVersion.add(clusternode.getClusterPackagesVersion(), clusternode.getClusterNodeName())
         if (not compareKernelVersion.isIdentical()):

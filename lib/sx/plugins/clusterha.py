@@ -150,12 +150,12 @@ class Clusterha(sx.plugins.PluginBase):
                     clusteredVMServicesString += "%s. %s\n" %(sIndex, str(clusteredService))
                     vIndex = vIndex + 1
             if (len(clusteredServicesString) > 0):
-                self.writeSeperator(filename, "Cluster Services Summary");
+                self.writeSeperator(filename, "Clustered Services Summary");
                 self.write(filename, "There was %d clustered services.\n" %(index - 1))
                 self.write(filename, "%s\n" %(clusteredServicesString.rstrip()))
 
             if (len(clusteredVMServicesString) > 0):
-                self.writeSeperator(filename, "Cluster Virtual Machine Services Summary");
+                self.writeSeperator(filename, "Clustered Virtual Machine Services Summary");
                 self.write(filename, "There was %d clustered virtual machine services.\n" %(vIndex - 1))
                 self.write(filename, "%s\n" %(clusteredVMServicesString.rstrip()))
 
@@ -201,7 +201,7 @@ class Clusterha(sx.plugins.PluginBase):
                 self.write(filename, "")
 
             clusterHAStorage = ClusterHAStorage(cnc)
-            result = clusterHAStorage.evaluate()
+            result = clusterHAStorage.getSummary()
             if (len(result) > 0):
                 self.write(filename, result.rstrip())
                 self.write(filename, "")

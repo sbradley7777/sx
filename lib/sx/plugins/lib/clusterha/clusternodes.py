@@ -29,6 +29,7 @@ from sx.plugins.lib.general.distroreleaseparser import DistroRelease
 from sx.plugins.lib.general.runlevelserviceparser import RunLevelParser
 from sx.plugins.lib.general.runlevelserviceparser import ChkConfigServiceStatus
 from sx.plugins.lib.kernel.modulesparser import ModulesParser
+from sx.plugins.lib.kernel import KernelParser
 
 from sx.plugins.lib.storage.filesysparser import FilesysParser
 from sx.plugins.lib.storage.filesysparser import FilesysMount
@@ -487,13 +488,18 @@ class ClusterNodes:
                                                                               etcExportsList, etcSambaSectionsList,
                                                                               etcClusterSambaSectionsListMap)
 
+
+        unameAData = report.getDataFromFile("uname")
+        if (unameAData == None):
+            unameAData = report.getDataFromFile("sos_commands/kernel/uname_-a")
+        unameA = KernelParser.parseUnameAData(unameAData)
         # ###############################################################
         # Create the node since it is valid then append to collection
         # ###############################################################
         clusterNode = ClusterNode(pathToClusterConfFile,
                                   distroRelease,
                                   report.getDate(),
-                                  report.getUname(),
+                                  unameA,
                                   report.getHostname(),
                                   report.getUptime(),
                                   networkMaps,
@@ -531,7 +537,7 @@ class ClusterNodes:
         for clusternode in self.getClusterNodes():
             if (len(rstring) > 0):
                 rstring += "\n"
-            unameASplit = clusternode.getUnameA().split()
+            unameASplit = str(clusternode.getUnameA()).split()
             unameA = ""
             for i in range (0, len(unameASplit)):
                 if (i == 5) :
@@ -717,33 +723,3 @@ class ClusterNodes:
             return True
         return False
 
-    def doesGFS2ModuleNeedRemoval(self, unameAData, packages):
-        """
-        In Red Hat Enterprise Linux 5.2, GFS2 was provided as a kernel
-        module for evaluation purposes. In Red Hat Enterprise Linux
-        5.3 GFS2 is now part of the kernel package.
-
-        If the Red Hat Enterprise Linux 5.2 GFS2 kernel modules have
-        been installed they must be removed to use GFS2 in Red Hat
-        Enterprise Linux 5.3. This function returns true if currently
-        running kernel should have kmod-gfs* removed.
-
-        @return: Returns True if kmod-gfs should be removed.
-        @rtype: Boolean
-
-        @param unameAData: A string containing uname data.
-        @type unameAData: String
-        @param packages: A list of packages.
-        @type packages: Array
-        """
-        isGFS2moduleInstalled = False
-        for package in packages:
-            if (package.startswith("kmod-gfs2")) :
-                isGFS2moduleInstalled = True
-                break;
-        unameSplit = unameAData.split()
-        kernelVersionMinor = 0
-        if (len(unameSplit) >= 2):
-            kernelVersionMinor = unameSplit[2].split("-")[1].split(".")[0]
-
-        return ((kernelVersionMinor > 128) and (isGFS2moduleInstalled))
