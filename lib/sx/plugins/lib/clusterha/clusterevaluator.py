@@ -355,7 +355,7 @@ class ClusterEvaluator():
                         interfacesString += " %s," %(currentNicInterface)
                     description =  "The following network interface(s)%s where using the \"%s\" for cluster communication and is a slave interface to the bond %s." %(interfacesString.rstrip(","),
                                                                                                                                                                       key, bondedMasterInterface)
-                 rString += StringUtil.formatBulletString(description, solutionNicModuleUrlMap.get(bondedSlaveInterface.getNetworkInterfaceModule().strip()))
+                    rString += StringUtil.formatBulletString(description, solutionNicModuleUrlMap.get(bondedSlaveInterface.getNetworkInterfaceModule().strip()))
         return rString
 
     def __evaluateClusterNodeFencing(self, cca, clusternode):
