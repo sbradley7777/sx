@@ -676,10 +676,11 @@ class StringUtil:
         rstring = "\n".join(textwrap.wrap(description, width=width, initial_indent=initIndent, subsequent_indent=subIndent))
         rstring += "\n"
         # Append the urls to the return string
-        for url in urls:
-            rstring += "%s - %s\n" %(subIndent, url)
-        rstring = rstring.strip("\n")
-        rstring += "\n"
+        if (not urls == None):
+            for url in urls:
+                rstring += "%s - %s\n" %(subIndent, url)
+                rstring = rstring.strip("\n")
+            rstring += "\n"
         # Add the table string if not None
         if (not tableOfStrings == None):
             rstring += "\n"

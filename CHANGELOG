@@ -1,4 +1,6 @@
-* Tue Jul 18 2012 Shane Bradley <sbradley@redhat.com>- 2.12-0.0
+* Tue Oct 2 2012 Shane Bradley <sbradley@redhat.com>- 2.13-0.0
+- Fix bug in printing information about nics in clusterevaluator.py.
+* Tue Oct 1 2012 Shane Bradley <sbradley@redhat.com>- 2.12-0.0
 - Added evaluation for verifying that lvm2-cluster has same major/minor number as lvm2.
 - RHEL6 does not have the class ParseError in elementtree so I now catch the exception and handle correctly.
 - Added a gluster plugin gluster.py and some libraries for the plugin.
