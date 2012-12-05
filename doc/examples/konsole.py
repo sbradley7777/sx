@@ -12,7 +12,7 @@ It will need to be enabled.
 
 @author    :  Shane Bradley
 @contact   :  sbradley@redhat.com
-@version   :  2.12
+@version   :  2.13
 @copyright :  GPLv2
 """
 import logging

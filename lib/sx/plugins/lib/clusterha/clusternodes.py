@@ -5,7 +5,7 @@ objects.
 
 @author    :  Shane Bradley
 @contact   :  sbradley@redhat.com
-@version   :  2.12
+@version   :  2.13
 @copyright :  GPLv2
 """
 import re
@@ -409,8 +409,9 @@ class ClusterNodes:
         # Get more network interfaces might need to add this at some point for
         # cases where ifconfig fails. Not sure how to combine the data yet
         # ###############################################################
-        #ip_addressData = report.getDataFromFile("sos_commands/networking/ip_address")
-        #networkInterfacesFromIP_Address = NetworkDeviceParser.parseIPAddressData(ip_addressData)
+        if (not len(networkInterfaces) > 0):
+            ip_addressData = report.getDataFromFile("sos_commands/networking/ip_address")
+            networkInterfaces = NetworkDeviceParser.parseIPAddressData(ip_addressData)
         # ###############################################################
 
         etcHostsMap = NetworkDeviceParser.parseEtcHostsData(report.getDataFromFile("etc/hosts"))

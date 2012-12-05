@@ -5,7 +5,7 @@ that is in xml format.
 
 @author    :  Shane Bradley
 @contact   :  sbradley@redhat.com
-@version   :  2.12
+@version   :  2.13
 @copyright :  GPLv2
 """
 import os.path
@@ -172,7 +172,6 @@ class Quorumd:
             return 20
         else:
             return None
-
 
 class QuorumdHeuristic:
     def __init__(self, heuristicAttributes):
@@ -993,15 +992,16 @@ class ClusterHAConfAnalyzer :
 
                 for currentElement in cnElement:
                     if (currentElement.tag == "multicast"):
+                        multicastAddress = ""
+                        multicastInterface = ""
                         try:
                             multicastAddress = currentElement.attrib["addr"]
+                        except KeyError:
+                            pass
+                        try:
                             multicastInterface = currentElement.attrib["interface"]
                         except KeyError:
-                            multicastAddress = ""
-                            multicastInterface = ""
-                        except AttributeError:
-                            multicastAddress = ""
-                            multicastInterface = ""
+                            pass
                 message = "Found clusternode properties for: %s(%s)." %(clusternodeName, str(nodeID))
                 logging.getLogger(sx.MAIN_LOGGER_NAME).debug(message)
                 return ClusterNodeProperties(nodeName, nodeID, votes,
@@ -1059,7 +1059,6 @@ class ClusterHAConfAnalyzer :
         # Find all shared resources that were not included in a service.
         for sharedFilesystemResource in sharedFilesystemResourcesList :
             matchFound = False
-            #if (sharedFilesystemResource in filesystemResourcesList) :
             if (sharedFilesystemResource in filesystemResourcesList):
                 matchFound = True
             if (not matchFound):
@@ -1175,7 +1174,7 @@ class ClusterHAConfAnalyzer :
 
     def getSharedClusterResources(self):
         sharedResourceMap = {}
-        for resourceElement in self.__ccRootElement.findall("rm/resources/"):
+        for resourceElement in self.__ccRootElement.findall("rm/resources/*"):
             clusteredResource = self.__getClusteredResource(resourceElement, False)
             if (not clusteredResource == None):
                 key = "%s-%s" %(clusteredResource.getType(), clusteredResource.getName())
@@ -1187,7 +1186,7 @@ class ClusterHAConfAnalyzer :
         failoverDomainsList = self.getFailoverDomains()
         sharedResourcesList = self.getSharedClusterResources()
         servicesMap={}
-        for rmElement in self.__ccRootElement.findall("rm/"):
+        for rmElement in self.__ccRootElement.findall("rm/*"):
             if (rmElement.tag == "service"):
                 try:
                     name = rmElement.attrib["name"]

@@ -6,7 +6,7 @@ sos_commands/networking/
 
 @author    :  Shane Bradley
 @contact   :  sbradley@redhat.com
-@version   :  2.12
+@version   :  2.13
 @copyright :  GPLv2
 """
 import re
@@ -622,6 +622,10 @@ class NetworkMaps:
             interfaceNameSplit = currentNetworkMap.getInterface().split(".")
             if ((len(interfaceNameSplit) == 2) and (mapOfNetworkMaps.has_key(interfaceNameSplit[0]))):
                 currentNetworkMap.setParentAliasNetworkMap(mapOfNetworkMaps.get(interfaceNameSplit[0]))
+            else:
+                interfaceNameSplit = currentNetworkMap.getInterface().split(":")
+                if ((len(interfaceNameSplit) == 2) and (mapOfNetworkMaps.has_key(interfaceNameSplit[0]))):
+                    currentNetworkMap.setParentAliasNetworkMap(mapOfNetworkMaps.get(interfaceNameSplit[0]))
 
         # Add any virtual bridge devices to any bridge interfaces.
         for key in mapOfNetworkMaps.keys():

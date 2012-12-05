@@ -13,7 +13,7 @@ fixed latter for just True on the plugin name and not class name.
 
 @author    :  Shane Bradley
 @contact   :  sbradley@redhat.com
-@version   :  2.12
+@version   :  2.13
 @copyright :  GPLv2
 """
 import string
@@ -141,13 +141,13 @@ class Clusterha(sx.plugins.PluginBase):
                     sIndex = str(index)
                     if (index < 10):
                         sIndex = " %d" %(index)
-                    clusteredServicesString += "%s. %s\n" %(sIndex, str(clusteredService))
+                    clusteredServicesString += "%s. %s\n\n" %(sIndex, str(clusteredService).rstrip())
                     index = index + 1
                 elif (clusteredService.isVirtualMachineService()):
                     sIndex = str(vIndex)
                     if (index < 10):
                         sIndex = " %d" %(vIndex)
-                    clusteredVMServicesString += "%s. %s\n" %(sIndex, str(clusteredService))
+                    clusteredVMServicesString += "%s. %s\n\n" %(sIndex, str(clusteredService).rstrip())
                     vIndex = vIndex + 1
             if (len(clusteredServicesString) > 0):
                 self.writeSeperator(filename, "Clustered Services Summary");

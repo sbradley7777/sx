@@ -6,7 +6,7 @@ sos_commands/kernel/
 
 @author    :  Shane Bradley
 @contact   :  sbradley@redhat.com
-@version   :  2.12
+@version   :  2.13
 @copyright :  GPLv2
 """
 
@@ -73,7 +73,8 @@ class ModprobeConfCommand:
             elif ((len(splitCommandLine) > 0) and (self.__command == "blacklist")):
                 self.__blacklist = splitCommandLine.pop(0).strip()
             elif ((len(splitCommandLine) > 0) and (self.__command == "alias")):
-                self.__wildCard = splitCommandLine.pop(0).strip()
+                if (len(splitCommandLine) == 2):
+                    self.__wildCard = splitCommandLine.pop(0).strip()
                 self.__moduleName = splitCommandLine.pop(0).strip()
             elif ((len(splitCommandLine) > 0) and (self.__command == "options")):
                 self.__moduleName = splitCommandLine.pop(0).strip()

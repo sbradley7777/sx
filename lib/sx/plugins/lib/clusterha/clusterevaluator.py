@@ -8,7 +8,7 @@ This plugin is documented here:
 
 @author    :  Shane Bradley
 @contact   :  sbradley@redhat.com
-@version   :  2.12
+@version   :  2.13
 @copyright :  GPLv2
 """
 import re
@@ -44,7 +44,7 @@ class ClusterEvaluator():
         if (clusterNameCharSize > 16):
             description = "The name of the cluster cannot be more than 16 characters in size. The cluster's name "
             description += "\%s\" is %d characters long." %(cca.getClusterName(), clusterNameCharSize)
-            urls = ["https://access.redhat.com/knowledge/solutions/32.12"]
+            urls = ["https://access.redhat.com/knowledge/solutions/32.13"]
             rString += StringUtil.formatBulletString(description, urls)
 
         if (cca.isCleanStartEnabled()):
@@ -314,7 +314,8 @@ class ClusterEvaluator():
             urls = ["https://access.redhat.com/knowledge/solutions/27604"]
             rString += StringUtil.formatBulletString(description, urls)
 
-
+        """
+        # DISABLING THIS CHECK TILL I REVEVALUTE IT CAUSE CURRENTLY CONFUSING.
         # ###################################################################
         # Check if heartbeat network interface is netxen or bnx2 network module
         # ###################################################################
@@ -325,14 +326,13 @@ class ClusterEvaluator():
         kernelRelease = clusternode.getUnameA().getKernelRelease()
         if (str(kernelRelease) > 0):
             # netxenUrlsList.append("https://access.redhat.com/knowledge/solutions/35299")
-            kernelRelease.compareGT("2.6.18-194.32.1.el5")
-            kernelRelease.compareGT("2.6.18-238.el5")
+            result = kernelRelease.compareGT("2.6.18-194.32.1.el5")
+            result = kernelRelease.compareGT("2.6.18-238.el5")
 
             # netxenUrlsList.append("https://access.redhat.com/knowledge/solutions/46663")
-            kernelRelease.compareGT("2.6.18-274.el5")
+            result = kernelRelease.compareGT("2.6.18-274.el5")
 
             # Need to rewrite the compare on kmod-gfs2.
-
         solutionNicModuleUrlMap = {"bnx2":[], "netxen": netxenUrlsList, "nx_nic": netxenUrlsList, "netxen_nic":netxenUrlsList}
         if (hbNetworkMap.getNetworkInterfaceModule().strip() in solutionNicModuleUrlMap.keys()):
             description =  "The network interface %s is using the module \"%s\" for cluster communication." %(hbNetworkMap.getInterface(), hbNetworkMap.getNetworkInterfaceModule())
@@ -356,6 +356,7 @@ class ClusterEvaluator():
                     description =  "The following network interface(s)%s where using the \"%s\" for cluster communication and is a slave interface to the bond %s." %(interfacesString.rstrip(","),
                                                                                                                                                                       key, bondedMasterInterface)
                     rString += StringUtil.formatBulletString(description, solutionNicModuleUrlMap.get(bondedSlaveInterface.getNetworkInterfaceModule().strip()))
+        """
         return rString
 
     def __evaluateClusterNodeFencing(self, cca, clusternode):

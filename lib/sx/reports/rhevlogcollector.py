@@ -4,7 +4,7 @@ This class is a container for rhev log collector report object.
 
 @author    :  Shane Bradley
 @contact   :  sbradley@redhat.com
-@version   :  2.12
+@version   :  2.13
 @copyright :  GPLv2
 """
 import os.path

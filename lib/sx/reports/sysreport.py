@@ -4,7 +4,7 @@ This class is a container for sysreport report object.
 
 @author    :  Shane Bradley
 @contact   :  sbradley@redhat.com
-@version   :  2.12
+@version   :  2.13
 @copyright :  GPLv2
 """
 import string
@@ -65,9 +65,10 @@ class Sysreport(sx.reports.Report) :
         @rtype String
         """
         unameData = self.getDataFromFile("uname")
-        if (unameData == None) :
-            return ""
-        return unameData[1].strip()
+        if (not unameData == None) :
+            if (len(unameData) > 1):
+                return unameData[1].strip()
+        return ""
 
     def getUptime(self) :
         """

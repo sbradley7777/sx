@@ -5,7 +5,7 @@ GFS2, and filesystem resources in the cluster.conf.
 
 @author    :  Shane Bradley
 @contact   :  sbradley@redhat.com
-@version   :  2.12
+@version   :  2.13
 @copyright :  GPLv2
 """
 import re
@@ -209,17 +209,18 @@ class ClusterHAStorage():
         @param packages: A list of packages.
         @type packages: Array
         """
+        kernelRelease = unameA.getKernelRelease()
+        if (not len(str(kernelRelease)) > 0):
+            return False
+
         isGFS2moduleInstalled = False
         for package in packages:
             if (package.startswith("kmod-gfs2")) :
                 isGFS2moduleInstalled = True
                 break;
-        kernelRelease = unameA.getKernelRelease()
-        if (str(kernelRelease) > 0):
-            return ((int(kernelRelease.getMinorReleaseNumber()) > 128) and (isGFS2moduleInstalled) and
-                    (kernelRelease.getMajorReleaseNumber() == "2.6.18"))
-        # Will return False if could not compare release
-        return False
+        return ((isGFS2moduleInstalled) and (int(kernelRelease.getMinorReleaseNumber()) >= 128) and
+                (kernelRelease.getMajorReleaseNumber() == "2.6.18"))
+
     # #######################################################################
     # Evaluate Functions
     # #######################################################################

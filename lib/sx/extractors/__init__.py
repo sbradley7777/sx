@@ -10,7 +10,7 @@ http://bugs.python.org/issue6715
 
 @author    :  Shane Bradley
 @contact   :  sbradley@redhat.com
-@version   :  2.12
+@version   :  2.13
 @copyright :  GPLv2
 """
 import os

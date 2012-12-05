@@ -1,6 +1,6 @@
 Metadata-Version: 1.0
 Name: sx
-Version: 2.12
+Version: 2.13
 Summary: Tool to extract reports and run plug-ins against those extracted reports.
 Home-page: https://fedorahosted.org/sx
 Author: Shane Bradley

@@ -3,7 +3,7 @@
 
 @author    :  Shane Bradley
 @contact   :  sbradley@redhat.com
-@version   :  2.12
+@version   :  2.13
 @copyright :  GPLv2
 """
 import re
@@ -75,11 +75,8 @@ class KernelRelease:
     def getDistroRelease(self):
         return self.__distroRelease
 
-    def compareGT(self, kernelReleaseString):
-        kr = KernelRelease(kernelReleaseString)
-        #print self.__str__()
-        #print kr
-        #print
+    #def compareGT(self, kernelReleaseString):
+    #    pass
 
 class UnameA:
     # Fix clusternodecompare.py and kmod-gfs2 module check.

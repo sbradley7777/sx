@@ -7,7 +7,7 @@ This file contains the container for sosreport report object.
 
 @author    :  Shane Bradley
 @contact   :  sbradley@redhat.com
-@version   :  2.12
+@version   :  2.13
 @copyright :  GPLv2
 """
 import string
@@ -45,9 +45,10 @@ class Sosreport(sx.reports.Report) :
         @rtype String
         """
         unameAData = self.getDataFromFile("sos_commands/kernel/uname_-a")
-        if (unameAData == None) :
-            return ""
-        return unameAData[0]
+        if (not unameAData == None) :
+            if (len(unameAData) > 0):
+                return unameAData[0]
+        return ""
 
     def getDate(self):
         """

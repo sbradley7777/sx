@@ -1,4 +1,8 @@
 * Tue Oct 2 2012 Shane Bradley <sbradley@redhat.com>- 2.13-0.0
+- Added parsing of ip_address in case ifconfig data parsing fails which can occur when language is not english.
+- Fix bug in parsing modules.
+- Fix bug parsing resources in cluster.conf.
+- Fix bug in figuring out bonded alias parent nic device.
 - Fix bug in printing information about nics in clusterevaluator.py.
 * Tue Oct 1 2012 Shane Bradley <sbradley@redhat.com>- 2.12-0.0
 - Added evaluation for verifying that lvm2-cluster has same major/minor number as lvm2.
