@@ -6,7 +6,7 @@ sos_commands/devicemapper
 
 @author    :  Shane Bradley
 @contact   :  sbradley@redhat.com
-@version   :  2.13
+@version   :  2.14
 @copyright :  GPLv2
 """
 from sx.plugins.lib.storage.lvm import PVS_AV
@@ -119,7 +119,10 @@ class DeviceMapperParser:
         foundHeader = False
         for line in lvsDevicesData:
             currentLine = line.strip().rstrip()
-            if (len(currentLine) > 0):
+            if ((len(currentLine) > 0) and
+                (not currentLine.startswith("Completed:")) and
+                (not currentLine.startswith("Wiping internal VG cache")) and
+                (not currentLine.startswith("Freeing VG"))):
                 splitLine = currentLine.split()
                 if (len(splitLine) >= 5):
                     if ((splitLine[0].strip() == "LV") and (splitLine[1].strip() == "VG")):

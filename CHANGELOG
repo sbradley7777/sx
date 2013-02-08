@@ -1,3 +1,7 @@
+* Tue Jan 27 2013 Shane Bradley <sbradley@redhat.com>- 2.14-0.0
+- Fixed issue where hostname was used in cluster summary for services.
+- Fixed parsing error with sosreports file sos_commands/devicemapper/lvs_-a_-o_devices.
+- Changed the output written to cluster service summary so that only service information and not resources printed.
 * Tue Oct 2 2012 Shane Bradley <sbradley@redhat.com>- 2.13-0.0
 - Added parsing of ip_address in case ifconfig data parsing fails which can occur when language is not english.
 - Fix bug in parsing modules.

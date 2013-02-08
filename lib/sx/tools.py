@@ -5,7 +5,7 @@ sosreports/sysreports.
 
 @author    :  Shane Bradley
 @contact   :  sbradley@redhat.com
-@version   :  2.13
+@version   :  2.14
 @copyright :  GPLv2
 """
 import sys
@@ -799,7 +799,7 @@ class StringUtil:
         same for each row in the table.
 
         I got code from this url and modified it:
-        http://ginstrom.com/scribbles/2.13/09/04/pretty-printing-a-table-in-python/
+        http://ginstrom.com/scribbles/2.14/09/04/pretty-printing-a-table-in-python/
 
         Example(added spacing to make example clear):
         table = [["",       "names", "birthyear", "age"], ["NCuser", "bob",   1976,         35]]

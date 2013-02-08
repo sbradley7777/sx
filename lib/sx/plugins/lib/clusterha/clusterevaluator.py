@@ -8,7 +8,7 @@ This plugin is documented here:
 
 @author    :  Shane Bradley
 @contact   :  sbradley@redhat.com
-@version   :  2.13
+@version   :  2.14
 @copyright :  GPLv2
 """
 import re
@@ -44,7 +44,7 @@ class ClusterEvaluator():
         if (clusterNameCharSize > 16):
             description = "The name of the cluster cannot be more than 16 characters in size. The cluster's name "
             description += "\%s\" is %d characters long." %(cca.getClusterName(), clusterNameCharSize)
-            urls = ["https://access.redhat.com/knowledge/solutions/32.13"]
+            urls = ["https://access.redhat.com/knowledge/solutions/32.14"]
             rString += StringUtil.formatBulletString(description, urls)
 
         if (cca.isCleanStartEnabled()):
@@ -523,7 +523,8 @@ class ClusterEvaluator():
                         description = "The packages %s and %s need to be on the same major/minor version number. " %(lvm2Package, lvm2clusterPackage)
                         description += "If the packages do not have the same major/minor version number then there could be communications issues or "
                         description += "problems starting clvmd which is part of the lvm2-cluster package."
-                        urls = ["https://access.redhat.com/knowledge/solutions/169913", "https://access.redhat.com/knowledge/solutions/18999"]
+                        urls = ["https://access.redhat.com/knowledge/solutions/169913", "https://access.redhat.com/knowledge/solutions/18999",
+                                "https://access.redhat.com/knowledge/solutions/58778"]
                         clusterNodeEvalString += StringUtil.formatBulletString(description, urls)
 
             # ###################################################################

@@ -4,7 +4,7 @@ This class is a container for rhnsatellite-debug report object.
 
 @author    :  Shane Bradley
 @contact   :  sbradley@redhat.com
-@version   :  2.13
+@version   :  2.14
 @copyright :  GPLv2
 """
 import os.path

@@ -5,7 +5,7 @@ that is in xml format.
 
 @author    :  Shane Bradley
 @contact   :  sbradley@redhat.com
-@version   :  2.13
+@version   :  2.14
 @copyright :  GPLv2
 """
 import os.path
@@ -21,7 +21,7 @@ from sx.tools import FileUtil
 from sx.plugins.lib.storage.filesysparser import FilesysMount
 
 # Elemtree throws different exception in python 2.6(pyexpat.error)
-# versus what is thrown in python2.7(ParseError). 
+# versus what is thrown in python2.7(ParseError).
 from sys import exc_type as ParseError
 try:
     from xml.etree.ElementTree import ParseError
@@ -343,9 +343,11 @@ class ClusteredService():
         self.__isVirtualMachineService = isVirtualMachineService
 
     def __str__(self):
-        rString = " %s(recovery policy: %s | failover domain: %s)\n     %s\n%s" %(self.getName(), self.getRecoveryPolicy(),
-                                                                                  self.getFailoverDomain().getName(), self.getFailoverDomain(),
-                                                                                  self.walkServiceToString())
+        #rString = " %s(recovery policy: %s | failover domain: %s)\n     %s\n%s" %(self.getName(), self.getRecoveryPolicy(),
+        #                                                                          self.getFailoverDomain().getName(), self.getFailoverDomain(),
+        #                                                                          self.walkServiceToString())
+        rString = " %s(recovery policy: %s | failover domain: %s)\n     %s\n" %(self.getName(), self.getRecoveryPolicy(),
+                                                                                self.getFailoverDomain().getName(), self.getFailoverDomain())
         return rString
 
     def __walkServiceToStringHelper(self, resource):

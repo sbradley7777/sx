@@ -12,7 +12,7 @@ TODO:
 
 @author    :  Shane Bradley
 @contact   :  sbradley@redhat.com
-@version   :  2.13
+@version   :  2.14
 @copyright :  GPLv2
 """
 import string
@@ -63,7 +63,7 @@ class Gluster(sx.plugins.PluginBase):
         """
         if (not len(self.__glusterPeerNodes.getGlusterPeerNodes()) > 0):
             message = "There were no gluster peer nodes found in the list of reports so no report will be generated."
-            logging.getLogger(sx.MAIN_LOGGER_NAME).warn(message)
+            logging.getLogger(sx.MAIN_LOGGER_NAME).warning(message)
         else:
             message = "Generating report for plugin: %s" %(self.getName())
             logging.getLogger(sx.MAIN_LOGGER_NAME).log(LogWriter.STATUS_LEVEL, message)

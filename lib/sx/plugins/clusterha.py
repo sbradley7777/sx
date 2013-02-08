@@ -13,7 +13,7 @@ fixed latter for just True on the plugin name and not class name.
 
 @author    :  Shane Bradley
 @contact   :  sbradley@redhat.com
-@version   :  2.13
+@version   :  2.14
 @copyright :  GPLv2
 """
 import string
@@ -134,29 +134,29 @@ class Clusterha(sx.plugins.PluginBase):
             clusteredServicesList = cca.getClusteredServices()
             clusteredServicesString = ""
             clusteredVMServicesString = ""
-            index = 1
-            vIndex = 1
+            regServiceCount = 0
+            vmServiceCount = 0
             for clusteredService in clusteredServicesList:
                 if (not clusteredService.isVirtualMachineService()):
-                    sIndex = str(index)
-                    if (index < 10):
-                        sIndex = " %d" %(index)
+                    sIndex = str(regServiceCount + 1)
+                    if ((regServiceCount + 1) < 10):
+                        sIndex = " %d" %(regServiceCount + 1)
                     clusteredServicesString += "%s. %s\n\n" %(sIndex, str(clusteredService).rstrip())
-                    index = index + 1
+                    regServiceCount = regServiceCount + 1
                 elif (clusteredService.isVirtualMachineService()):
-                    sIndex = str(vIndex)
-                    if (index < 10):
-                        sIndex = " %d" %(vIndex)
+                    sIndex = str(vmServiceCount + 1)
+                    if ((vmServiceCount + 1) < 10):
+                        sIndex = " %d" %(vmServiceCount + 1)
                     clusteredVMServicesString += "%s. %s\n\n" %(sIndex, str(clusteredService).rstrip())
-                    vIndex = vIndex + 1
-            if (len(clusteredServicesString) > 0):
+                    vmServiceCount = vmServiceCount + 1
+            if (regServiceCount > 0):
                 self.writeSeperator(filename, "Clustered Services Summary");
-                self.write(filename, "There was %d clustered services.\n" %(index - 1))
+                self.write(filename, "There was %d clustered services.\n" %(regServiceCount))
                 self.write(filename, "%s\n" %(clusteredServicesString.rstrip()))
 
-            if (len(clusteredVMServicesString) > 0):
+            if (vmServiceCount > 0):
                 self.writeSeperator(filename, "Clustered Virtual Machine Services Summary");
-                self.write(filename, "There was %d clustered virtual machine services.\n" %(vIndex - 1))
+                self.write(filename, "There was %d clustered virtual machine services.\n" %(vmServiceCount))
                 self.write(filename, "%s\n" %(clusteredVMServicesString.rstrip()))
 
             # List of clusternodes in cluster.conf that do not have
@@ -228,7 +228,9 @@ class Clusterha(sx.plugins.PluginBase):
                         chkConfigClusterService.isEnabledRunlevel5())):
                         currentDisabledServices += " %s |" %(chkConfigClusterService.getName())
                 if (len(currentDisabledServices) > 0):
-                    rString += "%s:\n  %s\n\n" %(clusternode.getHostname(), currentDisabledServices.rstrip("|"))
+                    rString += "%s:\n  %s\n\n" %(clusternode.getClusterNodeName(), currentDisabledServices.rstrip("|"))
+            rString = rString.rstrip()
+            rString += "\n"
             self.writeSeperator(filename, "Cluster Services Summary");
             if (len(rString) > 0):
                 header =  "The following services were disabled at boot.\n"
