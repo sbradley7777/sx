@@ -2,7 +2,7 @@
 """
 @author    :  Shane Bradley
 @contact   :  sbradley@redhat.com
-@version   :  2.14
+@version   :  2.15
 @copyright :  GPLv2
 """
 import logging
@@ -21,8 +21,6 @@ from sx.plugins.lib.kernel.modulesparser import ModulesParser
 from sx.plugins.lib.kernel.modulesparser import LSMod
 from sx.plugins.lib.storage.filesysparser import FilesysParser
 from sx.plugins.lib.storage.filesysparser import FilesysMount
-from sx.plugins.lib.log.syslogparser import SysLogParser
-from sx.plugins.lib.log.syslogparser import VarLogMessages
 
 
 class StorageData:
@@ -201,16 +199,6 @@ class StorageDataGenerator:
         @type reports: Array
         """
         storageData = None
-        varLogMessagesList = []
-        varLogMessagesSize = (report.getFileSize("var/log/messages")/(1024*1024.0))
-        if (int(varLogMessagesSize) < self.__varLogMessagesSizeMax):
-            # Add in the data since it is smaller than max size.
-            message = "The size of the messages log is %s MBs. If may take a few minutes to process the file." %(str(varLogMessagesSize))
-            logging.getLogger(sx.MAIN_LOGGER_NAME).debug(message)
-            varLogMessagesList = SysLogParser.parseVarLogMessagesData(report.getDataFromFile("var/log/messages"))
-        else:
-            message = "The size of the messages log is %s MBs which is larger than the max file size that can be parsed which is %s MBs." %(str(varLogMessagesSize), str(self.__varLogMessagesSizeMax))
-            logging.getLogger(sx.MAIN_LOGGER_NAME).warning(message)
         distroRelease = DistroReleaseParser.parseEtcRedHatReleaseRedhatReleaseData(report.getDataFromFile("etc/redhat-release"))
         procFilesystemsList = ProcParser.parseProcFilesystemsData(report.getDataFromFile("proc/filesystems"))
         fsTypes = []
@@ -230,6 +218,8 @@ class StorageDataGenerator:
                                           dmCommandsMap.get("dmsetup_info_-c"),
                                           dmCommandsMap.get("dmsetup_table"))
         lvmConfData = report.getDataFromFile("etc/lvm/lvm.conf")
+        # Empty array for now while system log parser is reworked.
+        varLogMessagesList = []
         storageData = StorageData(report.getHostname(),
                                   report.getUptime(),
                                   distroRelease,

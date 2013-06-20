@@ -3,7 +3,7 @@
 
 @author    :  Shane Bradley
 @contact   :  sbradley@redhat.com
-@version   :  2.14
+@version   :  2.15
 @copyright :  GPLv2
 """
 import os.path
@@ -139,9 +139,16 @@ class Tarextractor(Extractor) :
             message = "The %s command does not appear to be installed or incorrect version." %(self.getPathToCommand())
             logging.getLogger(sx.MAIN_LOGGER_NAME).debug(message)
         else:
-            message = "%s %s %s -C %s --strip-components %s" %(self.getPathToCommand(), commandOptions, self.getPathToFile(), extractDir, str(stripDirectoriesDepth))
+            # Add in all files that should be excluded. Add exclude string so
+            # that certain large files are skipped like /var/account. An option
+            # will need to be added to sx, report classes, and extractors. Will
+            # need to build up the string if multiples. Need to test cause it
+            # did not work before but appears to be good idea.
+            excludedFiles = ""
+            #excludedFiles = " --exclude=\"var/account/p*\""
+            message = "%s %s %s -C %s --strip-components %s %s" %(self.getPathToCommand(), commandOptions, self.getPathToFile(), extractDir, str(stripDirectoriesDepth), excludedFiles)
             logging.getLogger(sx.MAIN_LOGGER_NAME).debug(message)
-            command = [self.getPathToCommand(), commandOptions, self.getPathToFile(), "-C", extractDir, "--strip-components", str(stripDirectoriesDepth)]
+            command = [self.getPathToCommand(), commandOptions, self.getPathToFile(), "-C", extractDir, "--strip-components", str(stripDirectoriesDepth), excludedFiles]
             task = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             (stdout, stderr) = task.communicate()
             if (not task.returncode  == 0):

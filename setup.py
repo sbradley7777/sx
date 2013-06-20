@@ -14,7 +14,7 @@ from distutils.core import setup
 if __name__ == "__main__":
     setup(
         name="sx" ,
-        version="2.14",
+        version="2.15",
         author="Shane Bradley",
         author_email="sbradley@redhat.com",
         url="https://fedorahosted.org/sx",

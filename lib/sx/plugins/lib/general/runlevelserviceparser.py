@@ -6,7 +6,7 @@ sos_commands/startup
 
 @author    :  Shane Bradley
 @contact   :  sbradley@redhat.com
-@version   :  2.14
+@version   :  2.15
 @copyright :  GPLv2
 """
 import re
@@ -21,10 +21,16 @@ class RunLevelParser:
             #    "[0-6].(?P<runlevel1>o[f|n][f]?)\s*[0-6].(?P<runlevel2>o[f|n][f]?)\s*" + \
             #    "[0-6].(?P<runlevel3>o[f|n][f]?)\s*[0-6].(?P<runlevel4>o[f|n][f]?)\s*" + \
             #    "[0-6].(?P<runlevel5>o[f|n][f]?)\s*[0-6].(?P<runlevel6>o[f|n][f]?).*$"
-            regexStanza = "^(?P<name>\w+(-\w+)?)\s*[0-6].(?P<runlevel0>o[f|n][f]?)\s*" + \
-                "[0-6].(?P<runlevel1>o[f|n][f]?)\s*[0-6].(?P<runlevel2>o[f|n][f]?)\s*" + \
-                "[0-6].(?P<runlevel3>o[f|n][f]?)\s*[0-6].(?P<runlevel4>o[f|n][f]?)\s*" + \
-                "[0-6].(?P<runlevel5>o[f|n][f]?)\s*[0-6].(?P<runlevel6>o[f|n][f]?).*$"
+            # Current working regex
+            #regexStanza = "^(?P<name>\w+(-\w+)?)\s*[0-6].(?P<runlevel0>o[f|n][f]?)\s*" + \
+            #    "[0-6].(?P<runlevel1>o[f|n][f]?)\s*[0-6].(?P<runlevel2>o[f|n][f]?)\s*" + \
+            #    "[0-6].(?P<runlevel3>o[f|n][f]?)\s*[0-6].(?P<runlevel4>o[f|n][f]?)\s*" + \
+            #    "[0-6].(?P<runlevel5>o[f|n][f]?)\s*[0-6].(?P<runlevel6>o[f|n][f]?).*$"
+
+            regexStanza = "^(?P<name>\w+(-\w+)?)\s*[0-6].(?P<runlevel0>o[f|n][f]?|desactivado|activo)\s*" + \
+                "[0-6].(?P<runlevel1>o[f|n][f]?|desactivado|activo)\s*[0-6].(?P<runlevel2>o[f|n][f]?|desactivado|activo)\s*" + \
+                "[0-6].(?P<runlevel3>o[f|n][f]?|desactivado|activo)\s*[0-6].(?P<runlevel4>o[f|n][f]?|desactivado|activo)\s*" + \
+                "[0-6].(?P<runlevel5>o[f|n][f]?|desactivado|activo)\s*[0-6].(?P<runlevel6>o[f|n][f]?|desactivado|activo).*$"
 
             remStanza = re.compile(regexStanza)
             for item in chkConfigData:
@@ -52,13 +58,13 @@ class ChkConfigServiceStatus:
         self.__name = name
         # The actual line of service
         self.__rawStatus = rawStatus.rstrip()
-        self.__rl0 = self.__convertBooleanString(rl0.strip())
-        self.__rl1 = self.__convertBooleanString(rl1.strip())
-        self.__rl2 = self.__convertBooleanString(rl2.strip())
-        self.__rl3 = self.__convertBooleanString(rl3.strip())
-        self.__rl4 = self.__convertBooleanString(rl4.strip())
-        self.__rl5 = self.__convertBooleanString(rl5.strip())
-        self.__rl6 = self.__convertBooleanString(rl6.strip())
+        self.__rl0 = self.__convertStringToBoolean(rl0.strip())
+        self.__rl1 = self.__convertStringToBoolean(rl1.strip())
+        self.__rl2 = self.__convertStringToBoolean(rl2.strip())
+        self.__rl3 = self.__convertStringToBoolean(rl3.strip())
+        self.__rl4 = self.__convertStringToBoolean(rl4.strip())
+        self.__rl5 = self.__convertStringToBoolean(rl5.strip())
+        self.__rl6 = self.__convertStringToBoolean(rl6.strip())
 
         # The default will be zero can be specified later in set
         # method if needed.
@@ -66,19 +72,40 @@ class ChkConfigServiceStatus:
         self.__stopOrderNumber = 0
 
     def __str__(self):
-        return "%s(%d/%d): 0:%s 1:%s 2:%s 3:%s 4:%s 5:%s 6:%s" %(self.getName(), self.getStartOrderNumber(),
-                                                                 self.getStopOrderNumber(), str(self.isEnabledRunlevel0()),
-                                                                 str(self.isEnabledRunlevel1()), str(self.isEnabledRunlevel2()),
-                                                                 str(self.isEnabledRunlevel3()), str(self.isEnabledRunlevel4()),
-                                                                 str(self.isEnabledRunlevel5()), str(self.isEnabledRunlevel6()))
+        if ((self.__stopOrderNumber == 0) and (self.__startOrderNumber == 0)):
+            return "%s: 0:%s 1:%s 2:%s 3:%s 4:%s 5:%s 6:%s" %(self.getName(),
+                                                                     self.__convertBooleanToString(self.isEnabledRunlevel0()),
+                                                                     self.__convertBooleanToString(self.isEnabledRunlevel1()),
+                                                                     self.__convertBooleanToString(self.isEnabledRunlevel2()),
+                                                                     self.__convertBooleanToString(self.isEnabledRunlevel3()),
+                                                                     self.__convertBooleanToString(self.isEnabledRunlevel4()),
+                                                                     self.__convertBooleanToString(self.isEnabledRunlevel5()),
+                                                                     self.__convertBooleanToString(self.isEnabledRunlevel6()))
 
-    def __convertBooleanString(self, booleanString):
+        return "%s(%d/%d): 0:%s 1:%s 2:%s 3:%s 4:%s 5:%s 6:%s" %(self.getName(), self.getStartOrderNumber(), self.getStopOrderNumber(),
+                                                                 self.__convertBooleanToString(self.isEnabledRunlevel0()),
+                                                                 self.__convertBooleanToString(self.isEnabledRunlevel1()),
+                                                                 self.__convertBooleanToString(self.isEnabledRunlevel2()),
+                                                                 self.__convertBooleanToString(self.isEnabledRunlevel3()),
+                                                                 self.__convertBooleanToString(self.isEnabledRunlevel4()),
+                                                                 self.__convertBooleanToString(self.isEnabledRunlevel5()),
+                                                                 self.__convertBooleanToString(self.isEnabledRunlevel6()))
+
+    def __convertBooleanToString(self, boolean):
+        if (boolean):
+            return "on"
+        else:
+            return "off"
+
+    def __convertStringToBoolean(self, booleanString):
         """
         This function is for converting strings to boolean. For
         example the strings used in chkconfig data for "on" is True
         and "off" is False.
         """
         if (booleanString == "on"):
+            return True
+        elif (booleanString == "activo"):
             return True
         return False
 

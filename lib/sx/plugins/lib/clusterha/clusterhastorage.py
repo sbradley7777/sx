@@ -5,7 +5,7 @@ GFS2, and filesystem resources in the cluster.conf.
 
 @author    :  Shane Bradley
 @contact   :  sbradley@redhat.com
-@version   :  2.14
+@version   :  2.15
 @copyright :  GPLv2
 """
 import re
@@ -127,26 +127,25 @@ class ClusterHAStorage():
                       self.__cnc.getStorageData(clusternode.getClusterNodeName()).getLVMConfData())
             currentSummary =""
             lockingType = lvm.getLockingTypeValue()
-            currentSummary += "  locking_type: %s\n" %(lockingType)
+            currentSummary += "  /etc/lvm/lvm.conf -> locking_type: %s\n" %(lockingType)
 
             volume_list = lvm.getVolumeListValues()
             volumesListValues = ""
             for item in volume_list:
                volumesListValues += "%s |" %(item)
             volumesListValues = volumesListValues.rstrip("|")
-            currentSummary += "  volume_list: %s\n\n" %(volumesListValues)
+            if (not len(volumesListValues) > 0):
+                volumesListValues = "No volumes found for this configuration option."
+            currentSummary += "  /etc/lvm/lvm.conf -> volume_list:  %s\n\n" %(volumesListValues)
 
             # Check to see clvmd is enabled at boot.
             serviceName = "clvmd"
-            serviceStatus = ""
+            clvmdServiceSummary = "There was either an error finding the status for the service \"%s\" used by Cluster HA.\n" %(serviceName)
             for chkConfigItem in clusternode.getChkConfigList():
                 if (chkConfigItem.getName() == serviceName):
-                    serviceStatus = chkConfigItem.getRawStatus()
-            if (len(serviceStatus) > 0):
-                currentSummary += "  The service \"clvmd\" was found and the runlevel status is below:\n    %s\n" %(serviceStatus)
-            else:
-                currentSummary += "  The service \"clvmd\" was not found for the package \"lvm2-cluster\".\n"
-
+                    clvmdServiceSummary = "%s\n" %(chkConfigItem)
+                    break;
+            currentSummary += "  /etc/init.d/%s runlevel status: %s\n" %(serviceName, clvmdServiceSummary)
             # Add current summary to lvm summary
             if (len(currentSummary) > 0):
                 lvmSummary += "%s:\n%s\n" %(clusternode.getClusterNodeName(), currentSummary)

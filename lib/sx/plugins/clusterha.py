@@ -13,7 +13,7 @@ fixed latter for just True on the plugin name and not class name.
 
 @author    :  Shane Bradley
 @contact   :  sbradley@redhat.com
-@version   :  2.14
+@version   :  2.15
 @copyright :  GPLv2
 """
 import string
@@ -209,12 +209,13 @@ class Clusterha(sx.plugins.PluginBase):
             # ###################################################################
             # Check the cluster node services summary
             # ###################################################################
-            rString = ""
+            clusterHAServiceString = ""
             for clusternode in cnc.getClusterNodes():
                 chkConfigClusterServiceList = clusternode.getChkConfigClusterServicesStatus()
                 if (not len(chkConfigClusterServiceList) > 0):
                     # If there is no chkconfig data then skip
                     continue
+                currentEnabledServices = ""
                 currentDisabledServices = ""
                 sortedChkConfigClusterServicesList = sorted(chkConfigClusterServiceList, key=lambda k: k.getStartOrderNumber())
                 for chkConfigClusterService in sortedChkConfigClusterServicesList:
@@ -227,19 +228,21 @@ class Clusterha(sx.plugins.PluginBase):
                         chkConfigClusterService.isEnabledRunlevel4() and
                         chkConfigClusterService.isEnabledRunlevel5())):
                         currentDisabledServices += " %s |" %(chkConfigClusterService.getName())
-                if (len(currentDisabledServices) > 0):
-                    rString += "%s:\n  %s\n\n" %(clusternode.getClusterNodeName(), currentDisabledServices.rstrip("|"))
-            rString = rString.rstrip()
-            rString += "\n"
+                    else:
+                        currentEnabledServices += " %s |" %(chkConfigClusterService.getName())
+                if ((len(currentEnabledServices) > 0) or (len(currentDisabledServices) > 0)):
+                    clusterHAServiceString += "%s:\n  Enabled:  %s\n  Disabled: %s\n\n" %(clusternode.getClusterNodeName(), currentEnabledServices.rstrip("|"), currentDisabledServices.rstrip("|"))
+                else:
+                    clusterHAServiceString += "%s:\n  There was either an error finding the services used by Cluster HA or there was none installed.\n\n" %(clusternode.getClusterNodeName())
+            clusterHAServiceString = clusterHAServiceString.rstrip()
             self.writeSeperator(filename, "Cluster Services Summary");
-            if (len(rString) > 0):
-                header =  "The following services were disabled at boot.\n"
-                header += "-  https://access.redhat.com/knowledge/solutions/5898 \n"
-                self.write(filename, header)
-                self.write(filename, rString.rstrip())
+            header =  "The following lists the clustered services that were found runlevel start(enabled) state. Services\nin enabled list have the service enabled in runlevels 3,4,5.\n"
+            header += "-  https://access.redhat.com/knowledge/solutions/5898 \n"
+            self.write(filename, header)
+            if (len(clusterHAServiceString) > 0):
+                self.write(filename, "%s\n" %(clusterHAServiceString))
             else:
                 self.write(filename, "There was either an error finding the services used by Cluster HA or there was none installed.")
-                self.write(filename, "- https://access.redhat.com/knowledge/solutions/5898")
 
             # ###################################################################
             # Verify the cluster node configuration

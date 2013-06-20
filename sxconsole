@@ -7,7 +7,7 @@ All reports have to be a a compressed tarfile of type bzip2/gunzip.
 
 @author    :  Shane Bradley
 @contact   :  sbradley@redhat.com
-@version   :  2.14
+@version   :  2.15
 @copyright :  GPLv2
 """
 import sys
@@ -39,7 +39,7 @@ from sx.modulesloader import ExtractorsLoader
 @cvar VERSION_NUMBER: The current version number of sxconsole.
 @type VERSION_NUMBER: String
 """
-VERSION_NUMBER = "2.14-1"
+VERSION_NUMBER = "2.15-7"
 
 def getArchiveLayout(caseNumber, pathToArchiveDirectory, pathToExtractedReports,
                      isModifiedArchiveLayoutEnabled) :
@@ -371,17 +371,21 @@ def __initializeDirStructure(pathToCompressedReports, pathToExtractedReports):
     """
     dirPaths = [pathToCompressedReports, pathToExtractedReports]
     for dirPath in dirPaths:
+        if (not os.access(dirPath, os.F_OK)):
             try:
-                if (not os.access(dirPath, os.F_OK)):
-                    os.makedirs(dirPath)
-                if (not os.access(dirPath, os.F_OK)):
-                    message = "The directory does not exists after it was created: %s." % (dirPath)
-                    logging.getLogger(sx.MAIN_LOGGER_NAME).error(message)
-                    return False
+                os.makedirs(dirPath)
+            except OSError:
+                message = "Could not create the directory: %s." % (dirPath)
+                logging.getLogger(sx.MAIN_LOGGER_NAME).error(message)
+                return False
             except IOError:
                 message = "Could not create the directory: %s." % (dirPath)
                 logging.getLogger(sx.MAIN_LOGGER_NAME).error(message)
                 return False
+        if (not os.access(dirPath, os.F_OK)):
+            message = "The directory does not exists after it was created: %s." % (dirPath)
+            logging.getLogger(sx.MAIN_LOGGER_NAME).error(message)
+            return False
     return True
 
 def __moveReport(src, dst):
@@ -588,16 +592,16 @@ class OptionParserExtended(OptionParser):
         self.print_version()
         layoutDescription = "\n\nArchive Layout Description:\n\n"
         layoutDescription += "The default layout of the archive files looks like the following:\n"
-        layoutDescription += "\tCompressed Reports Path:   ~/sxarchive/creports/15555553/2.14-04-18_123703\n"
-        layoutDescription += "\tExtracted Reports Path:    ~/sxarchive/ereports/15555553/2.14-04-18_123703\n"
+        layoutDescription += "\tCompressed Reports Path:   ~/sxarchive/creports/15555553/2.15-04-18_123703\n"
+        layoutDescription += "\tExtracted Reports Path:    ~/sxarchive/ereports/15555553/2.15-04-18_123703\n"
         layoutDescription += "\tNon-report Files Path:     ~/sxarchive/ereports/15555553/files\n"
-        layoutDescription += "\tPlugin Report Files Path:  ~/sxarchive/ereports/15555553/2.14-04-18_123703/reports\n\n"
+        layoutDescription += "\tPlugin Report Files Path:  ~/sxarchive/ereports/15555553/2.15-04-18_123703/reports\n\n"
 
         layoutDescription += "The modified layout of the archive files looks like the following(when -M option is enabled):\n"
-        layoutDescription += "\tCompressed Reports Path:   ~/sxarchive/15555553/2.14-04-18_123703/.creports\n"
-        layoutDescription += "\tExtracted Reports Path:    ~/sxarchive/15555553/2.14-04-18_123703\n"
+        layoutDescription += "\tCompressed Reports Path:   ~/sxarchive/15555553/2.15-04-18_123703/.creports\n"
+        layoutDescription += "\tExtracted Reports Path:    ~/sxarchive/15555553/2.15-04-18_123703\n"
         layoutDescription += "\tNon-report Files Path:     ~/sxarchive/15555553/files\n"
-        layoutDescription += "\tPlugin Report Files Path:  ~/sxarchive/15555553/2.14-04-18_123703/reports\n\n"
+        layoutDescription += "\tPlugin Report Files Path:  ~/sxarchive/15555553/2.15-04-18_123703/reports\n\n"
 
         examplesMessage =  "Examples:\n\n"
         examplesMessage += "To list the different plugin and report types:\n"
@@ -621,11 +625,11 @@ class OptionParserExtended(OptionParser):
         examplesMessage += "After extraction is complete then open with a fileviewer and pass the option for a particular fileviewer.\n"
         examplesMessage += "$ %s 15555553 -e OpenSOSReport -o OpenSOSReport.fileviewer=konqueror\n\n" %(self.__commandName)
         examplesMessage += "To run the cluster and the checksysreport plugin against a previously extracted report:\n"
-        examplesMessage += "$ %s -p ~/sxarchive/ereports/15555553/2.14-01-26_160247 -e cluster,checksysreport\n\n" %(self.__commandName)
+        examplesMessage += "$ %s -p ~/sxarchive/ereports/15555553/2.15-01-26_160247 -e cluster,checksysreport\n\n" %(self.__commandName)
         examplesMessage += "To run default plugins on directory of reports(non-reports will not be processed) and use the modified archived layout:\n"
         examplesMessage += "$ %s 15555553 -R ~/tmp/ -M\n\n" %(self.__commandName)
         examplesMessage += "To run the cluster and the checksysreport plugin against a previously extracted report that used the modified layout scheme:\n"
-        examplesMessage += "$ %s -p ~/sxarchive/ereports/15555553/2.14-01-26_160247 -e cluster,checksysreport -M\n\n" %(self.__commandName)
+        examplesMessage += "$ %s -p ~/sxarchive/ereports/15555553/2.15-01-26_160247 -e cluster,checksysreport -M\n\n" %(self.__commandName)
         OptionParser.print_help(self)
         print layoutDescription
         print examplesMessage
@@ -918,10 +922,48 @@ if __name__ == "__main__":
             __printToConsole(al.getPathToCompressedReports(), al.getPathToExtractedReports(), mapOfPluginReportPaths, listOfNonReportPaths)
         # #######################################################################
     except KeyboardInterrupt:
-        print ""
         message =  "This script will exit since control-c was executed by end user."
         logging.getLogger(sx.MAIN_LOGGER_NAME).error(message)
         sys.exit(2)
+    except Exception, e:
+        import time
+        import traceback
+        errorString = ""
+        errorString += "Date:            %s\n" %(time.strftime("%Y-%m-%d %H:%M:%S"))
+        errorString += "Command:         %s-%s\n" %(os.path.basename(sys.argv[0]), VERSION_NUMBER)
+        errorString += "Path to Command: %s\n" %(sys.argv[0])
+        errorString += "Arguments:       "
+        # Add Arguments to the string
+        if (len(sys.argv) > 1):
+            for index in range(1, len(sys.argv)):
+                errorString += "%s " %(sys.argv[index])
+            errorString += "\n"
+        tb = traceback.format_exc()
+        # Add formatted traceback
+        errorString += "\nTraceBack: \n"
+        for line in tb.split("\n"):
+            errorString += "   %s\n" %(line)
+        # Write the ouput to a file.
+        pathToErrorFile = "/tmp/%s-%s-%s.txt" %(os.path.basename(sys.argv[0]), time.strftime("%Y-%m-%d"), int(time.time()))
+        message =  "An error occurred and a debug file containing the error will be written to the file: %s" %(pathToErrorFile)
+        logging.getLogger(sx.MAIN_LOGGER_NAME).error(message)
+        try:
+            fout = open(pathToErrorFile, "w")
+            fout.write(errorString + "\n")
+            fout.close()
+        except UnicodeEncodeError:
+            message = "There was a unicode encode error on file: %s." %(pathToErrorFile)
+            logging.getLogger(sx.MAIN_LOGGER_NAME).error(message)
+            message = "The data that was going to be written to the file is below: \n%s" %(errorString)
+            logging.getLogger(sx.MAIN_LOGGER_NAME).info(message)
+        except IOError:
+            message = "There was an error writing the file: %s." %(pathToErrorFile)
+            logging.getLogger(sx.MAIN_LOGGER_NAME).error(message)
+            message = "The data that was going to be written to the file is below: \n%s" %(errorString)
+            logging.getLogger(sx.MAIN_LOGGER_NAME).info(message)
+        print errorString
+        sys.exit(2)
+
     # #######################################################################
     # Exit the application with zero exit code since we cleanly exited.
     # #######################################################################

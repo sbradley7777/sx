@@ -4,7 +4,7 @@ A class that can run analyze the storage aspect of a sosreport.
 
 @author    :  Shane Bradley
 @contact   :  sbradley@redhat.com
-@version   :  2.14
+@version   :  2.15
 @copyright :  GPLv2
 """
 import sys
@@ -90,20 +90,6 @@ class Storage(sx.plugins.PluginBase):
             self.writeSeperator(filenameSummary, "System Summary", False)
             self.write(filenameSummary, storageData.getSummary())
             self.write(filenameSummary, "")
-
-            # Find Reboot signatures. Restart of syslog does not mean that
-            # machine has rebooted.
-            vlMessageRestartList = []
-            for vlMessage in storageData.getVarLogMessages():
-                # Syslogd 1.4.1 |  restart
-                if ((vlMessage.getMessageSender().startswith("syslogd")) and
-                    (vlMessage.getMessage().startswith("restart"))):
-                    vlMessageRestartList.append(vlMessage)
-            if (len(vlMessageRestartList) > 0):
-                self.writeSeperator(filenameSummary, "Syslog Restart Messages")
-                for vlMessage in vlMessageRestartList:
-                    self.write(filenameSummary, vlMessage.getOriginalMessage().strip())
-                self.write(filenameSummary, "")
 
             # The block device tree has some of the information that
             # is needed to report on.

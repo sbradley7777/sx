@@ -1,3 +1,13 @@
+* Thu Jun 20 2013 Shane Bradley <sbradley@redhat.com>- 2.15-0.0
+- bz955343: There was incorrect labeling on cluster.py when there was no rpms found, instead of being split by HA and RS, they are split by packages and module-packages.
+- Changed the chkconfig cluster service summary output to display enabled and disabled services.
+- Modified bonding mode check for clusterevaluator since there is some new supported modes.
+- A devicemapper parser error when libudev entries were in the files for dmsetup_info and lvs.
+- Fix all the urls since kcs changed.
+- Added a catch all exception that will write a debug file if uncaught exception is raised.
+- Added a check and summary output for transport mode which includes: broadcast, multicast, and updu.
+- Added code to check all valid values for attributes that can be enabled and disabled for /etc/cluster/cluster.conf.
+- Fixed parsing of sos_commands/startup/chkconfig_--list for spanish words.
 * Tue Jan 27 2013 Shane Bradley <sbradley@redhat.com>- 2.14-0.0
 - Fixed issue where hostname was used in cluster summary for services.
 - Fixed parsing error with sosreports file sos_commands/devicemapper/lvs_-a_-o_devices.

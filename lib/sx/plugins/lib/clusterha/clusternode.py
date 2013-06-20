@@ -6,7 +6,7 @@ cluster tools.
 
 @author    :  Shane Bradley
 @contact   :  sbradley@redhat.com
-@version   :  2.14
+@version   :  2.15
 @copyright :  GPLv2
 """
 import re
@@ -207,6 +207,8 @@ class ClusterNode:
     RHEL6_CLUSTER_SERVICES = { 0:"corosync", 1:"cman", 2:"cmirror", 3:"clvmd", 4:"gfs2",
                                5:"rgmanager", 6:"modclusterd", 7:"ricci", 8:"luci"}
 
+    RHEL_CLUSTER_DEFAULT_TRANSPORT_MODE = {4:"broadcast", 5:"multicast", 6:"multicast"}
+
     def __init__(self, pathToClusterConf, distroRelease, date, uname_a, hostname,
                  uptime, networkMaps, heartbeatNetworkMap, chkConfigList,
                  clusterCommandsMap, installedRPMS, clusterStorageFilesystemList):
@@ -296,7 +298,8 @@ class ClusterNode:
         if (cnp.isEmpty()):
             return ""
         nameMessage = "Node Name:    %s\n" %(self.getClusterNodeName())
-        nodeIDMessage = "Node ID :     %s\n" %(self.getClusterNodeID())
+        nodeIDMessage = "Node ID:      %s\n" %(self.getClusterNodeID())
+        transportModeMessage = "Transport:    %s\n" %(self.getCmanTransportMode())
         hbNetworkMap = self.getHeartbeatNetworkMap()
         hbNetworkMessage = ""
         if (not hbNetworkMap == None) :
@@ -328,7 +331,7 @@ class ClusterNode:
                 fenceMessage += "Fence Dev:    %s(Level %s)\n" %(fd.getName(), fd.getMethodName())
             else:
                 fenceMessage += "              %s(Level %s)\n" %(fd.getName(), fd.getMethodName())
-        return  "%s%s%s%s%s" %(nameMessage, nodeIDMessage, hbNetworkMessage, multicastMessage, fenceMessage)
+        return  "%s%s%s%s%s%s" %(nameMessage, nodeIDMessage, transportModeMessage, hbNetworkMessage, multicastMessage, fenceMessage)
 
 
     # #######################################################################
@@ -451,6 +454,22 @@ class ClusterNode:
         @rtype: String
         """
         return self.getClusterNodeProperties().getNodeID()
+
+
+    def getCmanTransportMode(self):
+        """
+        Returns the transport mode that cman is using.
+
+        @return: Returns the transport mode that cman is using.
+        @rtype: String
+        """
+        transportMode = self.getClusterNodeProperties().getTransportMode()
+        if (not len(transportMode) > 0):
+            distroRelease = self.getDistroRelease()
+            if (distroRelease.getDistroName() == "RHEL"):
+                if (ClusterNode.RHEL_CLUSTER_DEFAULT_TRANSPORT_MODE.has_key(distroRelease.getMajorVersion())):
+                    transportMode = ClusterNode.RHEL_CLUSTER_DEFAULT_TRANSPORT_MODE.get(distroRelease.getMajorVersion())
+        return transportMode
 
     def getClusterCommandData(self, key) :
         """

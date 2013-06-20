@@ -5,7 +5,7 @@ that is in xml format.
 
 @author    :  Shane Bradley
 @contact   :  sbradley@redhat.com
-@version   :  2.14
+@version   :  2.15
 @copyright :  GPLv2
 """
 import os.path
@@ -394,7 +394,7 @@ class ClusteredService():
         return flatListOfClusteredResources
 
 class ClusterNodeProperties:
-    def __init__(self, nodeName, nodeID, votes, multicastAddress, multicastInterface,
+    def __init__(self, nodeName, nodeID, votes, transportMode, multicastAddress, multicastInterface,
                  cmanMulticastAddress, fenceDevicesList) :
         """
         @param nodeName: The name of node.
@@ -403,6 +403,8 @@ class ClusterNodeProperties:
         @type nodeID: String
         @param votes: The votes for the node.
         @type votes: String
+        @param transportMode: The transport mode used for communication.
+        @type transportMode: String
         @param multicastAddress: The multicast address of the node.
         @type multicastAddress: String
         @param multicastInterface: The multicast interface for the node.
@@ -415,6 +417,7 @@ class ClusterNodeProperties:
         self.__nodeName = nodeName
         self.__nodeID = nodeID
         self.__votes = votes
+        self.__transportMode = transportMode
         self.__multicastAddress = multicastAddress
         self.__multicastInterface = multicastInterface
         self.__cmanMulticastAddress = cmanMulticastAddress
@@ -426,6 +429,7 @@ class ClusterNodeProperties:
         rstring += "%s\n" %(self.getNodeName())
         rstring += "\tClusternode ID:              %s\n" %(self.getNodeID())
         rstring += "\tClusternode Votes:           %s\n" %(self.getVotes())
+        rstring += "\tClusternode Transport Mode:  %s\n" %(self.getTransportMode())
         rstring += "\tClusternode MC Address:      %s\n" %(self.getMulticastAddress())
         rstring += "\tClusternode MC Interface:    %s\n" %(self.getMulticastInterface())
         rstring += "\tClusternode MC cman Address: %s\n" %(self.getCmanMulticastAddress())
@@ -468,6 +472,18 @@ class ClusterNodeProperties:
         if (self.isEmpty()):
             return ""
         return self.__votes
+
+
+    def getTransportMode(self):
+        """
+        Returns the transportMode.
+
+        @return: Returns the transportMode.
+        @rtype: String
+        """
+        if (self.isEmpty()):
+            return ""
+        return self.__transportMode
 
     def getMulticastAddress(self):
         """
@@ -655,6 +671,28 @@ class ClusterHAConfAnalyzer :
         """
         return (not self.__ccRootElement == None)
 
+
+    def __isAttributeEnabled(self, attributeValue):
+        """
+        This function will return True if the string is one of the values that
+        stand for "enabled". False if the attribute stands for "disabled". None
+        will be returned if no match is found.
+
+        @return: Return True if the attributeValue stands for "enabled", False
+        if the attribute stands for "disabled". None will be returned if no
+        match is found.
+
+        @rtype: Boolean
+
+        @param attributeValue: The value of an attribute.
+        @type attributeValue: String
+        """
+        attributeValue = attributeValue.lower()
+        if attributeValue in ("1", "true", "on", "enabled", "yes"):
+            return True
+        elif attributeValue in ("0", "false", "off", "disabled", "no"):
+            return False
+        return None
     # #######################################################################
     # IS Functions
     # #######################################################################
@@ -667,7 +705,25 @@ class ClusterHAConfAnalyzer :
         """
         cmanElement = self.__ccRootElement.find("cman")
         try:
-            if (cmanElement.attrib["two_node"] == "1"):
+            if (self.__isAttributeEnabled(cmanElement.attrib["two_node"])):
+                return True
+            else:
+                return False
+        except KeyError:
+            return False
+        except AttributeError:
+            return False
+
+    def isCmanBroadcastTransportModeEnabled(self):
+        """
+        Returns True if cman tag has the attribute broadcast set to 1.
+
+        @return: Returns True if cman tag has the attribute broadcast set to 1.
+        @rtype: Boolean
+        """
+        cmanElement = self.__ccRootElement.find("cman")
+        try:
+            if (self.__isAttributeEnabled(cmanElement.attrib["broadcast"])):
                 return True
             else:
                 return False
@@ -727,7 +783,7 @@ class ClusterHAConfAnalyzer :
                 return True
         return False
 
-    def isCleanStartEnabled(self) :
+    def hasAttributeCleanStart(self) :
         """
         Returns True if the value is equal to 0, otherwise False.
 
@@ -736,7 +792,8 @@ class ClusterHAConfAnalyzer :
         """
         fdElement = self.__ccRootElement.find("fence_daemon")
         try:
-            return (not fdElement.attrib["clean_start"] == "0")
+            attributeValue = fdElement.attrib["clean_start"]
+            return True
         except KeyError:
             # If attribute does not exist then return False
             return False
@@ -746,6 +803,18 @@ class ClusterHAConfAnalyzer :
     # #######################################################################
     # Get Functions
     # #######################################################################
+    def getTransportMode(self):
+        if (self.isCmanBroadcastTransportModeEnabled()):
+            return "broadcast"
+        cmanElement = self.__ccRootElement.find("cman")
+        try:
+            return cmanElement.attrib["transport"]
+        except KeyError:
+            pass
+        except AttributeError:
+            pass
+        return ""
+
     def getQuorumd(self):
         quorumdElement = self.__ccRootElement.find("quorumd")
         if (not quorumdElement == None):
@@ -941,6 +1010,7 @@ class ClusterHAConfAnalyzer :
         cluster.conf.
         @rtype: Dictionary
         """
+        transportMode = self.getTransportMode()
         cmanMulticastAddress = self.getCmanMulticastAddress()
         cnFenceDevicesList = self.getClusterNodeFenceDevicesList(clusternodeName)
         # If there are no node ids set then we got to write them in
@@ -1006,7 +1076,7 @@ class ClusterHAConfAnalyzer :
                             pass
                 message = "Found clusternode properties for: %s(%s)." %(clusternodeName, str(nodeID))
                 logging.getLogger(sx.MAIN_LOGGER_NAME).debug(message)
-                return ClusterNodeProperties(nodeName, nodeID, votes,
+                return ClusterNodeProperties(nodeName, nodeID, votes, transportMode,
                                              multicastAddress, multicastInterface,
                                              cmanMulticastAddress, cnFenceDevicesList)
         return None

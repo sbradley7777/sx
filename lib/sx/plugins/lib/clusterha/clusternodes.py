@@ -5,7 +5,7 @@ objects.
 
 @author    :  Shane Bradley
 @contact   :  sbradley@redhat.com
-@version   :  2.14
+@version   :  2.15
 @copyright :  GPLv2
 """
 import re
@@ -642,7 +642,7 @@ class ClusterNodes:
                 packageTableString = stringUtil.toTableString(fsTable)
                 rstring += ("\n%s\n") %(packageTableString)
             else:
-                rstring += "\nThere was no High Availability Packages Found.\n"
+                rstring += "\nThere was no High Availability or Resilient Storage Packages Found.\n"
 
             # Verify cluster-storage package
             packages = clusternode.getClusterModulePackagesVersion()
@@ -672,7 +672,7 @@ class ClusterNodes:
                 packageTableString = stringUtil.toTableString(fsTable)
                 rstring += ("\n%s\n") %(packageTableString)
             else:
-                rstring += "\nThere was no Resilient Storage Packages Found.\n"
+                rstring += "\nThere was no High Availability Module or Resilient Storage Module Packages Found.\n"
         # Remove an extra newline
         rstring = rstring.rstrip("\n")
         return rstring

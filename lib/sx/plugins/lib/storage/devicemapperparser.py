@@ -6,7 +6,7 @@ sos_commands/devicemapper
 
 @author    :  Shane Bradley
 @contact   :  sbradley@redhat.com
-@version   :  2.14
+@version   :  2.15
 @copyright :  GPLv2
 """
 from sx.plugins.lib.storage.lvm import PVS_AV
@@ -30,8 +30,12 @@ class DeviceMapperParser:
         for line in dmSetupInfoCData:
             lineSplit = line.split()
             if ((not line.startswith("Name ")) and (len(lineSplit) == 8)):
-                name = lineSplit[0]
-                dmsetupDMSetupInfoC = DMSetupInfoC(name,lineSplit[1],
+                if ((not lineSplit[1].isdigit()) or (not lineSplit[2].isdigit()) or
+                    (not lineSplit[4].isdigit()) or  (not lineSplit[5].isdigit()) or
+                    (not lineSplit[6].isdigit())):
+                    # If those items are not ints then skip.
+                    continue
+                dmsetupDMSetupInfoC = DMSetupInfoC(lineSplit[0],lineSplit[1],
                                                     lineSplit[2],lineSplit[3],
                                                     lineSplit[4],lineSplit[5],
                                                     lineSplit[6],lineSplit[7])
@@ -65,9 +69,12 @@ class DeviceMapperParser:
             if (len(lineSplit) >= 4):
                 deviceMapperName = lineSplit.pop(0).rstrip(":")
                 startOfMap = lineSplit.pop(0)
+                if (not startOfMap.isdigit()):
+                    continue
                 lengthOfMap = lineSplit.pop(0)
+                if (not lengthOfMap.isdigit()):
+                    continue
                 targetName = lineSplit[0]
-
                 parsedList.append(DMSetupTable(deviceMapperName, startOfMap,
                                                lengthOfMap, targetName, lineSplit))
         return parsedList
@@ -129,7 +136,10 @@ class DeviceMapperParser:
                         foundHeader = True
                         continue
                     elif (foundHeader):
-                        parsedList.append(LVS_AO(splitLine[(len(splitLine) - 1)], splitLine[1], splitLine[0], splitLine[2], splitLine[3]))
+                        if (splitLine[(len(splitLine) - 1)].startswith("/")):
+                            # Make sure last items starts with / so it is no
+                            # udev data that is useless to this object.
+                            parsedList.append(LVS_AO(splitLine[(len(splitLine) - 1)], splitLine[1], splitLine[0], splitLine[2], splitLine[3]))
         return parsedList
     parseLVSAODevicesData = staticmethod(parseLVSAODevicesData)
 
