@@ -3,7 +3,7 @@
 
 @author    :  Shane Bradley
 @contact   :  sbradley@redhat.com
-@version   :  2.15
+@version   :  2.16
 @copyright :  GPLv2
 """
 import os.path
@@ -46,7 +46,7 @@ class Zipextractor(Extractor) :
         return False
 
     def getListArgs(self) :
-        # $ unzip -L LOG_2.15_12_16_12_32_50.zip
+        # $ unzip -L LOG_2.16_12_16_12_32_50.zip
         if (not self.isValidMimeType()):
             return None;
         return "-l"
@@ -55,7 +55,7 @@ class Zipextractor(Extractor) :
         # There is no options needed, quiet and overwrite files
         # options will be added.
 
-        # $ unzip LOG_2.15_12_16_12_32_50.zip -d somedir
+        # $ unzip LOG_2.16_12_16_12_32_50.zip -d somedir
         if (not self.isValidMimeType()):
             return None;
         return "-qo"

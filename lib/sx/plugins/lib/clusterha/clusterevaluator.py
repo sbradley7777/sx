@@ -8,7 +8,7 @@ This plugin is documented here:
 
 @author    :  Shane Bradley
 @contact   :  sbradley@redhat.com
-@version   :  2.15
+@version   :  2.16
 @copyright :  GPLv2
 """
 import re
@@ -45,12 +45,12 @@ class ClusterEvaluator():
         if (clusterNameCharSize > 16):
             description = "The name of the cluster cannot be more than 16 characters in size. The cluster's name "
             description += "\%s\" is %d characters long." %(cca.getClusterName(), clusterNameCharSize)
-            urls = ["https://access.redhat.com/site/solutions/32.15"]
+            urls = ["https://access.redhat.com/site/solutions/32.16"]
             rString += StringUtil.formatBulletString(description, urls)
 
         if (cca.hasAttributeCleanStart()):
             description =  "The clean_start option in the /etc/cluster/cluster.conf is not supported "
-            description += "for production clusters. The option is for testing and debugging only."
+            description += "for production clusters and is set to %s. The option is for testing and debugging only." %(cca.getCleanStart())
             urls = ["https://access.redhat.com/site/solutions/23238"]
             rString += StringUtil.formatBulletString(description, urls)
 
@@ -155,45 +155,57 @@ class ClusterEvaluator():
         """
         rString = ""
         # Check if there is no fence defined  on the cluster nodes.
-        fsTable = []
+        fenceTable = []
         for clusternodeName in cca.getClusterNodeNames():
             cnFenceDeviceList = cca.getClusterNodeFenceDevicesList(clusternodeName)
             if (not len(cnFenceDeviceList) > 0):
-                fsTable.append([clusternodeName])
-        if (len(fsTable) > 0):
+                fenceTable.append([clusternodeName])
+        if (len(fenceTable) > 0):
             description = "There was no fence device defined for the following clusternodes. A fence device is required for each clusternode."
             urls = ["https://access.redhat.com/site/solutions/15575"]
             stringUtil = StringUtil()
-            tableOfStrings = stringUtil.toTableStringsList(fsTable, ["clusternode_name"])
+            tableOfStrings = stringUtil.toTableStringsList(fenceTable, ["clusternode_name"])
             rString += StringUtil.formatBulletString(description, urls, tableOfStrings)
 
         # Check if fence_manual is defined on a cluster_node.
-        fsTable = []
+        fenceTable = []
         for clusternodeName in cca.getClusterNodeNames():
             # Check if fence_manual is enabled on a node
             if (cca.isFenceDeviceAgentEnabledOnClusterNode(clusternodeName, "fence_manual")):
-                fsTable.append([clusternodeName])
-        if (len(fsTable) > 0):
+                fenceTable.append([clusternodeName])
+        if (len(fenceTable) > 0):
             description = "The fence device \"fence_manual\" is defined as a fence agent for the following clusternodes which is an unsupported fencing method."
             urls = ["https://access.redhat.com/site/articles/36302"]
             stringUtil = StringUtil()
-            tableOfStrings = stringUtil.toTableStringsList(fsTable, ["clusternode_name"])
+            tableOfStrings = stringUtil.toTableStringsList(fenceTable, ["clusternode_name"])
             rString += StringUtil.formatBulletString(description, urls, tableOfStrings)
 
         # Check to make sure that fence_vmware is not enabled on node
-        fsTable = []
+        fenceTable = []
         for clusternodeName in cca.getClusterNodeNames():
             # Check if fence_manual is enabled on a node
             if (cca.isFenceDeviceAgentEnabledOnClusterNode(clusternodeName, "fence_vmware")):
-                fsTable.append([clusternodeName])
-        if (len(fsTable) > 0):
+                fenceTable.append([clusternodeName])
+        if (len(fenceTable) > 0):
             description =  "The fence device \"fence_vmware\" is defined as a fence agent for the following clusternodes which is an unsupported fencing method. "
             description += "The only supported fencing method for VMWare is fence_vmware_soap and fence_scsi."
             urls = ["https://access.redhat.com/site/articles/29440"]
             stringUtil = StringUtil()
-            tableOfStrings = stringUtil.toTableStringsList(fsTable, ["clusternode_name"])
+            tableOfStrings = stringUtil.toTableStringsList(fenceTable, ["clusternode_name"])
             rString += StringUtil.formatBulletString(description, urls, tableOfStrings)
-        return rString
+        # Make sure there is secondary fence device configured.
+        fenceTable = []
+        for clusternodeName in cca.getClusterNodeNames():
+            cnFenceDeviceList = cca.getClusterNodeFenceDevicesList(clusternodeName)
+            if (not len(list(set(map(lambda m: m.getMethodName(), cnFenceDeviceList)))) > 1):
+                fenceTable.append([clusternodeName])
+        if (len(fenceTable) > 0):
+            description = "A secondary fence device is recommended on the following cluster nodes:"
+            urls = ["https://access.redhat.com/site/solutions/15575" , "https://access.redhat.com/site/solutions/16657"]
+            stringUtil = StringUtil()
+            tableOfStrings = stringUtil.toTableStringsList(fenceTable, ["clusternode_name"])
+            rString += StringUtil.formatBulletString(description, urls, tableOfStrings)
+        return rString.rstrip()
 
     def __evaluateQuorumdConfiguration(self, cca, distroRelease):
         rString = ""
@@ -206,7 +218,7 @@ class ClusterEvaluator():
         if (len(quorumd.getStatusFile()) > 0):
             description =  "The \"status_file\" option for quorumd should be removed prior to production "
             description += "cause it is know to cause qdiskd to hang unnecessarily."
-            urls = ["https://access.redhat.com/site/solutions/54460"]
+            urls = ["https://access.redhat.com/site/solutions/35941"]
             rString += StringUtil.formatBulletString(description, urls)
         if (not quorumd.getUseUptime() == "1"):
             description =  "The changing of the internal timers used by qdisk by setting "
@@ -267,23 +279,23 @@ class ClusterEvaluator():
         # supported in production.
         # ###################################################################
         if ((len(quorumd.getLabel()) > 0) and (len(quorumd.getDevice()) > 0)):
-            description =  "The quorumd option should not have a \"quorumd/@device\" and "
-            description += "\"quorumd/@label\" configured. The label option will override the device option."
+            description =  "The quorumd option should not have a \"device\" and "
+            description += "\"label\" configured in the /etc/cluster/cluster.conf. The label option will override the device option."
             urls = []
             rString += StringUtil.formatBulletString(description, urls)
         if (quorumd.getReboot() == "0"):
-            description =  "If the quorumd option reboot is set to 0 then this option only prevents "
+            description =  "If the quorumd option reboot is set to 0 in the /etc/cluster/cluster.conf. This option only prevents "
             description += "rebooting on loss of score. The option does not change whether qdiskd "
             description += "reboots the host as a result of hanging for too long and getting "
             description += "evicted by other nodes in the cluster."
             urls = []
             rString += StringUtil.formatBulletString(description, urls)
         if (quorumd.getAllowKill() == "0"):
-            description =  "If the quorumd option allow_kill is set to 0 (off), qdiskd will not instruct cman to kill "
-            description += "the cluster nodes that openais or corosync think are dead cluster nodes. Cluster nodes "
+            description =  "If the quorumd option allow_kill is set to 0 (disabled) in the /etc/cluster/cluster.conf. qdiskd will not instruct cman to kill "
+            description += "the cluster nodes that openais or corosync think are dead cluster nodes when disabled. Cluster nodes "
             description += "are still evicted via the qdiskd which will cause a reboot to occur. By default this option "
-            description += "is set to 1."
-            urls = []
+            description += "is set to 1(enabled)."
+            urls = ["https://access.redhat.com/site/solutions/266683"]
             rString += StringUtil.formatBulletString(description, urls)
 
         # ###################################################################

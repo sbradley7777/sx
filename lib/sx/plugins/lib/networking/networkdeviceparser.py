@@ -6,7 +6,7 @@ sos_commands/networking/
 
 @author    :  Shane Bradley
 @contact   :  sbradley@redhat.com
-@version   :  2.15
+@version   :  2.16
 @copyright :  GPLv2
 """
 import re
@@ -386,7 +386,7 @@ class NetworkMap(NetworkInterface):
         return {}
 
     # ###########################################################################
-    # Get functions
+    # Is functions
     # ###########################################################################
     def hasHostnameMapped(self, hostname) :
         # Returns True if a particular hostname is in the /etc/hosts
@@ -397,6 +397,15 @@ class NetworkMap(NetworkInterface):
                 return True
         return False
 
+    def isOnBootEnabled(self):
+        if (self.getNetworkScriptMap().has_key("ONBOOT")):
+            if self.getNetworkScriptMap().get("ONBOOT") == "yes":
+                return True
+        return False
+        
+    # ###########################################################################
+    # Get functions
+    # ###########################################################################
     def getEtcHostsMap(self):
         """
         This returns a map of all the entries in /etc/hosts. The key

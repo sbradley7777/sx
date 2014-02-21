@@ -5,7 +5,7 @@ base class that all report types should inherit.
 
 @author    :  Shane Bradley
 @contact   :  sbradley@redhat.com
-@version   :  2.15
+@version   :  2.16
 @copyright :  GPLv2
 """
 import os

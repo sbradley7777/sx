@@ -5,7 +5,7 @@ objects.
 
 @author    :  Shane Bradley
 @contact   :  sbradley@redhat.com
-@version   :  2.15
+@version   :  2.16
 @copyright :  GPLv2
 """
 import re
@@ -28,6 +28,7 @@ from sx.plugins.lib.general.distroreleaseparser import DistroReleaseParser
 from sx.plugins.lib.general.distroreleaseparser import DistroRelease
 from sx.plugins.lib.general.runlevelserviceparser import RunLevelParser
 from sx.plugins.lib.general.runlevelserviceparser import ChkConfigServiceStatus
+from sx.plugins.lib.general.dmidecodeparser import DmiDecodeParser
 from sx.plugins.lib.kernel.modulesparser import ModulesParser
 from sx.plugins.lib.kernel import KernelParser
 
@@ -83,6 +84,10 @@ class ClusterNodes:
                     for networkMap in networkMaps.getListOfNetworkMaps():
                         ipAddress = networkMap.getIPv4Address()
                         if (ipAddress == hbAddress):
+                            if (not networkMap.isOnBootEnabled()):
+                                # If the device is not enabled at boot, then it
+                                # will be skipped.
+                                continue
                             clusternodeNetworkMap = ClusterNodeNetworkMap(networkMap.getInterface(),
                                                                           networkMap.getHardwareAddress(),
                                                                           networkMap.getIPv4Address(),
@@ -494,6 +499,10 @@ class ClusterNodes:
         if (unameAData == None):
             unameAData = report.getDataFromFile("sos_commands/kernel/uname_-a")
         unameA = KernelParser.parseUnameAData(unameAData)
+
+        # Maybe I should return a map of stanza or dmidecode object just maps them. Need to code for NODE.
+        dmidecodeStanzas = DmiDecodeParser.parseDmiDecodeData(report.getDataFromFile("dmidecode"))
+
         # ###############################################################
         # Create the node since it is valid then append to collection
         # ###############################################################
@@ -508,7 +517,8 @@ class ClusterNodes:
                                   chkConfigList,
                                   clusterCommandsMap,
                                   report.getInstalledRPMSData(),
-                                  clusterStorageFilesystemList)
+                                  clusterStorageFilesystemList,
+                                  dmidecodeStanzas)
         # ###############################################################
         # Now append the fully formed object to the node and resort the
         # nodes so they are kept in node id order.
@@ -546,6 +556,10 @@ class ClusterNodes:
                 unameA += "%s " %(unameASplit[i])
                 i = i + 1
             rstring += "Hostname:     %s\n" %(clusternode.getHostname())
+            machineType = clusternode.getMachineType()
+            if (not len(machineType) > 0):
+                machineType = "-"
+            rstring += "Machine Type: %s\n" %(machineType)
             rstring += "Date:         %s\n" %(clusternode.getDate())
             rstring += "RH Release:   %s\n" %(clusternode.getDistroRelease())
             rstring += "Uptime:       %s\n" %(clusternode.getUptime())

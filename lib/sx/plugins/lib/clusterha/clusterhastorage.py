@@ -5,7 +5,7 @@ GFS2, and filesystem resources in the cluster.conf.
 
 @author    :  Shane Bradley
 @contact   :  sbradley@redhat.com
-@version   :  2.15
+@version   :  2.16
 @copyright :  GPLv2
 """
 import re
@@ -286,6 +286,14 @@ class ClusterHAStorage():
             return rString
         cca = ClusterHAConfAnalyzer(baseClusterNode.getPathToClusterConf())
 
+        if ((cca.getTransportMode() == "broadcast") or (cca.getTransportMode() == "udpu")):
+            for clusternode in self.__cnc.getClusterNodes():
+                if (len(clusternode.getClusterStorageFilesystemList()) > 0):
+                    description =  "There is known limitations for GFS2 filesystem when using the "
+                    description += "following transports: \"broadcast\" or \"udpu\"."
+                    urls = ["https://access.redhat.com/site/articles/146163", "https://access.redhat.com/site/solutions/459243"]
+                    rString += "%s\n" %(StringUtil.formatBulletString(description, urls))
+                    break;
         for clusternode in self.__cnc.getClusterNodes():
             stringUtil = StringUtil()
             clusterNodeEvalString = ""
@@ -460,11 +468,9 @@ class ClusterHAStorage():
             # Add to string with the hostname and header if needed.
             # ###################################################################
             if (len(clusterNodeEvalString) > 0):
-                if (not len(rString) > 0):
-                    sectionHeader = "%s\nCluster Storage Configuration Known Issues\n%s" %(self.__seperator, self.__seperator)
-                    rString += "%s\n%s(Cluster Node ID: %s):\n%s\n\n" %(sectionHeader, clusternode.getClusterNodeName(), clusternode.getClusterNodeID(), clusterNodeEvalString.rstrip())
-                    sectionHeaderAdded = True
-                else:
-                    rString += "%s(Cluster Node ID: %s):\n%s\n\n" %(clusternode.getClusterNodeName(), clusternode.getClusterNodeID(), clusterNodeEvalString.rstrip())
+                rString += "%s(Cluster Node ID: %s):\n%s\n\n" %(clusternode.getClusterNodeName(), clusternode.getClusterNodeID(), clusterNodeEvalString.rstrip())
         # Return the string
+        if (len(rString) > 0):
+            sectionHeader = "%s\nCluster Storage Configuration Known Issues\n%s" %(self.__seperator, self.__seperator)
+            rString = "%s\n%s" %(sectionHeader, rString)
         return rString

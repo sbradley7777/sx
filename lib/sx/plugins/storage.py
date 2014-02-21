@@ -4,7 +4,7 @@ A class that can run analyze the storage aspect of a sosreport.
 
 @author    :  Shane Bradley
 @contact   :  sbradley@redhat.com
-@version   :  2.15
+@version   :  2.16
 @copyright :  GPLv2
 """
 import sys

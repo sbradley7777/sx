@@ -6,7 +6,7 @@ cluster tools.
 
 @author    :  Shane Bradley
 @contact   :  sbradley@redhat.com
-@version   :  2.15
+@version   :  2.16
 @copyright :  GPLv2
 """
 import re
@@ -211,7 +211,8 @@ class ClusterNode:
 
     def __init__(self, pathToClusterConf, distroRelease, date, uname_a, hostname,
                  uptime, networkMaps, heartbeatNetworkMap, chkConfigList,
-                 clusterCommandsMap, installedRPMS, clusterStorageFilesystemList):
+                 clusterCommandsMap, installedRPMS, clusterStorageFilesystemList,
+                 dmidecodeStanzas):
         """
         Requries the cluster.conf(and file has to exist) so we know
         that this node is apart of cluster. The pathToClusterConf
@@ -249,6 +250,8 @@ class ClusterNode:
         @param clusterStorageFilesystemList: Array of cluster storage filesystems
         in this report that were found.
         @type clusterStorageFilesystemList: Array
+        @param dmidecodeStanzas: List of DMIDecodeStanza objects.
+        @type dmidecodeStanzas: Array
         """
         self.__pathToClusterConf = pathToClusterConf
         self.__distroRelease = distroRelease
@@ -262,7 +265,7 @@ class ClusterNode:
         self.__clusterCommandsMap = clusterCommandsMap
         self.__installedRPMS = installedRPMS
         self.__clusterStorageFilesystemList = clusterStorageFilesystemList
-
+        self.__dmidecodeStanzas = dmidecodeStanzas
         # Find out which rpms are installed
         self.__clusterPackageVersions = {}
         self.__clusterModulePackageVersions = {}
@@ -432,6 +435,15 @@ class ClusterNode:
         @rtype: String
         """
         return self.__hostname
+
+
+    def getMachineType(self):
+        for stanza in self.__dmidecodeStanzas:
+            if (stanza.getName() == "System Information"):
+                attribute = stanza.getAttribute("Product Name")
+                if (not attribute == None):
+                    return attribute.getValue()
+        return ""
 
     def getClusterNodeName(self):
         """

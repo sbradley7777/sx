@@ -1,3 +1,10 @@
+Fri Feb 21 2014 Shane Bradley <sbradley@redhat.com>- 2.16-0.0
+- Added detection of secondary fencing method.
+- Added clean_start attribute value to message if attribute detected.
+- Add this url to allow_kill on qdisk.
+- Check protocal when gfs/gfs2 found. If broadcast or updu then output a message.
+- Added DMIDecode.py and added to machine type of cluster nodes to summary output.
+- Fix network issue for: https://bugzilla.redhat.com/show_bug.cgi?id=1001754
 * Thu Jun 20 2013 Shane Bradley <sbradley@redhat.com>- 2.15-0.0
 - bz955343: There was incorrect labeling on cluster.py when there was no rpms found, instead of being split by HA and RS, they are split by packages and module-packages.
 - Changed the chkconfig cluster service summary output to display enabled and disabled services.

@@ -5,7 +5,7 @@ that is in xml format.
 
 @author    :  Shane Bradley
 @contact   :  sbradley@redhat.com
-@version   :  2.15
+@version   :  2.16
 @copyright :  GPLv2
 """
 import os.path
@@ -803,6 +803,16 @@ class ClusterHAConfAnalyzer :
     # #######################################################################
     # Get Functions
     # #######################################################################
+    def getCleanStart(self) :
+        fdElement = self.__ccRootElement.find("fence_daemon")
+        try:
+            return fdElement.attrib["clean_start"]
+        except KeyError:
+            # If attribute does not exist then return False
+            return "0"
+        except AttributeError:
+            return "0"
+
     def getTransportMode(self):
         if (self.isCmanBroadcastTransportModeEnabled()):
             return "broadcast"

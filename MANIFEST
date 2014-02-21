@@ -35,6 +35,7 @@ lib/sx/plugins/lib/clusterha/clusternodecompare.py
 lib/sx/plugins/lib/clusterha/clusternodes.py
 lib/sx/plugins/lib/general/__init__.py
 lib/sx/plugins/lib/general/distroreleaseparser.py
+lib/sx/plugins/lib/general/dmidecodeparser.py
 lib/sx/plugins/lib/general/processparser.py
 lib/sx/plugins/lib/general/runlevelserviceparser.py
 lib/sx/plugins/lib/gluster/__init__.py

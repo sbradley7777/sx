@@ -4,7 +4,7 @@ This contains Global variables for sx.
 
 @author    :  Shane Bradley
 @contact   :  sbradley@redhat.com
-@version   :  2.15
+@version   :  2.16
 @copyright :  GPLv2
 """
 import sys
@@ -70,8 +70,8 @@ class ArchiveLayout:
     and uid for all the directories that will be used by sx.
 
     Example of Layout:
-    Compressed Reports Path:   ~/sxarchive/creports/15555553/2.15-04-18_123703
-    Extracted Reports Path:    ~/sxarchive/ereports/15555553/2.15-04-18_123703
+    Compressed Reports Path:   ~/sxarchive/creports/15555553/2.16-04-18_123703
+    Extracted Reports Path:    ~/sxarchive/ereports/15555553/2.16-04-18_123703
     Non-report Files Path:     ~/sxarchive/ereports/15555553/files
     """
     def __init__(self, archivePath, uid, timestamp=""):
@@ -167,8 +167,8 @@ class ArchivedLayout(ArchiveLayout):
     the correct strings to the path of all directories for sx.
 
     Example of Layout:
-    Compressed Reports Path:   ~/sxarchive/creports/15555553/2.15-04-18_123703
-    Extracted Reports Path:    ~/sxarchive/ereports/15555553/2.15-04-18_123703
+    Compressed Reports Path:   ~/sxarchive/creports/15555553/2.16-04-18_123703
+    Extracted Reports Path:    ~/sxarchive/ereports/15555553/2.16-04-18_123703
     Non-report Files Path:     ~/sxarchive/ereports/15555553/files
     """
     def __init__(self, pathToExistingArchive):
@@ -192,8 +192,8 @@ class ModifiedArchiveLayout(ArchiveLayout):
     and uid for all the directories that will be used by sx.
 
     Example of Layout:
-    Compressed Reports Path:   ~/sxarchive/15555553/2.15-04-18_122701/.creports
-    Extracted Reports Path:    ~/sxarchive/15555553/2.15-04-18_122701
+    Compressed Reports Path:   ~/sxarchive/15555553/2.16-04-18_122701/.creports
+    Extracted Reports Path:    ~/sxarchive/15555553/2.16-04-18_122701
     Non-report Files Path:     ~/sxarchive/15555553/files
     """
     def __init__(self, archivePath, uid, timestamp=""):
@@ -242,8 +242,8 @@ class ModifiedArchivedLayout(ModifiedArchiveLayout):
     the correct strings to the path of all directories for sx.
 
     Example of Layout:
-    Compressed Reports Path:   ~/sxarchive/15555553/2.15-04-18_122701/.creports
-    Extracted Reports Path:    ~/sxarchive/15555553/2.15-04-18_122701
+    Compressed Reports Path:   ~/sxarchive/15555553/2.16-04-18_122701/.creports
+    Extracted Reports Path:    ~/sxarchive/15555553/2.16-04-18_122701
     Non-report Files Path:     ~/sxarchive/15555553/files
     """
     def __init__(self, pathToExistingArchive):
