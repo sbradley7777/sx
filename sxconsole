@@ -39,7 +39,7 @@ from sx.modulesloader import ExtractorsLoader
 @cvar VERSION_NUMBER: The current version number of sxconsole.
 @type VERSION_NUMBER: String
 """
-VERSION_NUMBER = "2.16-1"
+VERSION_NUMBER = "2.16-6"
 
 def getArchiveLayout(caseNumber, pathToArchiveDirectory, pathToExtractedReports,
                      isModifiedArchiveLayoutEnabled) :
@@ -713,15 +713,7 @@ def __printToConsole(pathToCompressedReports, pathToExtractedReports, mapOfPlugi
     # If any path starts with home directory then change to tilda.OB
     homeDirectory = os.environ["HOME"]
 
-    # Print the report archive location
     wasInformationPrintedToConsole = False
-    if ((os.path.exists(pathToCompressedReports)) or
-        (os.path.exists(pathToExtractedReports))):
-        wasInformationPrintedToConsole = True
-        print "\n%s" %(ConsoleUtil.colorText("Details of Report Extraction: ","lcyan"))
-        print "%s%s" %(ConsoleUtil.colorText("Compressed Reports Directory: ","lgreen"), pathToCompressedReports.replace(homeDirectory, "~"))
-        print "%s%s" %(ConsoleUtil.colorText("Extracted Reports Directory:  ","lgreen"), pathToExtractedReports.replace(homeDirectory, "~"))
-
     # Print all the paths to files created by the plugins
     if (len(mapOfPluginReportPaths.keys()) > 0):
         headerPrinted = False
@@ -740,6 +732,7 @@ def __printToConsole(pathToCompressedReports, pathToExtractedReports, mapOfPlugi
                         headerPrinted = True
                 index += 1;
 
+    # Print paths to all files that are not reports.
     if (len(listOfNonReportPaths) > 0) :
         wasInformationPrintedToConsole = True
         print "\n%s" %(ConsoleUtil.colorText("Details for Non-Report Files: ","lcyan"))
@@ -753,6 +746,15 @@ def __printToConsole(pathToCompressedReports, pathToExtractedReports, mapOfPlugi
                 spacingCount = 6
             print "%s %s %s" %(ConsoleUtil.colorText("Non-Report File %d: " %(index),"lgreen"), (" " * spacingCount), pathToNonReportFile.replace(homeDirectory, "~"))
             index += 1;
+
+    # Print the report archive location
+    if ((os.path.exists(pathToCompressedReports)) or
+        (os.path.exists(pathToExtractedReports))):
+        wasInformationPrintedToConsole = True
+        print "\n%s" %(ConsoleUtil.colorText("Details of Report Extraction: ","lcyan"))
+        print "%s%s" %(ConsoleUtil.colorText("Compressed Reports Directory: ","lgreen"), pathToCompressedReports.replace(homeDirectory, "~"))
+        print "%s%s" %(ConsoleUtil.colorText("Extracted Reports Directory:  ","lgreen"), pathToExtractedReports.replace(homeDirectory, "~"))
+
     if (not wasInformationPrintedToConsole):
         message = "There was zero reports extracted and zero non-report files added."
         logging.getLogger(sx.MAIN_LOGGER_NAME).warning(message)
@@ -858,6 +860,9 @@ if __name__ == "__main__":
                                                                            (not cmdLineOpts.disableUserDefinedModules))
                 # Print a list of enabled plugins.
                 if (len(listOfEnabledPlugins) > 0) :
+                    message = "There was %d plugins enabled." %(len(listOfEnabledPlugins))
+                    logging.getLogger(sx.MAIN_LOGGER_NAME).info(message)
+                    """
                     message = "The following plugins will be enabled(Some plugins will required extracted reports to run):"
                     logging.getLogger(sx.MAIN_LOGGER_NAME).info(message)
                     for plugin in listOfEnabledPlugins:
@@ -875,11 +880,11 @@ if __name__ == "__main__":
                                                                 subsequent_indent="\t  %s"%(subsequentIndent))
                                 for textWrapped in textWrappedList:
                                     print textWrapped
-
+                      """
                     # Generate map of all plugins reports that were created after they run.
                     mapOfPluginReportPaths = pluginsHelper.generatePluginReports(listOfReportsExtracted, listOfEnabledPlugins)
                 else:
-                    logging.getLogger(sx.MAIN_LOGGER_NAME).warning("There are no plugins enabled.")
+                    logging.getLogger(sx.MAIN_LOGGER_NAME).info("There are no plugins enabled.")
             # #######################################################################
             # Remove the compressed and extraction directory since nothing was
             # extracted and we do not want empty directories.

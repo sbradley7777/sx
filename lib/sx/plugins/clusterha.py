@@ -103,7 +103,7 @@ class Clusterha(sx.plugins.PluginBase):
         else:
             message = "Generating report for plugin: %s" %(self.getName())
             logging.getLogger(sx.MAIN_LOGGER_NAME).status(message)
-            message = "%s is generating a report for the Cluster(s) that were found." %(self.getName())
+            message = "The plugin %s is generating a report for the Cluster(s) that were found." %(self.getName())
             logging.getLogger(sx.MAIN_LOGGER_NAME).info(message)
 
             # Since we are going to run the plugin and create files in
@@ -254,11 +254,9 @@ class Clusterha(sx.plugins.PluginBase):
                 if (len(missingNodesList) > 0):
                     self.write(filenameCE, "%s\n\n" %(missingNodesMessage))
                 self.writeSeperator(filenameCE, "Known Issues with Cluster");
-                self.write(filenameCE, "NOTE: The known issues below may or may not be related to solving")
-                self.write(filenameCE, "      the current issue or preventing a issue. These are meant to")
-                self.write(filenameCE, "      be a guide in making sure that the cluster is happy and")
-                self.write(filenameCE, "      healthy all the time. Please use report as a guide in")
-                self.write(filenameCE, "      reviewing the cluster.\n")
+                self.write(filenameCE, "NOTE: The known issues below may or may not be related to solving the current issue or preventing")
+                self.write(filenameCE, "      a issue. These are meant to be a guide in making sure that the cluster is happy and healthy")
+                self.write(filenameCE, "      healthy all the time. Please use report as a guide in reviewing the cluster.\n")
                 self.write(filenameCE, evaluatorResult.rstrip())
                 self.write(filenameCE, "")
 

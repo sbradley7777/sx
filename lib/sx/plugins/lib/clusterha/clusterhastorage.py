@@ -111,7 +111,7 @@ class ClusterHAStorage():
             sectionHeader =  "%s\nFilesystem and Clustered-Filesystem cluster.conf Summary\n%s" %(self.__seperator, self.__seperator)
             tableHeader = ["device_name", "mount_point", "fs_type"]
             tableOfStrings = stringUtil.toTableString(fsTable, tableHeader)
-            description =  "It is recommended that all filesystem resources(fs.sh) are created on a HALVM device."
+            description =  "There was %d filesystems resources found. It is recommended that all filesystem resources(fs.sh) are created on a HALVM device." %(len(fsTable))
             description += "The following article describes this procedure:"
             urls = ["https://access.redhat.com/knowledge/solutions/3067"]
             rString += "%s\n%s\n%s\n\n" %(sectionHeader, StringUtil.wrapParagraphURLs(description, urls), tableOfStrings)

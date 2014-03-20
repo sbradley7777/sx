@@ -219,10 +219,10 @@ class Networking(sx.plugins.PluginBase):
                     slaveInterfaces += " %s(%s) |" %(slaveInterface.getInterface(), slaveInterface.getNetworkInterfaceModule())
                 slaveInterfaces = slaveInterfaces.rstrip("|")
                 bondedInterfaceTable.append([bondedInterface.getInterface(),
-                                             bondingNumber, bondingName, slaveInterfaces])
+                                             bondingNumber, bondingName, slaveInterfaces, bondedInterface.getIPv4Address()])
             if (len(bondedInterfaceTable) > 0):
                 self.writeSeperator(filenameSummary, "Bonding Summary", True)
-                tableHeader = ["device", "mode_#", "mode_name", "slave_interfaces"]
+                tableHeader = ["device", "mode_#", "mode_name", "slave_interfaces", "ipv4_address"]
                 self.write(filenameSummary, stringUtil.toTableString(bondedInterfaceTable, tableHeader))
                 self.write(filenameSummary, "")
 

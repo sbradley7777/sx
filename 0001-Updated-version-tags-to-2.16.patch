@@ -1,0 +1,1341 @@
+From 4b7ae5a429d7cdc817feba8c7b33a5add57c8c07 Mon Sep 17 00:00:00 2001
+From: Shane Bradley <sbradley@redhat.com>
+Date: Fri, 21 Feb 2014 12:17:46 -0500
+Subject: [PATCH] Updated version tags to 2.16
+
+---
+ CHANGELOG                                          |    7 ++
+ MANIFEST                                           |    1 +
+ PKG-INFO                                           |    2 +-
+ doc/examples/demoreport.py                         |    2 +-
+ doc/examples/konsole.py                            |    2 +-
+ lib/sx/__init__.py                                 |   18 ++--
+ lib/sx/extractors/__init__.py                      |    2 +-
+ lib/sx/extractors/tarextractor.py                  |    2 +-
+ lib/sx/extractors/zipextractor.py                  |    6 +-
+ lib/sx/logwriter.py                                |    2 +-
+ lib/sx/modulesloader.py                            |    2 +-
+ lib/sx/plugins/__init__.py                         |    2 +-
+ lib/sx/plugins/checksysreport.py                   |    2 +-
+ lib/sx/plugins/clusterha.py                        |    2 +-
+ lib/sx/plugins/gluster.py                          |    2 +-
+ lib/sx/plugins/lib/__init__.py                     |    2 +-
+ lib/sx/plugins/lib/clusterha/__init__.py           |    2 +-
+ .../plugins/lib/clusterha/clustercommandsparser.py |    2 +-
+ lib/sx/plugins/lib/clusterha/clusterevaluator.py   |   60 ++++++++-----
+ .../plugins/lib/clusterha/clusterhaconfanalyzer.py |   12 +++-
+ lib/sx/plugins/lib/clusterha/clusterhastorage.py   |   20 +++--
+ .../lib/clusterha/clusterhastretchevaluator.py     |    2 +-
+ lib/sx/plugins/lib/clusterha/clusternode.py        |   18 +++-
+ lib/sx/plugins/lib/clusterha/clusternodecompare.py |    2 +-
+ lib/sx/plugins/lib/clusterha/clusternodes.py       |   18 ++++-
+ lib/sx/plugins/lib/general/__init__.py             |    2 +-
+ lib/sx/plugins/lib/general/distroreleaseparser.py  |    2 +-
+ lib/sx/plugins/lib/general/dmidecodeparser.py      |   96 ++++++++++++++++++++
+ lib/sx/plugins/lib/general/processparser.py        |    2 +-
+ .../plugins/lib/general/runlevelserviceparser.py   |    2 +-
+ lib/sx/plugins/lib/gluster/__init__.py             |    2 +-
+ lib/sx/plugins/lib/kernel/__init__.py              |    2 +-
+ lib/sx/plugins/lib/kernel/modulesparser.py         |    2 +-
+ lib/sx/plugins/lib/log/__init__.py                 |    2 +-
+ lib/sx/plugins/lib/log/syslogparser.py             |    2 +-
+ lib/sx/plugins/lib/networking/__init__.py          |    2 +-
+ .../plugins/lib/networking/networkdeviceparser.py  |   13 +++-
+ lib/sx/plugins/lib/rpm/__init__.py                 |    2 +-
+ lib/sx/plugins/lib/rpm/rpmparser.py                |    2 +-
+ lib/sx/plugins/lib/storage/__init__.py             |    2 +-
+ lib/sx/plugins/lib/storage/blockdevicetree.py      |    2 +-
+ lib/sx/plugins/lib/storage/devicemapperparser.py   |    2 +-
+ lib/sx/plugins/lib/storage/filesysparser.py        |    2 +-
+ lib/sx/plugins/lib/storage/lvm.py                  |    2 +-
+ lib/sx/plugins/lib/storage/procparser.py           |    2 +-
+ lib/sx/plugins/lib/storage/storageevaluator.py     |    2 +-
+ lib/sx/plugins/networking.py                       |    2 +-
+ lib/sx/plugins/satellitedebug.py                   |    2 +-
+ lib/sx/plugins/storage.py                          |    2 +-
+ lib/sx/reports/__init__.py                         |    2 +-
+ lib/sx/reports/rhevlogcollector.py                 |    2 +-
+ lib/sx/reports/satellitedebug.py                   |    2 +-
+ lib/sx/reports/sosreport.py                        |    2 +-
+ lib/sx/reports/sysreport.py                        |    2 +-
+ lib/sx/tools.py                                    |   13 +++-
+ setup.py                                           |    2 +-
+ sx.spec                                            |    4 +-
+ sxconsole                                          |   20 ++--
+ 58 files changed, 285 insertions(+), 109 deletions(-)
+ create mode 100644 lib/sx/plugins/lib/general/dmidecodeparser.py
+
+diff --git a/CHANGELOG b/CHANGELOG
+index 9f71c7b..da434b3 100644
+--- a/CHANGELOG
++++ b/CHANGELOG
+@@ -1,3 +1,10 @@
++Fri Feb 21 2014 Shane Bradley <sbradley@redhat.com>- 2.16-0.0
++- Added detection of secondary fencing method.
++- Added clean_start attribute value to message if attribute detected.
++- Add this url to allow_kill on qdisk.
++- Check protocal when gfs/gfs2 found. If broadcast or updu then output a message.
++- Added DMIDecode.py and added to machine type of cluster nodes to summary output.
++- Fix network issue for: https://bugzilla.redhat.com/show_bug.cgi?id=1001754
+ * Thu Jun 20 2013 Shane Bradley <sbradley@redhat.com>- 2.15-0.0
+ - bz955343: There was incorrect labeling on cluster.py when there was no rpms found, instead of being split by HA and RS, they are split by packages and module-packages.
+ - Changed the chkconfig cluster service summary output to display enabled and disabled services.
+diff --git a/MANIFEST b/MANIFEST
+index 8d30b26..67612ba 100644
+--- a/MANIFEST
++++ b/MANIFEST
+@@ -35,6 +35,7 @@ lib/sx/plugins/lib/clusterha/clusternodecompare.py
+ lib/sx/plugins/lib/clusterha/clusternodes.py
+ lib/sx/plugins/lib/general/__init__.py
+ lib/sx/plugins/lib/general/distroreleaseparser.py
++lib/sx/plugins/lib/general/dmidecodeparser.py
+ lib/sx/plugins/lib/general/processparser.py
+ lib/sx/plugins/lib/general/runlevelserviceparser.py
+ lib/sx/plugins/lib/gluster/__init__.py
+diff --git a/PKG-INFO b/PKG-INFO
+index ad5f338..69972e0 100644
+--- a/PKG-INFO
++++ b/PKG-INFO
+@@ -1,6 +1,6 @@
+ Metadata-Version: 1.0
+ Name: sx
+-Version: 2.14
++Version: 2.15
+ Summary: Tool to extract reports and run plug-ins against those extracted reports.
+ Home-page: https://fedorahosted.org/sx
+ Author: Shane Bradley
+diff --git a/doc/examples/demoreport.py b/doc/examples/demoreport.py
+index 1f68f47..c6c9798 100644
+--- a/doc/examples/demoreport.py
++++ b/doc/examples/demoreport.py
+@@ -9,7 +9,7 @@ $ cp demoreport.py $HOME/.sx/sxreports/
+ 
+ @author    :  Shane Bradley
+ @contact   :  sbradley@redhat.com
+-@version   :  2.15
++@version   :  2.16
+ @copyright :  GPLv2
+ """
+ import os.path
+diff --git a/doc/examples/konsole.py b/doc/examples/konsole.py
+index 544ddf0..26ab702 100644
+--- a/doc/examples/konsole.py
++++ b/doc/examples/konsole.py
+@@ -12,7 +12,7 @@ It will need to be enabled.
+ 
+ @author    :  Shane Bradley
+ @contact   :  sbradley@redhat.com
+-@version   :  2.15
++@version   :  2.16
+ @copyright :  GPLv2
+ """
+ import logging
+diff --git a/lib/sx/__init__.py b/lib/sx/__init__.py
+index 52feb94..fd5abf0 100644
+--- a/lib/sx/__init__.py
++++ b/lib/sx/__init__.py
+@@ -4,7 +4,7 @@ This contains Global variables for sx.
+ 
+ @author    :  Shane Bradley
+ @contact   :  sbradley@redhat.com
+-@version   :  2.15
++@version   :  2.16
+ @copyright :  GPLv2
+ """
+ import sys
+@@ -70,8 +70,8 @@ class ArchiveLayout:
+     and uid for all the directories that will be used by sx.
+ 
+     Example of Layout:
+-    Compressed Reports Path:   ~/sxarchive/creports/15555553/2.15-04-18_123703
+-    Extracted Reports Path:    ~/sxarchive/ereports/15555553/2.15-04-18_123703
++    Compressed Reports Path:   ~/sxarchive/creports/15555553/2.16-04-18_123703
++    Extracted Reports Path:    ~/sxarchive/ereports/15555553/2.16-04-18_123703
+     Non-report Files Path:     ~/sxarchive/ereports/15555553/files
+     """
+     def __init__(self, archivePath, uid, timestamp=""):
+@@ -167,8 +167,8 @@ class ArchivedLayout(ArchiveLayout):
+     the correct strings to the path of all directories for sx.
+ 
+     Example of Layout:
+-    Compressed Reports Path:   ~/sxarchive/creports/15555553/2.15-04-18_123703
+-    Extracted Reports Path:    ~/sxarchive/ereports/15555553/2.15-04-18_123703
++    Compressed Reports Path:   ~/sxarchive/creports/15555553/2.16-04-18_123703
++    Extracted Reports Path:    ~/sxarchive/ereports/15555553/2.16-04-18_123703
+     Non-report Files Path:     ~/sxarchive/ereports/15555553/files
+     """
+     def __init__(self, pathToExistingArchive):
+@@ -192,8 +192,8 @@ class ModifiedArchiveLayout(ArchiveLayout):
+     and uid for all the directories that will be used by sx.
+ 
+     Example of Layout:
+-    Compressed Reports Path:   ~/sxarchive/15555553/2.15-04-18_122701/.creports
+-    Extracted Reports Path:    ~/sxarchive/15555553/2.15-04-18_122701
++    Compressed Reports Path:   ~/sxarchive/15555553/2.16-04-18_122701/.creports
++    Extracted Reports Path:    ~/sxarchive/15555553/2.16-04-18_122701
+     Non-report Files Path:     ~/sxarchive/15555553/files
+     """
+     def __init__(self, archivePath, uid, timestamp=""):
+@@ -242,8 +242,8 @@ class ModifiedArchivedLayout(ModifiedArchiveLayout):
+     the correct strings to the path of all directories for sx.
+ 
+     Example of Layout:
+-    Compressed Reports Path:   ~/sxarchive/15555553/2.15-04-18_122701/.creports
+-    Extracted Reports Path:    ~/sxarchive/15555553/2.15-04-18_122701
++    Compressed Reports Path:   ~/sxarchive/15555553/2.16-04-18_122701/.creports
++    Extracted Reports Path:    ~/sxarchive/15555553/2.16-04-18_122701
+     Non-report Files Path:     ~/sxarchive/15555553/files
+     """
+     def __init__(self, pathToExistingArchive):
+diff --git a/lib/sx/extractors/__init__.py b/lib/sx/extractors/__init__.py
+index 20a8c40..4d0c58d 100644
+--- a/lib/sx/extractors/__init__.py
++++ b/lib/sx/extractors/__init__.py
+@@ -10,7 +10,7 @@ http://bugs.python.org/issue6715
+ 
+ @author    :  Shane Bradley
+ @contact   :  sbradley@redhat.com
+-@version   :  2.15
++@version   :  2.16
+ @copyright :  GPLv2
+ """
+ import os
+diff --git a/lib/sx/extractors/tarextractor.py b/lib/sx/extractors/tarextractor.py
+index 66e7d3a..9f4b085 100644
+--- a/lib/sx/extractors/tarextractor.py
++++ b/lib/sx/extractors/tarextractor.py
+@@ -3,7 +3,7 @@
+ 
+ @author    :  Shane Bradley
+ @contact   :  sbradley@redhat.com
+-@version   :  2.15
++@version   :  2.16
+ @copyright :  GPLv2
+ """
+ import os.path
+diff --git a/lib/sx/extractors/zipextractor.py b/lib/sx/extractors/zipextractor.py
+index 3265621..4d320d2 100644
+--- a/lib/sx/extractors/zipextractor.py
++++ b/lib/sx/extractors/zipextractor.py
+@@ -3,7 +3,7 @@
+ 
+ @author    :  Shane Bradley
+ @contact   :  sbradley@redhat.com
+-@version   :  2.15
++@version   :  2.16
+ @copyright :  GPLv2
+ """
+ import os.path
+@@ -46,7 +46,7 @@ class Zipextractor(Extractor) :
+         return False
+ 
+     def getListArgs(self) :
+-        # $ unzip -L LOG_2.15_12_16_12_32_50.zip
++        # $ unzip -L LOG_2.16_12_16_12_32_50.zip
+         if (not self.isValidMimeType()):
+             return None;
+         return "-l"
+@@ -55,7 +55,7 @@ class Zipextractor(Extractor) :
+         # There is no options needed, quiet and overwrite files
+         # options will be added.
+ 
+-        # $ unzip LOG_2.15_12_16_12_32_50.zip -d somedir
++        # $ unzip LOG_2.16_12_16_12_32_50.zip -d somedir
+         if (not self.isValidMimeType()):
+             return None;
+         return "-qo"
+diff --git a/lib/sx/logwriter.py b/lib/sx/logwriter.py
+index 6b8696f..4c475d7 100644
+--- a/lib/sx/logwriter.py
++++ b/lib/sx/logwriter.py
+@@ -5,7 +5,7 @@ to console then text will colorize the message type.
+ 
+ @author    :  Shane Bradley
+ @contact   :  sbradley@redhat.com
+-@version   :  2.15
++@version   :  2.16
+ @copyright :  GPLv2
+ """
+ import logging
+diff --git a/lib/sx/modulesloader.py b/lib/sx/modulesloader.py
+index 2f7e341..aba74f9 100644
+--- a/lib/sx/modulesloader.py
++++ b/lib/sx/modulesloader.py
+@@ -8,7 +8,7 @@ PluginsLoader is a child of the ModulesLoader class that loads plugin modules.
+ 
+ @author    :  Shane Bradley
+ @contact   :  sbradley@redhat.com
+-@version   :  2.15
++@version   :  2.16
+ @copyright :  GPLv2
+ """
+ import os
+diff --git a/lib/sx/plugins/__init__.py b/lib/sx/plugins/__init__.py
+index 05ec8fd..f32f23c 100644
+--- a/lib/sx/plugins/__init__.py
++++ b/lib/sx/plugins/__init__.py
+@@ -5,7 +5,7 @@ inherited by all the plugins.
+ 
+ @author    :  Shane Bradley
+ @contact   :  sbradley@redhat.com
+-@version   :  2.15
++@version   :  2.16
+ @copyright :  GPLv2
+ """
+ import time
+diff --git a/lib/sx/plugins/checksysreport.py b/lib/sx/plugins/checksysreport.py
+index be9427e..ff71da1 100644
+--- a/lib/sx/plugins/checksysreport.py
++++ b/lib/sx/plugins/checksysreport.py
+@@ -5,7 +5,7 @@ the checksysreport data to a file.
+ 
+ @author    :  Shane Bradley
+ @contact   :  sbradley@redhat.com
+-@version   :  2.15
++@version   :  2.16
+ @copyright :  GPLv2
+ """
+ import sys
+diff --git a/lib/sx/plugins/clusterha.py b/lib/sx/plugins/clusterha.py
+index 90d3c87..1d8feba 100644
+--- a/lib/sx/plugins/clusterha.py
++++ b/lib/sx/plugins/clusterha.py
+@@ -13,7 +13,7 @@ fixed latter for just True on the plugin name and not class name.
+ 
+ @author    :  Shane Bradley
+ @contact   :  sbradley@redhat.com
+-@version   :  2.15
++@version   :  2.16
+ @copyright :  GPLv2
+ """
+ import string
+diff --git a/lib/sx/plugins/gluster.py b/lib/sx/plugins/gluster.py
+index 13646d0..b38e6e0 100644
+--- a/lib/sx/plugins/gluster.py
++++ b/lib/sx/plugins/gluster.py
+@@ -12,7 +12,7 @@ TODO:
+ 
+ @author    :  Shane Bradley
+ @contact   :  sbradley@redhat.com
+-@version   :  2.15
++@version   :  2.16
+ @copyright :  GPLv2
+ """
+ import string
+diff --git a/lib/sx/plugins/lib/__init__.py b/lib/sx/plugins/lib/__init__.py
+index 865fe23..e3c980c 100644
+--- a/lib/sx/plugins/lib/__init__.py
++++ b/lib/sx/plugins/lib/__init__.py
+@@ -2,7 +2,7 @@
+ """
+ @author    :  Shane Bradley
+ @contact   :  sbradley@redhat.com
+-@version   :  2.15
++@version   :  2.16
+ @copyright :  GPLv2
+ """
+ 
+diff --git a/lib/sx/plugins/lib/clusterha/__init__.py b/lib/sx/plugins/lib/clusterha/__init__.py
+index 865fe23..e3c980c 100644
+--- a/lib/sx/plugins/lib/clusterha/__init__.py
++++ b/lib/sx/plugins/lib/clusterha/__init__.py
+@@ -2,7 +2,7 @@
+ """
+ @author    :  Shane Bradley
+ @contact   :  sbradley@redhat.com
+-@version   :  2.15
++@version   :  2.16
+ @copyright :  GPLv2
+ """
+ 
+diff --git a/lib/sx/plugins/lib/clusterha/clustercommandsparser.py b/lib/sx/plugins/lib/clusterha/clustercommandsparser.py
+index 44886cd..e55fe1a 100644
+--- a/lib/sx/plugins/lib/clusterha/clustercommandsparser.py
++++ b/lib/sx/plugins/lib/clusterha/clustercommandsparser.py
+@@ -5,7 +5,7 @@ sos_commands/cluster in a sosreport.
+ 
+ @author    :  Shane Bradley
+ @contact   :  sbradley@redhat.com
+-@version   :  2.15
++@version   :  2.16
+ @copyright :  GPLv2
+ """
+ import re
+diff --git a/lib/sx/plugins/lib/clusterha/clusterevaluator.py b/lib/sx/plugins/lib/clusterha/clusterevaluator.py
+index e183bdf..d35cd56 100644
+--- a/lib/sx/plugins/lib/clusterha/clusterevaluator.py
++++ b/lib/sx/plugins/lib/clusterha/clusterevaluator.py
+@@ -8,7 +8,7 @@ This plugin is documented here:
+ 
+ @author    :  Shane Bradley
+ @contact   :  sbradley@redhat.com
+-@version   :  2.15
++@version   :  2.16
+ @copyright :  GPLv2
+ """
+ import re
+@@ -45,12 +45,12 @@ class ClusterEvaluator():
+         if (clusterNameCharSize > 16):
+             description = "The name of the cluster cannot be more than 16 characters in size. The cluster's name "
+             description += "\%s\" is %d characters long." %(cca.getClusterName(), clusterNameCharSize)
+-            urls = ["https://access.redhat.com/site/solutions/32.15"]
++            urls = ["https://access.redhat.com/site/solutions/32.16"]
+             rString += StringUtil.formatBulletString(description, urls)
+ 
+         if (cca.hasAttributeCleanStart()):
+             description =  "The clean_start option in the /etc/cluster/cluster.conf is not supported "
+-            description += "for production clusters. The option is for testing and debugging only."
++            description += "for production clusters and is set to %s. The option is for testing and debugging only." %(cca.getCleanStart())
+             urls = ["https://access.redhat.com/site/solutions/23238"]
+             rString += StringUtil.formatBulletString(description, urls)
+ 
+@@ -155,45 +155,57 @@ class ClusterEvaluator():
+         """
+         rString = ""
+         # Check if there is no fence defined  on the cluster nodes.
+-        fsTable = []
++        fenceTable = []
+         for clusternodeName in cca.getClusterNodeNames():
+             cnFenceDeviceList = cca.getClusterNodeFenceDevicesList(clusternodeName)
+             if (not len(cnFenceDeviceList) > 0):
+-                fsTable.append([clusternodeName])
+-        if (len(fsTable) > 0):
++                fenceTable.append([clusternodeName])
++        if (len(fenceTable) > 0):
+             description = "There was no fence device defined for the following clusternodes. A fence device is required for each clusternode."
+             urls = ["https://access.redhat.com/site/solutions/15575"]
+             stringUtil = StringUtil()
+-            tableOfStrings = stringUtil.toTableStringsList(fsTable, ["clusternode_name"])
++            tableOfStrings = stringUtil.toTableStringsList(fenceTable, ["clusternode_name"])
+             rString += StringUtil.formatBulletString(description, urls, tableOfStrings)
+ 
+         # Check if fence_manual is defined on a cluster_node.
+-        fsTable = []
++        fenceTable = []
+         for clusternodeName in cca.getClusterNodeNames():
+             # Check if fence_manual is enabled on a node
+             if (cca.isFenceDeviceAgentEnabledOnClusterNode(clusternodeName, "fence_manual")):
+-                fsTable.append([clusternodeName])
+-        if (len(fsTable) > 0):
++                fenceTable.append([clusternodeName])
++        if (len(fenceTable) > 0):
+             description = "The fence device \"fence_manual\" is defined as a fence agent for the following clusternodes which is an unsupported fencing method."
+             urls = ["https://access.redhat.com/site/articles/36302"]
+             stringUtil = StringUtil()
+-            tableOfStrings = stringUtil.toTableStringsList(fsTable, ["clusternode_name"])
++            tableOfStrings = stringUtil.toTableStringsList(fenceTable, ["clusternode_name"])
+             rString += StringUtil.formatBulletString(description, urls, tableOfStrings)
+ 
+         # Check to make sure that fence_vmware is not enabled on node
+-        fsTable = []
++        fenceTable = []
+         for clusternodeName in cca.getClusterNodeNames():
+             # Check if fence_manual is enabled on a node
+             if (cca.isFenceDeviceAgentEnabledOnClusterNode(clusternodeName, "fence_vmware")):
+-                fsTable.append([clusternodeName])
+-        if (len(fsTable) > 0):
++                fenceTable.append([clusternodeName])
++        if (len(fenceTable) > 0):
+             description =  "The fence device \"fence_vmware\" is defined as a fence agent for the following clusternodes which is an unsupported fencing method. "
+             description += "The only supported fencing method for VMWare is fence_vmware_soap and fence_scsi."
+             urls = ["https://access.redhat.com/site/articles/29440"]
+             stringUtil = StringUtil()
+-            tableOfStrings = stringUtil.toTableStringsList(fsTable, ["clusternode_name"])
++            tableOfStrings = stringUtil.toTableStringsList(fenceTable, ["clusternode_name"])
+             rString += StringUtil.formatBulletString(description, urls, tableOfStrings)
+-        return rString
++        # Make sure there is secondary fence device configured.
++        fenceTable = []
++        for clusternodeName in cca.getClusterNodeNames():
++            cnFenceDeviceList = cca.getClusterNodeFenceDevicesList(clusternodeName)
++            if (not len(list(set(map(lambda m: m.getMethodName(), cnFenceDeviceList)))) > 1):
++                fenceTable.append([clusternodeName])
++        if (len(fenceTable) > 0):
++            description = "A secondary fence device is recommended on the following cluster nodes:"
++            urls = ["https://access.redhat.com/site/solutions/15575" , "https://access.redhat.com/site/solutions/16657"]
++            stringUtil = StringUtil()
++            tableOfStrings = stringUtil.toTableStringsList(fenceTable, ["clusternode_name"])
++            rString += StringUtil.formatBulletString(description, urls, tableOfStrings)
++        return rString.rstrip()
+ 
+     def __evaluateQuorumdConfiguration(self, cca, distroRelease):
+         rString = ""
+@@ -206,7 +218,7 @@ class ClusterEvaluator():
+         if (len(quorumd.getStatusFile()) > 0):
+             description =  "The \"status_file\" option for quorumd should be removed prior to production "
+             description += "cause it is know to cause qdiskd to hang unnecessarily."
+-            urls = ["https://access.redhat.com/site/solutions/54460"]
++            urls = ["https://access.redhat.com/site/solutions/35941"]
+             rString += StringUtil.formatBulletString(description, urls)
+         if (not quorumd.getUseUptime() == "1"):
+             description =  "The changing of the internal timers used by qdisk by setting "
+@@ -267,23 +279,23 @@ class ClusterEvaluator():
+         # supported in production.
+         # ###################################################################
+         if ((len(quorumd.getLabel()) > 0) and (len(quorumd.getDevice()) > 0)):
+-            description =  "The quorumd option should not have a \"quorumd/@device\" and "
+-            description += "\"quorumd/@label\" configured. The label option will override the device option."
++            description =  "The quorumd option should not have a \"device\" and "
++            description += "\"label\" configured in the /etc/cluster/cluster.conf. The label option will override the device option."
+             urls = []
+             rString += StringUtil.formatBulletString(description, urls)
+         if (quorumd.getReboot() == "0"):
+-            description =  "If the quorumd option reboot is set to 0 then this option only prevents "
++            description =  "If the quorumd option reboot is set to 0 in the /etc/cluster/cluster.conf. This option only prevents "
+             description += "rebooting on loss of score. The option does not change whether qdiskd "
+             description += "reboots the host as a result of hanging for too long and getting "
+             description += "evicted by other nodes in the cluster."
+             urls = []
+             rString += StringUtil.formatBulletString(description, urls)
+         if (quorumd.getAllowKill() == "0"):
+-            description =  "If the quorumd option allow_kill is set to 0 (off), qdiskd will not instruct cman to kill "
+-            description += "the cluster nodes that openais or corosync think are dead cluster nodes. Cluster nodes "
++            description =  "If the quorumd option allow_kill is set to 0 (disabled) in the /etc/cluster/cluster.conf. qdiskd will not instruct cman to kill "
++            description += "the cluster nodes that openais or corosync think are dead cluster nodes when disabled. Cluster nodes "
+             description += "are still evicted via the qdiskd which will cause a reboot to occur. By default this option "
+-            description += "is set to 1."
+-            urls = []
++            description += "is set to 1(enabled)."
++            urls = ["https://access.redhat.com/site/solutions/266683"]
+             rString += StringUtil.formatBulletString(description, urls)
+ 
+         # ###################################################################
+diff --git a/lib/sx/plugins/lib/clusterha/clusterhaconfanalyzer.py b/lib/sx/plugins/lib/clusterha/clusterhaconfanalyzer.py
+index 9802f4b..06f3b94 100644
+--- a/lib/sx/plugins/lib/clusterha/clusterhaconfanalyzer.py
++++ b/lib/sx/plugins/lib/clusterha/clusterhaconfanalyzer.py
+@@ -5,7 +5,7 @@ that is in xml format.
+ 
+ @author    :  Shane Bradley
+ @contact   :  sbradley@redhat.com
+-@version   :  2.15
++@version   :  2.16
+ @copyright :  GPLv2
+ """
+ import os.path
+@@ -803,6 +803,16 @@ class ClusterHAConfAnalyzer :
+     # #######################################################################
+     # Get Functions
+     # #######################################################################
++    def getCleanStart(self) :
++        fdElement = self.__ccRootElement.find("fence_daemon")
++        try:
++            return fdElement.attrib["clean_start"]
++        except KeyError:
++            # If attribute does not exist then return False
++            return "0"
++        except AttributeError:
++            return "0"
++
+     def getTransportMode(self):
+         if (self.isCmanBroadcastTransportModeEnabled()):
+             return "broadcast"
+diff --git a/lib/sx/plugins/lib/clusterha/clusterhastorage.py b/lib/sx/plugins/lib/clusterha/clusterhastorage.py
+index ba663d2..8ec70a2 100644
+--- a/lib/sx/plugins/lib/clusterha/clusterhastorage.py
++++ b/lib/sx/plugins/lib/clusterha/clusterhastorage.py
+@@ -5,7 +5,7 @@ GFS2, and filesystem resources in the cluster.conf.
+ 
+ @author    :  Shane Bradley
+ @contact   :  sbradley@redhat.com
+-@version   :  2.15
++@version   :  2.16
+ @copyright :  GPLv2
+ """
+ import re
+@@ -286,6 +286,14 @@ class ClusterHAStorage():
+             return rString
+         cca = ClusterHAConfAnalyzer(baseClusterNode.getPathToClusterConf())
+ 
++        if ((cca.getTransportMode() == "broadcast") or (cca.getTransportMode() == "udpu")):
++            for clusternode in self.__cnc.getClusterNodes():
++                if (len(clusternode.getClusterStorageFilesystemList()) > 0):
++                    description =  "There is known limitations for GFS2 filesystem when using the "
++                    description += "following transports: \"broadcast\" or \"udpu\"."
++                    urls = ["https://access.redhat.com/site/articles/146163", "https://access.redhat.com/site/solutions/459243"]
++                    rString += "%s\n" %(StringUtil.formatBulletString(description, urls))
++                    break;
+         for clusternode in self.__cnc.getClusterNodes():
+             stringUtil = StringUtil()
+             clusterNodeEvalString = ""
+@@ -460,11 +468,9 @@ class ClusterHAStorage():
+             # Add to string with the hostname and header if needed.
+             # ###################################################################
+             if (len(clusterNodeEvalString) > 0):
+-                if (not len(rString) > 0):
+-                    sectionHeader = "%s\nCluster Storage Configuration Known Issues\n%s" %(self.__seperator, self.__seperator)
+-                    rString += "%s\n%s(Cluster Node ID: %s):\n%s\n\n" %(sectionHeader, clusternode.getClusterNodeName(), clusternode.getClusterNodeID(), clusterNodeEvalString.rstrip())
+-                    sectionHeaderAdded = True
+-                else:
+-                    rString += "%s(Cluster Node ID: %s):\n%s\n\n" %(clusternode.getClusterNodeName(), clusternode.getClusterNodeID(), clusterNodeEvalString.rstrip())
++                rString += "%s(Cluster Node ID: %s):\n%s\n\n" %(clusternode.getClusterNodeName(), clusternode.getClusterNodeID(), clusterNodeEvalString.rstrip())
+         # Return the string
++        if (len(rString) > 0):
++            sectionHeader = "%s\nCluster Storage Configuration Known Issues\n%s" %(self.__seperator, self.__seperator)
++            rString = "%s\n%s" %(sectionHeader, rString)
+         return rString
+diff --git a/lib/sx/plugins/lib/clusterha/clusterhastretchevaluator.py b/lib/sx/plugins/lib/clusterha/clusterhastretchevaluator.py
+index 89cbb5f..53f188b 100644
+--- a/lib/sx/plugins/lib/clusterha/clusterhastretchevaluator.py
++++ b/lib/sx/plugins/lib/clusterha/clusterhastretchevaluator.py
+@@ -5,7 +5,7 @@ link in known issues with links to resolution.
+ 
+ @author    :  Shane Bradley
+ @contact   :  sbradley@redhat.com
+-@version   :  2.15
++@version   :  2.16
+ @copyright :  GPLv2
+ """
+ import re
+diff --git a/lib/sx/plugins/lib/clusterha/clusternode.py b/lib/sx/plugins/lib/clusterha/clusternode.py
+index a458efa..1d93ec4 100644
+--- a/lib/sx/plugins/lib/clusterha/clusternode.py
++++ b/lib/sx/plugins/lib/clusterha/clusternode.py
+@@ -6,7 +6,7 @@ cluster tools.
+ 
+ @author    :  Shane Bradley
+ @contact   :  sbradley@redhat.com
+-@version   :  2.15
++@version   :  2.16
+ @copyright :  GPLv2
+ """
+ import re
+@@ -211,7 +211,8 @@ class ClusterNode:
+ 
+     def __init__(self, pathToClusterConf, distroRelease, date, uname_a, hostname,
+                  uptime, networkMaps, heartbeatNetworkMap, chkConfigList,
+-                 clusterCommandsMap, installedRPMS, clusterStorageFilesystemList):
++                 clusterCommandsMap, installedRPMS, clusterStorageFilesystemList,
++                 dmidecodeStanzas):
+         """
+         Requries the cluster.conf(and file has to exist) so we know
+         that this node is apart of cluster. The pathToClusterConf
+@@ -249,6 +250,8 @@ class ClusterNode:
+         @param clusterStorageFilesystemList: Array of cluster storage filesystems
+         in this report that were found.
+         @type clusterStorageFilesystemList: Array
++        @param dmidecodeStanzas: List of DMIDecodeStanza objects.
++        @type dmidecodeStanzas: Array
+         """
+         self.__pathToClusterConf = pathToClusterConf
+         self.__distroRelease = distroRelease
+@@ -262,7 +265,7 @@ class ClusterNode:
+         self.__clusterCommandsMap = clusterCommandsMap
+         self.__installedRPMS = installedRPMS
+         self.__clusterStorageFilesystemList = clusterStorageFilesystemList
+-
++        self.__dmidecodeStanzas = dmidecodeStanzas
+         # Find out which rpms are installed
+         self.__clusterPackageVersions = {}
+         self.__clusterModulePackageVersions = {}
+@@ -433,6 +436,15 @@ class ClusterNode:
+         """
+         return self.__hostname
+ 
++
++    def getMachineType(self):
++        for stanza in self.__dmidecodeStanzas:
++            if (stanza.getName() == "System Information"):
++                attribute = stanza.getAttribute("Product Name")
++                if (not attribute == None):
++                    return attribute.getValue()
++        return ""
++
+     def getClusterNodeName(self):
+         """
+         Returns the cluster node name that is in cluster.conf for this
+diff --git a/lib/sx/plugins/lib/clusterha/clusternodecompare.py b/lib/sx/plugins/lib/clusterha/clusternodecompare.py
+index 1ad4f08..4932957 100644
+--- a/lib/sx/plugins/lib/clusterha/clusternodecompare.py
++++ b/lib/sx/plugins/lib/clusterha/clusternodecompare.py
+@@ -8,7 +8,7 @@ This plugin is documented here:
+ 
+ @author    :  Shane Bradley
+ @contact   :  sbradley@redhat.com
+-@version   :  2.15
++@version   :  2.16
+ @copyright :  GPLv2
+ """
+ from copy import deepcopy
+diff --git a/lib/sx/plugins/lib/clusterha/clusternodes.py b/lib/sx/plugins/lib/clusterha/clusternodes.py
+index 299f10b..704994a 100644
+--- a/lib/sx/plugins/lib/clusterha/clusternodes.py
++++ b/lib/sx/plugins/lib/clusterha/clusternodes.py
+@@ -5,7 +5,7 @@ objects.
+ 
+ @author    :  Shane Bradley
+ @contact   :  sbradley@redhat.com
+-@version   :  2.15
++@version   :  2.16
+ @copyright :  GPLv2
+ """
+ import re
+@@ -28,6 +28,7 @@ from sx.plugins.lib.general.distroreleaseparser import DistroReleaseParser
+ from sx.plugins.lib.general.distroreleaseparser import DistroRelease
+ from sx.plugins.lib.general.runlevelserviceparser import RunLevelParser
+ from sx.plugins.lib.general.runlevelserviceparser import ChkConfigServiceStatus
++from sx.plugins.lib.general.dmidecodeparser import DmiDecodeParser
+ from sx.plugins.lib.kernel.modulesparser import ModulesParser
+ from sx.plugins.lib.kernel import KernelParser
+ 
+@@ -83,6 +84,10 @@ class ClusterNodes:
+                     for networkMap in networkMaps.getListOfNetworkMaps():
+                         ipAddress = networkMap.getIPv4Address()
+                         if (ipAddress == hbAddress):
++                            if (not networkMap.isOnBootEnabled()):
++                                # If the device is not enabled at boot, then it
++                                # will be skipped.
++                                continue
+                             clusternodeNetworkMap = ClusterNodeNetworkMap(networkMap.getInterface(),
+                                                                           networkMap.getHardwareAddress(),
+                                                                           networkMap.getIPv4Address(),
+@@ -494,6 +499,10 @@ class ClusterNodes:
+         if (unameAData == None):
+             unameAData = report.getDataFromFile("sos_commands/kernel/uname_-a")
+         unameA = KernelParser.parseUnameAData(unameAData)
++
++        # Maybe I should return a map of stanza or dmidecode object just maps them. Need to code for NODE.
++        dmidecodeStanzas = DmiDecodeParser.parseDmiDecodeData(report.getDataFromFile("dmidecode"))
++
+         # ###############################################################
+         # Create the node since it is valid then append to collection
+         # ###############################################################
+@@ -508,7 +517,8 @@ class ClusterNodes:
+                                   chkConfigList,
+                                   clusterCommandsMap,
+                                   report.getInstalledRPMSData(),
+-                                  clusterStorageFilesystemList)
++                                  clusterStorageFilesystemList,
++                                  dmidecodeStanzas)
+         # ###############################################################
+         # Now append the fully formed object to the node and resort the
+         # nodes so they are kept in node id order.
+@@ -546,6 +556,10 @@ class ClusterNodes:
+                 unameA += "%s " %(unameASplit[i])
+                 i = i + 1
+             rstring += "Hostname:     %s\n" %(clusternode.getHostname())
++            machineType = clusternode.getMachineType()
++            if (not len(machineType) > 0):
++                machineType = "-"
++            rstring += "Machine Type: %s\n" %(machineType)
+             rstring += "Date:         %s\n" %(clusternode.getDate())
+             rstring += "RH Release:   %s\n" %(clusternode.getDistroRelease())
+             rstring += "Uptime:       %s\n" %(clusternode.getUptime())
+diff --git a/lib/sx/plugins/lib/general/__init__.py b/lib/sx/plugins/lib/general/__init__.py
+index cf70590..52cdd8c 100644
+--- a/lib/sx/plugins/lib/general/__init__.py
++++ b/lib/sx/plugins/lib/general/__init__.py
+@@ -2,6 +2,6 @@
+ """
+ @author    :  Shane Bradley
+ @contact   :  sbradley@redhat.com
+-@version   :  2.15
++@version   :  2.16
+ @copyright :  GPLv2
+ """
+diff --git a/lib/sx/plugins/lib/general/distroreleaseparser.py b/lib/sx/plugins/lib/general/distroreleaseparser.py
+index c26ab6c..6db9249 100644
+--- a/lib/sx/plugins/lib/general/distroreleaseparser.py
++++ b/lib/sx/plugins/lib/general/distroreleaseparser.py
+@@ -6,7 +6,7 @@ etc/redhat-release
+ 
+ @author    :  Shane Bradley
+ @contact   :  sbradley@redhat.com
+-@version   :  2.15
++@version   :  2.16
+ @copyright :  GPLv2
+ """
+ import re
+diff --git a/lib/sx/plugins/lib/general/dmidecodeparser.py b/lib/sx/plugins/lib/general/dmidecodeparser.py
+new file mode 100644
+index 0000000..b7197e9
+--- /dev/null
++++ b/lib/sx/plugins/lib/general/dmidecodeparser.py
+@@ -0,0 +1,96 @@
++#!/usr/bin/env python
++"""
++
++@author    :  Shane Bradley
++@contact   :  sbradley@redhat.com
++@version   :  2.16
++@copyright :  GPLv2
++"""
++from sx.tools import StringUtil
++class DmiDecodeParser:
++    def parseDmiDecodeData(dmidecodeData):
++        stanzas = []
++        currentStanza = []
++        if (not dmidecodeData == None):
++            for line in dmidecodeData:
++                line = line.rstrip()
++                if (line.startswith("Handle")):
++                    if (len(currentStanza) > 0):
++                        stanzas.append(DMIDecodeStanza(currentStanza))
++                        currentStanza = []
++                    currentStanza.append(line)
++                elif ((len(line) > 0) and (len(currentStanza) > 0)):
++                    currentStanza.append(line)
++            if (len(currentStanza) > 0):
++                stanzas.append(DMIDecodeStanza(currentStanza))
++        return stanzas
++    parseDmiDecodeData = staticmethod(parseDmiDecodeData)
++
++class DMIDecodeStanzaAttribute:
++    def __init__(self, name, value):
++        self.__name = name
++        self.__value = value
++
++    def __str__(self):
++        return "%s: %s" %(self.getName(), self.getValue())
++
++    def getName(self):
++        return self.__name
++
++    def getValue(self):
++        return self.__value
++
++class DMIDecodeStanza:
++    def __init__(self, data):
++        self.__handle = ""
++        self.__type = -1
++        self.__name = ""
++        self.__size = 0
++        self.__attributesMap = {}
++        if (len(data) > 0):
++            dataSplit = data.pop(0).strip().rstrip().split()
++            if (len(dataSplit) >= 6):
++                self.__handle = dataSplit[1].rstrip(",").strip().rstrip()
++                self.__type = int(dataSplit[4].rstrip(",").strip().rstrip())
++                self.__size = int(dataSplit[5].rstrip(",").strip().rstrip())
++        if (len(data) > 0):
++            self.__name = data.pop(0).strip().rstrip().strip().rstrip()
++
++        for pair in data:
++            currentTabCount = (len(pair) - len(pair.lstrip("\t")))
++            splitPair = pair.strip().rstrip().split(":", 1)
++            if (not len(splitPair) > 1):
++                continue
++            attributeName = splitPair[0].strip().rstrip()
++            attributeValue = splitPair[1].strip().rstrip()
++            if (currentTabCount == 1 or (len(attributeValue) > 0)):
++                # could add index to DMIDecodeStanzaAttribute to preserve order
++                # if I want to in the future.
++                self.__attributesMap[attributeName] = DMIDecodeStanzaAttribute(attributeName, attributeValue)
++            # else: Need to do something with attributes that contain their own attribute/value list.
++
++    def __str__(self):
++        rString = "handle: %s(type: %d bytes: %d): %s\n" %(self.getHandle(), self.getType(), self.getSize(), self.getName())
++        for attributeName in self.__attributesMap.keys():
++            rString += "\t%s\n" %(self.__attributesMap.get(attributeName))
++        return rString.rstrip()
++
++    def getHandle(self):
++        return self.__handle
++
++    def getType(self):
++        return self.__type
++
++    def getSize(self):
++        return self.__size
++
++    def getName(self):
++        return self.__name
++
++    def getAttributeNames(self):
++        return self.__attributesMap.keys()
++
++    def getAttribute(self, attributeName):
++        if (self.__attributesMap.has_key(attributeName)):
++            return self.__attributesMap.get(attributeName)
++        return None
+diff --git a/lib/sx/plugins/lib/general/processparser.py b/lib/sx/plugins/lib/general/processparser.py
+index a0ce4ec..85f83be 100644
+--- a/lib/sx/plugins/lib/general/processparser.py
++++ b/lib/sx/plugins/lib/general/processparser.py
+@@ -3,7 +3,7 @@
+ 
+ @author    :  Shane Bradley
+ @contact   :  sbradley@redhat.com
+-@version   :  2.15
++@version   :  2.16
+ @copyright :  GPLv2
+ """
+ from sx.tools import StringUtil
+diff --git a/lib/sx/plugins/lib/general/runlevelserviceparser.py b/lib/sx/plugins/lib/general/runlevelserviceparser.py
+index 8377619..5aa422c 100644
+--- a/lib/sx/plugins/lib/general/runlevelserviceparser.py
++++ b/lib/sx/plugins/lib/general/runlevelserviceparser.py
+@@ -6,7 +6,7 @@ sos_commands/startup
+ 
+ @author    :  Shane Bradley
+ @contact   :  sbradley@redhat.com
+-@version   :  2.15
++@version   :  2.16
+ @copyright :  GPLv2
+ """
+ import re
+diff --git a/lib/sx/plugins/lib/gluster/__init__.py b/lib/sx/plugins/lib/gluster/__init__.py
+index 865fe23..e3c980c 100644
+--- a/lib/sx/plugins/lib/gluster/__init__.py
++++ b/lib/sx/plugins/lib/gluster/__init__.py
+@@ -2,7 +2,7 @@
+ """
+ @author    :  Shane Bradley
+ @contact   :  sbradley@redhat.com
+-@version   :  2.15
++@version   :  2.16
+ @copyright :  GPLv2
+ """
+ 
+diff --git a/lib/sx/plugins/lib/kernel/__init__.py b/lib/sx/plugins/lib/kernel/__init__.py
+index 31933ea..590f748 100644
+--- a/lib/sx/plugins/lib/kernel/__init__.py
++++ b/lib/sx/plugins/lib/kernel/__init__.py
+@@ -3,7 +3,7 @@
+ 
+ @author    :  Shane Bradley
+ @contact   :  sbradley@redhat.com
+-@version   :  2.15
++@version   :  2.16
+ @copyright :  GPLv2
+ """
+ import re
+diff --git a/lib/sx/plugins/lib/kernel/modulesparser.py b/lib/sx/plugins/lib/kernel/modulesparser.py
+index 9748f4e..f6ea388 100644
+--- a/lib/sx/plugins/lib/kernel/modulesparser.py
++++ b/lib/sx/plugins/lib/kernel/modulesparser.py
+@@ -6,7 +6,7 @@ sos_commands/kernel/
+ 
+ @author    :  Shane Bradley
+ @contact   :  sbradley@redhat.com
+-@version   :  2.15
++@version   :  2.16
+ @copyright :  GPLv2
+ """
+ 
+diff --git a/lib/sx/plugins/lib/log/__init__.py b/lib/sx/plugins/lib/log/__init__.py
+index 865fe23..e3c980c 100644
+--- a/lib/sx/plugins/lib/log/__init__.py
++++ b/lib/sx/plugins/lib/log/__init__.py
+@@ -2,7 +2,7 @@
+ """
+ @author    :  Shane Bradley
+ @contact   :  sbradley@redhat.com
+-@version   :  2.15
++@version   :  2.16
+ @copyright :  GPLv2
+ """
+ 
+diff --git a/lib/sx/plugins/lib/log/syslogparser.py b/lib/sx/plugins/lib/log/syslogparser.py
+index ad19c3b..25660b0 100644
+--- a/lib/sx/plugins/lib/log/syslogparser.py
++++ b/lib/sx/plugins/lib/log/syslogparser.py
+@@ -6,7 +6,7 @@ var/log/*
+ 
+ @author    :  Shane Bradley
+ @contact   :  sbradley@redhat.com
+-@version   :  2.15
++@version   :  2.16
+ @copyright :  GPLv2
+ """
+ 
+diff --git a/lib/sx/plugins/lib/networking/__init__.py b/lib/sx/plugins/lib/networking/__init__.py
+index 865fe23..e3c980c 100644
+--- a/lib/sx/plugins/lib/networking/__init__.py
++++ b/lib/sx/plugins/lib/networking/__init__.py
+@@ -2,7 +2,7 @@
+ """
+ @author    :  Shane Bradley
+ @contact   :  sbradley@redhat.com
+-@version   :  2.15
++@version   :  2.16
+ @copyright :  GPLv2
+ """
+ 
+diff --git a/lib/sx/plugins/lib/networking/networkdeviceparser.py b/lib/sx/plugins/lib/networking/networkdeviceparser.py
+index ac60541..7da403d 100644
+--- a/lib/sx/plugins/lib/networking/networkdeviceparser.py
++++ b/lib/sx/plugins/lib/networking/networkdeviceparser.py
+@@ -6,7 +6,7 @@ sos_commands/networking/
+ 
+ @author    :  Shane Bradley
+ @contact   :  sbradley@redhat.com
+-@version   :  2.15
++@version   :  2.16
+ @copyright :  GPLv2
+ """
+ import re
+@@ -386,7 +386,7 @@ class NetworkMap(NetworkInterface):
+         return {}
+ 
+     # ###########################################################################
+-    # Get functions
++    # Is functions
+     # ###########################################################################
+     def hasHostnameMapped(self, hostname) :
+         # Returns True if a particular hostname is in the /etc/hosts
+@@ -397,6 +397,15 @@ class NetworkMap(NetworkInterface):
+                 return True
+         return False
+ 
++    def isOnBootEnabled(self):
++        if (self.getNetworkScriptMap().has_key("ONBOOT")):
++            if self.getNetworkScriptMap().get("ONBOOT") == "yes":
++                return True
++        return False
++        
++    # ###########################################################################
++    # Get functions
++    # ###########################################################################
+     def getEtcHostsMap(self):
+         """
+         This returns a map of all the entries in /etc/hosts. The key
+diff --git a/lib/sx/plugins/lib/rpm/__init__.py b/lib/sx/plugins/lib/rpm/__init__.py
+index 865fe23..e3c980c 100644
+--- a/lib/sx/plugins/lib/rpm/__init__.py
++++ b/lib/sx/plugins/lib/rpm/__init__.py
+@@ -2,7 +2,7 @@
+ """
+ @author    :  Shane Bradley
+ @contact   :  sbradley@redhat.com
+-@version   :  2.15
++@version   :  2.16
+ @copyright :  GPLv2
+ """
+ 
+diff --git a/lib/sx/plugins/lib/rpm/rpmparser.py b/lib/sx/plugins/lib/rpm/rpmparser.py
+index 98c5edb..9ebdae4 100644
+--- a/lib/sx/plugins/lib/rpm/rpmparser.py
++++ b/lib/sx/plugins/lib/rpm/rpmparser.py
+@@ -6,7 +6,7 @@ sos_commands/rpm
+ 
+ @author    :  Shane Bradley
+ @contact   :  sbradley@redhat.com
+-@version   :  2.15
++@version   :  2.16
+ @copyright :  GPLv2
+ """
+ import re
+diff --git a/lib/sx/plugins/lib/storage/__init__.py b/lib/sx/plugins/lib/storage/__init__.py
+index 020d580..5f5c50d 100644
+--- a/lib/sx/plugins/lib/storage/__init__.py
++++ b/lib/sx/plugins/lib/storage/__init__.py
+@@ -2,7 +2,7 @@
+ """
+ @author    :  Shane Bradley
+ @contact   :  sbradley@redhat.com
+-@version   :  2.15
++@version   :  2.16
+ @copyright :  GPLv2
+ """
+ import logging
+diff --git a/lib/sx/plugins/lib/storage/blockdevicetree.py b/lib/sx/plugins/lib/storage/blockdevicetree.py
+index c9b4828..c3f7c28 100644
+--- a/lib/sx/plugins/lib/storage/blockdevicetree.py
++++ b/lib/sx/plugins/lib/storage/blockdevicetree.py
+@@ -12,7 +12,7 @@ couple parsers.
+ 
+ @author    :  Shane Bradley
+ @contact   :  sbradley@redhat.com
+-@version   :  2.15
++@version   :  2.16
+ @copyright :  GPLv2
+ """
+ import logging
+diff --git a/lib/sx/plugins/lib/storage/devicemapperparser.py b/lib/sx/plugins/lib/storage/devicemapperparser.py
+index d0c60c8..0e817ae 100644
+--- a/lib/sx/plugins/lib/storage/devicemapperparser.py
++++ b/lib/sx/plugins/lib/storage/devicemapperparser.py
+@@ -6,7 +6,7 @@ sos_commands/devicemapper
+ 
+ @author    :  Shane Bradley
+ @contact   :  sbradley@redhat.com
+-@version   :  2.15
++@version   :  2.16
+ @copyright :  GPLv2
+ """
+ from sx.plugins.lib.storage.lvm import PVS_AV
+diff --git a/lib/sx/plugins/lib/storage/filesysparser.py b/lib/sx/plugins/lib/storage/filesysparser.py
+index fd149fd..ffcc19b 100644
+--- a/lib/sx/plugins/lib/storage/filesysparser.py
++++ b/lib/sx/plugins/lib/storage/filesysparser.py
+@@ -5,7 +5,7 @@ located in the sos_commands/filesys directory.
+ 
+ @author    :  Shane Bradley
+ @contact   :  sbradley@redhat.com
+-@version   :  2.15
++@version   :  2.16
+ @copyright :  GPLv2
+ """
+ import re
+diff --git a/lib/sx/plugins/lib/storage/lvm.py b/lib/sx/plugins/lib/storage/lvm.py
+index 7dd80c5..bb64f60 100644
+--- a/lib/sx/plugins/lib/storage/lvm.py
++++ b/lib/sx/plugins/lib/storage/lvm.py
+@@ -3,7 +3,7 @@
+ 
+ @author    :  Shane Bradley
+ @contact   :  sbradley@redhat.com
+-@version   :  2.15
++@version   :  2.16
+ @copyright :  GPLv2
+ """
+ import os.path
+diff --git a/lib/sx/plugins/lib/storage/procparser.py b/lib/sx/plugins/lib/storage/procparser.py
+index 0e75ad4..5807347 100644
+--- a/lib/sx/plugins/lib/storage/procparser.py
++++ b/lib/sx/plugins/lib/storage/procparser.py
+@@ -5,7 +5,7 @@ located in the /proc directory.
+ 
+ @author    :  Shane Bradley
+ @contact   :  sbradley@redhat.com
+-@version   :  2.15
++@version   :  2.16
+ @copyright :  GPLv2
+ """
+ import re
+diff --git a/lib/sx/plugins/lib/storage/storageevaluator.py b/lib/sx/plugins/lib/storage/storageevaluator.py
+index 26d8213..f6a7f1c 100644
+--- a/lib/sx/plugins/lib/storage/storageevaluator.py
++++ b/lib/sx/plugins/lib/storage/storageevaluator.py
+@@ -5,7 +5,7 @@ link in known issues with links to resolution.
+ 
+ @author    :  Shane Bradley
+ @contact   :  sbradley@redhat.com
+-@version   :  2.15
++@version   :  2.16
+ @copyright :  GPLv2
+ """
+ import os.path
+diff --git a/lib/sx/plugins/networking.py b/lib/sx/plugins/networking.py
+index 9b2a45f..399cbb6 100644
+--- a/lib/sx/plugins/networking.py
++++ b/lib/sx/plugins/networking.py
+@@ -4,7 +4,7 @@ A class that can run analyze the storage aspect of a sosreport.
+ 
+ @author    :  Shane Bradley
+ @contact   :  sbradley@redhat.com
+-@version   :  2.15
++@version   :  2.16
+ @copyright :  GPLv2
+ """
+ import sys
+diff --git a/lib/sx/plugins/satellitedebug.py b/lib/sx/plugins/satellitedebug.py
+index c7a30a2..c1cc244 100644
+--- a/lib/sx/plugins/satellitedebug.py
++++ b/lib/sx/plugins/satellitedebug.py
+@@ -5,7 +5,7 @@ validation tests.
+ 
+ @author    :  Shane Bradley
+ @contact   :  sbradley@redhat.com
+-@version   :  2.15
++@version   :  2.16
+ @copyright :  GPLv2
+ """
+ import logging
+diff --git a/lib/sx/plugins/storage.py b/lib/sx/plugins/storage.py
+index 1723c7a..fefb825 100644
+--- a/lib/sx/plugins/storage.py
++++ b/lib/sx/plugins/storage.py
+@@ -4,7 +4,7 @@ A class that can run analyze the storage aspect of a sosreport.
+ 
+ @author    :  Shane Bradley
+ @contact   :  sbradley@redhat.com
+-@version   :  2.15
++@version   :  2.16
+ @copyright :  GPLv2
+ """
+ import sys
+diff --git a/lib/sx/reports/__init__.py b/lib/sx/reports/__init__.py
+index 478651c..17aed69 100644
+--- a/lib/sx/reports/__init__.py
++++ b/lib/sx/reports/__init__.py
+@@ -5,7 +5,7 @@ base class that all report types should inherit.
+ 
+ @author    :  Shane Bradley
+ @contact   :  sbradley@redhat.com
+-@version   :  2.15
++@version   :  2.16
+ @copyright :  GPLv2
+ """
+ import os
+diff --git a/lib/sx/reports/rhevlogcollector.py b/lib/sx/reports/rhevlogcollector.py
+index 5f32f6f..e5aa069 100644
+--- a/lib/sx/reports/rhevlogcollector.py
++++ b/lib/sx/reports/rhevlogcollector.py
+@@ -4,7 +4,7 @@ This class is a container for rhev log collector report object.
+ 
+ @author    :  Shane Bradley
+ @contact   :  sbradley@redhat.com
+-@version   :  2.15
++@version   :  2.16
+ @copyright :  GPLv2
+ """
+ import os.path
+diff --git a/lib/sx/reports/satellitedebug.py b/lib/sx/reports/satellitedebug.py
+index 05d5d65..514afe6 100644
+--- a/lib/sx/reports/satellitedebug.py
++++ b/lib/sx/reports/satellitedebug.py
+@@ -4,7 +4,7 @@ This class is a container for rhnsatellite-debug report object.
+ 
+ @author    :  Shane Bradley
+ @contact   :  sbradley@redhat.com
+-@version   :  2.15
++@version   :  2.16
+ @copyright :  GPLv2
+ """
+ import os.path
+diff --git a/lib/sx/reports/sosreport.py b/lib/sx/reports/sosreport.py
+index bcd9048..a827fd9 100644
+--- a/lib/sx/reports/sosreport.py
++++ b/lib/sx/reports/sosreport.py
+@@ -7,7 +7,7 @@ This file contains the container for sosreport report object.
+ 
+ @author    :  Shane Bradley
+ @contact   :  sbradley@redhat.com
+-@version   :  2.15
++@version   :  2.16
+ @copyright :  GPLv2
+ """
+ import string
+diff --git a/lib/sx/reports/sysreport.py b/lib/sx/reports/sysreport.py
+index 8679b00..0998fd0 100644
+--- a/lib/sx/reports/sysreport.py
++++ b/lib/sx/reports/sysreport.py
+@@ -4,7 +4,7 @@ This class is a container for sysreport report object.
+ 
+ @author    :  Shane Bradley
+ @contact   :  sbradley@redhat.com
+-@version   :  2.15
++@version   :  2.16
+ @copyright :  GPLv2
+ """
+ import string
+diff --git a/lib/sx/tools.py b/lib/sx/tools.py
+index f0aa805..051e3a5 100644
+--- a/lib/sx/tools.py
++++ b/lib/sx/tools.py
+@@ -5,7 +5,7 @@ sosreports/sysreports.
+ 
+ @author    :  Shane Bradley
+ @contact   :  sbradley@redhat.com
+-@version   :  2.15
++@version   :  2.16
+ @copyright :  GPLv2
+ """
+ import sys
+@@ -644,6 +644,15 @@ class FileUtil:
+         return (os.path.exists(pathToDstFile))
+     archiveFile = staticmethod(archiveFile)
+ 
++    def touch(pathToFile):
++        try:
++            with open(pathToFile, "a"):
++                os.utime(pathToFile, None)
++        except IOError:
++            message = "There was an error creating the file: %s." %(pathToFile)
++            logging.getLogger(sx.MAIN_LOGGER_NAME).error(message)
++    touch = staticmethod(touch)
++
+ class StringUtil:
+ 
+     def wrapParagraph(s, width=98, newline=True):
+@@ -805,7 +814,7 @@ class StringUtil:
+         same for each row in the table.
+ 
+         I got code from this url and modified it:
+-        http://ginstrom.com/scribbles/2.15/09/04/pretty-printing-a-table-in-python/
++        http://ginstrom.com/scribbles/2.16/09/04/pretty-printing-a-table-in-python/
+ 
+         Example(added spacing to make example clear):
+         table = [["",       "names", "birthyear", "age"], ["NCuser", "bob",   1976,         35]]
+diff --git a/setup.py b/setup.py
+index 6f9b442..f203b6b 100644
+--- a/setup.py
++++ b/setup.py
+@@ -14,7 +14,7 @@ from distutils.core import setup
+ if __name__ == "__main__":
+     setup(
+         name="sx" ,
+-        version="2.15",
++        version="2.16",
+         author="Shane Bradley",
+         author_email="sbradley@redhat.com",
+         url="https://fedorahosted.org/sx",
+diff --git a/sx.spec b/sx.spec
+index 8208f18..6858446 100644
+--- a/sx.spec
++++ b/sx.spec
+@@ -2,8 +2,8 @@
+ 
+ Summary: Tool to extract reports and run plug-ins against those extracted reports
+ Name: sx
+-Version: 2.15
+-Release: 0%{?dist}
++Version: 2.16
++Release: 1%{?dist}
+ URL: https://fedorahosted.org/sx
+ Source0: %{name}-%{version}.tar.gz
+ License: GPLv2
+diff --git a/sxconsole b/sxconsole
+index cfda794..8904a4b 100755
+--- a/sxconsole
++++ b/sxconsole
+@@ -7,7 +7,7 @@ All reports have to be a a compressed tarfile of type bzip2/gunzip.
+ 
+ @author    :  Shane Bradley
+ @contact   :  sbradley@redhat.com
+-@version   :  2.15
++@version   :  2.16
+ @copyright :  GPLv2
+ """
+ import sys
+@@ -39,7 +39,7 @@ from sx.modulesloader import ExtractorsLoader
+ @cvar VERSION_NUMBER: The current version number of sxconsole.
+ @type VERSION_NUMBER: String
+ """
+-VERSION_NUMBER = "2.15-7"
++VERSION_NUMBER = "2.16-1"
+ 
+ def getArchiveLayout(caseNumber, pathToArchiveDirectory, pathToExtractedReports,
+                      isModifiedArchiveLayoutEnabled) :
+@@ -592,16 +592,16 @@ class OptionParserExtended(OptionParser):
+         self.print_version()
+         layoutDescription = "\n\nArchive Layout Description:\n\n"
+         layoutDescription += "The default layout of the archive files looks like the following:\n"
+-        layoutDescription += "\tCompressed Reports Path:   ~/sxarchive/creports/15555553/2.15-04-18_123703\n"
+-        layoutDescription += "\tExtracted Reports Path:    ~/sxarchive/ereports/15555553/2.15-04-18_123703\n"
++        layoutDescription += "\tCompressed Reports Path:   ~/sxarchive/creports/15555553/2.16-04-18_123703\n"
++        layoutDescription += "\tExtracted Reports Path:    ~/sxarchive/ereports/15555553/2.16-04-18_123703\n"
+         layoutDescription += "\tNon-report Files Path:     ~/sxarchive/ereports/15555553/files\n"
+-        layoutDescription += "\tPlugin Report Files Path:  ~/sxarchive/ereports/15555553/2.15-04-18_123703/reports\n\n"
++        layoutDescription += "\tPlugin Report Files Path:  ~/sxarchive/ereports/15555553/2.16-04-18_123703/reports\n\n"
+ 
+         layoutDescription += "The modified layout of the archive files looks like the following(when -M option is enabled):\n"
+-        layoutDescription += "\tCompressed Reports Path:   ~/sxarchive/15555553/2.15-04-18_123703/.creports\n"
+-        layoutDescription += "\tExtracted Reports Path:    ~/sxarchive/15555553/2.15-04-18_123703\n"
++        layoutDescription += "\tCompressed Reports Path:   ~/sxarchive/15555553/2.16-04-18_123703/.creports\n"
++        layoutDescription += "\tExtracted Reports Path:    ~/sxarchive/15555553/2.16-04-18_123703\n"
+         layoutDescription += "\tNon-report Files Path:     ~/sxarchive/15555553/files\n"
+-        layoutDescription += "\tPlugin Report Files Path:  ~/sxarchive/15555553/2.15-04-18_123703/reports\n\n"
++        layoutDescription += "\tPlugin Report Files Path:  ~/sxarchive/15555553/2.16-04-18_123703/reports\n\n"
+ 
+         examplesMessage =  "Examples:\n\n"
+         examplesMessage += "To list the different plugin and report types:\n"
+@@ -625,11 +625,11 @@ class OptionParserExtended(OptionParser):
+         examplesMessage += "After extraction is complete then open with a fileviewer and pass the option for a particular fileviewer.\n"
+         examplesMessage += "$ %s 15555553 -e OpenSOSReport -o OpenSOSReport.fileviewer=konqueror\n\n" %(self.__commandName)
+         examplesMessage += "To run the cluster and the checksysreport plugin against a previously extracted report:\n"
+-        examplesMessage += "$ %s -p ~/sxarchive/ereports/15555553/2.15-01-26_160247 -e cluster,checksysreport\n\n" %(self.__commandName)
++        examplesMessage += "$ %s -p ~/sxarchive/ereports/15555553/2.16-01-26_160247 -e cluster,checksysreport\n\n" %(self.__commandName)
+         examplesMessage += "To run default plugins on directory of reports(non-reports will not be processed) and use the modified archived layout:\n"
+         examplesMessage += "$ %s 15555553 -R ~/tmp/ -M\n\n" %(self.__commandName)
+         examplesMessage += "To run the cluster and the checksysreport plugin against a previously extracted report that used the modified layout scheme:\n"
+-        examplesMessage += "$ %s -p ~/sxarchive/ereports/15555553/2.15-01-26_160247 -e cluster,checksysreport -M\n\n" %(self.__commandName)
++        examplesMessage += "$ %s -p ~/sxarchive/ereports/15555553/2.16-01-26_160247 -e cluster,checksysreport -M\n\n" %(self.__commandName)
+         OptionParser.print_help(self)
+         print layoutDescription
+         print examplesMessage
+-- 
+1.7.1
+

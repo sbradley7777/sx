@@ -226,7 +226,10 @@ class StreamHandlerColorized(logging.StreamHandler):
             elif (msg.find("DEBUG") >= 0) :
                 colorizedMsg = self.__colorizeText("DEBUG", "purple")
                 msg = msg.replace("DEBUG", colorizedMsg, 1)
-            self.stream.write(msg + "\n")
+            try:
+                self.stream.write(msg + "\n")
+            except UnicodeEncodeError:
+                self.stream.write(msg.encode("utf-8"))
             self.flush()
         except:
             self.handleError(record)

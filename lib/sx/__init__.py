@@ -296,6 +296,10 @@ class SXConfigurationFiles:
                     message = "Could not create the directory: %s." % (path)
                     logging.getLogger(MAIN_LOGGER_NAME).error(message)
                     return False
+                except OSError:
+                    message = "Could not create the directory: %s." % (path)
+                    logging.getLogger(MAIN_LOGGER_NAME).error(message)
+                    return False
 
         # Create the python module __init_.py file so modules can be imported
         timestamp = time.strftime(UID_TIMESTAMP)
@@ -308,6 +312,10 @@ class SXConfigurationFiles:
                     fout.close()
                 except IOError:
                     message = "There was an error writing the file: %s." %(path)
+                    logging.getLogger(MAIN_LOGGER_NAME).error(message)
+                    return False
+                except OSError:
+                    message = "Could not create the directory: %s." % (path)
                     logging.getLogger(MAIN_LOGGER_NAME).error(message)
                     return False
         return True

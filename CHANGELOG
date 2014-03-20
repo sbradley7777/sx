@@ -1,3 +1,6 @@
+Thr Mar 20 2014 Shane Bradley <sbradley@redhat.com>- 2.16-6.0
+- Fix some parsing issues of strings in logger and strings when formatting tables.
+- Fixed an error that was thrown if user did not have privledges for user configuration directory that would be created.
 Fri Feb 21 2014 Shane Bradley <sbradley@redhat.com>- 2.16-0.0
 - Added detection of secondary fencing method.
 - Added clean_start attribute value to message if attribute detected.

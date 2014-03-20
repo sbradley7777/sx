@@ -729,7 +729,10 @@ class StringUtil:
             inum = int(tableValue)
             return locale.format("%.*f", (0, inum), True)
         except (ValueError, TypeError):
-            return str(tableValue)
+            try:
+                return str(tableValue)
+            except UnicodeEncodeError:
+                return tableValue.encode("utf-8")
 
     def __getMaxColumnWidth(self, table, index):
         """
