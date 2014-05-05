@@ -1,6 +1,18 @@
-Thr Mar 20 2014 Shane Bradley <sbradley@redhat.com>- 2.16-6.0
+Thr May 05 2014 Shane Bradley <sbradley@redhat.com>- 2.17-0.0
 - Fix some parsing issues of strings in logger and strings when formatting tables.
 - Fixed an error that was thrown if user did not have privledges for user configuration directory that would be created.
+- Added check to make sure that fsck option is not enabled on GFS/GFS2 filesystems.
+- The cluster services are no longer printed to a file and now a total counted in printed in summary.
+- Add ip to bonding output in networking plugin.
+- Add check for quromd section that is not running master_wins && 2 nodes with no heuristics.
+- It detects broadcast, but multicast configured on RHEL4.
+- Detects if quorum disk did not have heuristics configured when not using master_wins mode on RHEL 5.
+- Added multiple evaluations for correctly configured quorum disk.
+- Check to verify that if fence_scsi is used on virtual machines that iscsi is used on all shared storage.
+- Added unfence check to see if fence agent supports that tag.
+- Changed the cluster boot up services summary to a table.
+- Add checks and summary information on pacemaker cluster.
+- Added new option (-t) so that timestamp could be set.
 Fri Feb 21 2014 Shane Bradley <sbradley@redhat.com>- 2.16-0.0
 - Added detection of secondary fencing method.
 - Added clean_start attribute value to message if attribute detected.

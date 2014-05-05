@@ -5,7 +5,7 @@ that is in xml format.
 
 @author    :  Shane Bradley
 @contact   :  sbradley@redhat.com
-@version   :  2.16
+@version   :  2.17
 @copyright :  GPLv2
 """
 import os.path
@@ -100,16 +100,21 @@ class Quorumd:
     def getMinScore(self):
         return self.__getAttribute("min_score")
 
+    def getTKO(self):
+        return self.__getAttribute("tko")
+
+    def getInterval(self):
+        return self.__getAttribute("interval")
+
     def getStatusFile(self):
         return self.__getAttribute("status_file")
 
     def getMasterWins(self):
         # The option quorumd/@master_wins uses some auto configure magic in RHEL
-        # 6 so cannot set a default value.
-        quorumdOption = self.__getAttribute("master_wins")
-        if (not len(quorumdOption) > 0):
-            quorumdOption = ""
-        return quorumdOption
+        # 6 so cannot set a default value.  Master-wins mode is automatically
+        # configured when: There are only 2 nodes in the cluster There is a
+        # quorum disk configured that has no heuristics.
+        return self.__getAttribute("master_wins").strip()
 
     def getUseUptime(self):
         quorumdOption = self.__getAttribute("use_uptime")
@@ -783,6 +788,23 @@ class ClusterHAConfAnalyzer :
                 return True
         return False
 
+    def isUnfenceEnabledOnClusterNode(self, clusternodeName) :
+        # Loop over each nodes fence devices
+        for cnElement in self.__ccRootElement.findall("clusternodes/clusternode") :
+            currentNodeName = ""
+            try:
+                currentNodeName = cnElement.attrib["name"]
+            except KeyError:
+                continue
+            except AttributeError:
+                continue
+            if (currentNodeName == clusternodeName):
+                cnUnfenceElements = cnElement.findall("unfence")
+                if (len(cnElement.findall("unfence")) > 0):
+                    return True
+                return False
+        return False
+
     def hasAttributeCleanStart(self) :
         """
         Returns True if the value is equal to 0, otherwise False.
@@ -823,6 +845,8 @@ class ClusterHAConfAnalyzer :
             pass
         except AttributeError:
             pass
+        if (len(self.getCmanMulticastAddress()) > 0):
+            return "multicast"
         return ""
 
     def getQuorumd(self):
@@ -833,6 +857,42 @@ class ClusterHAConfAnalyzer :
                 quorumd.addHeuristic(QuorumdHeuristic(heuristic.attrib))
             return quorumd
         return None
+
+    def getCmanQuorumDevPoll(self):
+        """
+        Returns the value of <cman quorum_dev_poll>. Returns empty string if no
+        value is found. In RHEL 6 the value is autoconfigured so cannot set
+        default value.
+
+        @return: Returns the value of <cman quorum_dev_poll>.
+        @rtype: String
+        """
+        cmanElement = self.__ccRootElement.find("cman")
+        try:
+            return cmanElement.attrib["quorum_dev_poll"]
+        except KeyError:
+            pass
+        except AttributeError:
+            pass
+        return ""
+
+    def getTotemToken(self):
+        """
+        Returns the value of <totem token>. Returns empty string if no
+        value is found. In RHEL 6 the value is autoconfigured so cannot set
+        default value.
+
+        @return: Returns the value of <totem token>.
+        @rtype: String
+        """
+        cmanElement = self.__ccRootElement.find("totem")
+        try:
+            return cmanElement.attrib["token"]
+        except KeyError:
+            pass
+        except AttributeError:
+            pass
+        return ""
 
     def getClusterName(self) :
         """

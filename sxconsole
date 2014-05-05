@@ -7,7 +7,7 @@ All reports have to be a a compressed tarfile of type bzip2/gunzip.
 
 @author    :  Shane Bradley
 @contact   :  sbradley@redhat.com
-@version   :  2.16
+@version   :  2.17
 @copyright :  GPLv2
 """
 import sys
@@ -39,10 +39,10 @@ from sx.modulesloader import ExtractorsLoader
 @cvar VERSION_NUMBER: The current version number of sxconsole.
 @type VERSION_NUMBER: String
 """
-VERSION_NUMBER = "2.16-6"
+VERSION_NUMBER = "2.17-0"
 
 def getArchiveLayout(caseNumber, pathToArchiveDirectory, pathToExtractedReports,
-                     isModifiedArchiveLayoutEnabled) :
+                     isModifiedArchiveLayoutEnabled, timestamp="") :
     """
     This function is what will take the user options and do the action
     that user has specified.
@@ -71,11 +71,11 @@ def getArchiveLayout(caseNumber, pathToArchiveDirectory, pathToExtractedReports,
     else:
         # This will extracted a list of reports since they have not
         # been extracted.
-        al = ArchiveLayout(pathToArchiveDirectory, caseNumber)
+        al = ArchiveLayout(pathToArchiveDirectory, caseNumber, timestamp)
         if (isModifiedArchiveLayoutEnabled):
             message = "Enabling the Modified Archive Layout."
-            logging.getLogger(sx.MAIN_LOGGER_NAME).info(message)
-            al = ModifiedArchiveLayout(pathToArchiveDirectory, caseNumber)
+            logging.getLogger(sx.MAIN_LOGGER_NAME).debug(message)
+            al = ModifiedArchiveLayout(pathToArchiveDirectory, caseNumber, timestamp)
     return al
 
 def extractReports(caseNumber, al, pathToExtractedReports, listOfReports,
@@ -92,7 +92,6 @@ def extractReports(caseNumber, al, pathToExtractedReports, listOfReports,
         message = "The archive directories do not exist. The application will exit."
         logging.getLogger(sx.MAIN_LOGGER_NAME).error(message)
         sys.exit(1)
-
     # #######################################################################
     # Extract or load the reports
     # #######################################################################
@@ -103,14 +102,18 @@ def extractReports(caseNumber, al, pathToExtractedReports, listOfReports,
         logging.getLogger(sx.MAIN_LOGGER_NAME).info(message)
     else:
         # Extract reports that have not been archived from the list of reports
+        message = "The list of reports are being analyzed to verify that they are known report types."
+        logging.getLogger(sx.MAIN_LOGGER_NAME).status(message)
         listOfReports = __getListOfReports(listOfReports, pathToReportsDirectory)
-        message = "The list of files are being processed to see if they contain any know report types that can be extracted."
+        message = "The reports will be extracted to the following directory: %s" %(al.getPathToExtractedReports())
+        logging.getLogger(sx.MAIN_LOGGER_NAME).info(message)
+        message = "Extracting %d reports."%(len(listOfReports))
         logging.getLogger(sx.MAIN_LOGGER_NAME).status(message)
         message = "This process could take a while on large reports."
         logging.getLogger(sx.MAIN_LOGGER_NAME).info(message)
         reportsExtracted = __extract(listOfReports, al.getPathToCompressedReports(),
                                      al.getPathToExtractedReports(), includeUserDefinedModules)
-        message = "There was %d reports extracted." %(len(reportsExtracted))
+        message = "There was %d reports extracted to the directory: %s" %(len(reportsExtracted), al.getPathToExtractedReports())
         logging.getLogger(sx.MAIN_LOGGER_NAME).info(message)
     return reportsExtracted
 
@@ -488,6 +491,12 @@ def __getOptions(version) :
                          dest="modifiedArchiveLayout",
                          help="Enables a modified layout of the archive directory.",
                          default=False)
+    cmdParser.add_option("-t", "--timestamp",
+                         action="store",
+                         dest="timestamp",
+                         help="Set the unique timestamp directory for the extracted reports.(Format of the timestamp: %Y-%m-%d_%H%M%S)",
+                         type="string",
+                         default="")
     cmdParser.add_option("-r", "--report",
                          action="extend",
                          dest="listOfReports",
@@ -592,16 +601,16 @@ class OptionParserExtended(OptionParser):
         self.print_version()
         layoutDescription = "\n\nArchive Layout Description:\n\n"
         layoutDescription += "The default layout of the archive files looks like the following:\n"
-        layoutDescription += "\tCompressed Reports Path:   ~/sxarchive/creports/15555553/2.16-04-18_123703\n"
-        layoutDescription += "\tExtracted Reports Path:    ~/sxarchive/ereports/15555553/2.16-04-18_123703\n"
+        layoutDescription += "\tCompressed Reports Path:   ~/sxarchive/creports/15555553/2.17-04-18_123703\n"
+        layoutDescription += "\tExtracted Reports Path:    ~/sxarchive/ereports/15555553/2.17-04-18_123703\n"
         layoutDescription += "\tNon-report Files Path:     ~/sxarchive/ereports/15555553/files\n"
-        layoutDescription += "\tPlugin Report Files Path:  ~/sxarchive/ereports/15555553/2.16-04-18_123703/reports\n\n"
+        layoutDescription += "\tPlugin Report Files Path:  ~/sxarchive/ereports/15555553/2.17-04-18_123703/reports\n\n"
 
         layoutDescription += "The modified layout of the archive files looks like the following(when -M option is enabled):\n"
-        layoutDescription += "\tCompressed Reports Path:   ~/sxarchive/15555553/2.16-04-18_123703/.creports\n"
-        layoutDescription += "\tExtracted Reports Path:    ~/sxarchive/15555553/2.16-04-18_123703\n"
+        layoutDescription += "\tCompressed Reports Path:   ~/sxarchive/15555553/2.17-04-18_123703/.creports\n"
+        layoutDescription += "\tExtracted Reports Path:    ~/sxarchive/15555553/2.17-04-18_123703\n"
         layoutDescription += "\tNon-report Files Path:     ~/sxarchive/15555553/files\n"
-        layoutDescription += "\tPlugin Report Files Path:  ~/sxarchive/15555553/2.16-04-18_123703/reports\n\n"
+        layoutDescription += "\tPlugin Report Files Path:  ~/sxarchive/15555553/2.17-04-18_123703/reports\n\n"
 
         examplesMessage =  "Examples:\n\n"
         examplesMessage += "To list the different plugin and report types:\n"
@@ -625,11 +634,11 @@ class OptionParserExtended(OptionParser):
         examplesMessage += "After extraction is complete then open with a fileviewer and pass the option for a particular fileviewer.\n"
         examplesMessage += "$ %s 15555553 -e OpenSOSReport -o OpenSOSReport.fileviewer=konqueror\n\n" %(self.__commandName)
         examplesMessage += "To run the cluster and the checksysreport plugin against a previously extracted report:\n"
-        examplesMessage += "$ %s -p ~/sxarchive/ereports/15555553/2.16-01-26_160247 -e cluster,checksysreport\n\n" %(self.__commandName)
+        examplesMessage += "$ %s -p ~/sxarchive/ereports/15555553/2.17-01-26_160247 -e cluster,checksysreport\n\n" %(self.__commandName)
         examplesMessage += "To run default plugins on directory of reports(non-reports will not be processed) and use the modified archived layout:\n"
         examplesMessage += "$ %s 15555553 -R ~/tmp/ -M\n\n" %(self.__commandName)
         examplesMessage += "To run the cluster and the checksysreport plugin against a previously extracted report that used the modified layout scheme:\n"
-        examplesMessage += "$ %s -p ~/sxarchive/ereports/15555553/2.16-01-26_160247 -e cluster,checksysreport -M\n\n" %(self.__commandName)
+        examplesMessage += "$ %s -p ~/sxarchive/ereports/15555553/2.17-01-26_160247 -e cluster,checksysreport -M\n\n" %(self.__commandName)
         OptionParser.print_help(self)
         print layoutDescription
         print examplesMessage
@@ -813,10 +822,16 @@ if __name__ == "__main__":
 
         if (__validateOptions(caseNumber, cmdLineOpts.pathToExtractedReports)):
             # Get Layout
-            al = getArchiveLayout(caseNumber, cmdLineOpts.archivePath,
-                                  cmdLineOpts.pathToExtractedReports,
-                                  cmdLineOpts.modifiedArchiveLayout)
-
+            al = None
+            try:
+                al = getArchiveLayout(caseNumber, cmdLineOpts.archivePath,
+                                      cmdLineOpts.pathToExtractedReports,
+                                      cmdLineOpts.modifiedArchiveLayout,
+                                      cmdLineOpts.timestamp)
+            except ValueError:
+                message = "The timestamp value (for the -t option) is using an incorrect format. See --help for the correct format to use with the -t option."
+                logging.getLogger(sx.MAIN_LOGGER_NAME).error(message)
+                sys.exit()
             # List of files that were added to the archive that were not known
             # report types.
             listOfNonReportPaths = []
@@ -826,7 +841,7 @@ if __name__ == "__main__":
             # #######################################################################
             if (len(cmdLineOpts.filePathArray) > 0):
                 message = "Moving all the non-report files into the archive directory before extracting reports so they will not be scanned."
-                logging.getLogger(sx.MAIN_LOGGER_NAME).info(message)
+                logging.getLogger(sx.MAIN_LOGGER_NAME).status(message)
                 pathToNonReports = al.getPathToNonReportFiles()
                 listOfNonReportPaths = __moveNonReportFiles(pathToNonReports, cmdLineOpts.filePathArray)
 
@@ -884,7 +899,7 @@ if __name__ == "__main__":
                     # Generate map of all plugins reports that were created after they run.
                     mapOfPluginReportPaths = pluginsHelper.generatePluginReports(listOfReportsExtracted, listOfEnabledPlugins)
                 else:
-                    logging.getLogger(sx.MAIN_LOGGER_NAME).info("There are no plugins enabled.")
+                    logging.getLogger(sx.MAIN_LOGGER_NAME).info("Skipping plugins since there was no plugins enabled.")
             # #######################################################################
             # Remove the compressed and extraction directory since nothing was
             # extracted and we do not want empty directories.

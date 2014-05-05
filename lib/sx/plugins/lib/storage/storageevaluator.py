@@ -5,7 +5,7 @@ link in known issues with links to resolution.
 
 @author    :  Shane Bradley
 @contact   :  sbradley@redhat.com
-@version   :  2.16
+@version   :  2.17
 @copyright :  GPLv2
 """
 import os.path

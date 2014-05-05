@@ -5,7 +5,7 @@ GFS2, and filesystem resources in the cluster.conf.
 
 @author    :  Shane Bradley
 @contact   :  sbradley@redhat.com
-@version   :  2.16
+@version   :  2.17
 @copyright :  GPLv2
 """
 import re
@@ -91,6 +91,7 @@ class ClusterHAStorage():
         if (len(result) > 0):
             sectionHeader = "%s\nGFS and GFS2 Filesystem Summary\n%s" %(self.__seperator, self.__seperator)
             rString += "%s\n%s\n\n" %(sectionHeader, result)
+        """
         # ###################################################################
         # Get the fs.sh resources and write summary
         # ###################################################################
@@ -109,13 +110,14 @@ class ClusterHAStorage():
             # Should flag for vgs with no c bit set and no lvm on device path.
             stringUtil = StringUtil()
             sectionHeader =  "%s\nFilesystem and Clustered-Filesystem cluster.conf Summary\n%s" %(self.__seperator, self.__seperator)
-            tableHeader = ["device_name", "mount_point", "fs_type"]
-            tableOfStrings = stringUtil.toTableString(fsTable, tableHeader)
+            #tableHeader = ["device_name", "mount_point", "fs_type"]
+            #tableOfStrings = stringUtil.toTableString(fsTable, tableHeader)
             description =  "There was %d filesystems resources found. It is recommended that all filesystem resources(fs.sh) are created on a HALVM device." %(len(fsTable))
             description += "The following article describes this procedure:"
             urls = ["https://access.redhat.com/knowledge/solutions/3067"]
-            rString += "%s\n%s\n%s\n\n" %(sectionHeader, StringUtil.wrapParagraphURLs(description, urls), tableOfStrings)
-
+            # rString += "%s\n%s\n%s\n\n" %(sectionHeader, StringUtil.wrapParagraphURLs(description, urls), tableOfStrings)
+            rString += "%s\n%s\n" %(sectionHeader, StringUtil.wrapParagraphURLs(description, urls))
+        """
         # ###################################################################
         # Write summary of status of HALVM and CLVM
         # ###################################################################
@@ -136,7 +138,7 @@ class ClusterHAStorage():
             volumesListValues = volumesListValues.rstrip("|")
             if (not len(volumesListValues) > 0):
                 volumesListValues = "No volumes found for this configuration option."
-            currentSummary += "  /etc/lvm/lvm.conf -> volume_list:  %s\n\n" %(volumesListValues)
+            currentSummary += "  /etc/lvm/lvm.conf -> volume_list:  %s\n" %(volumesListValues)
 
             # Check to see clvmd is enabled at boot.
             serviceName = "clvmd"
@@ -145,10 +147,10 @@ class ClusterHAStorage():
                 if (chkConfigItem.getName() == serviceName):
                     clvmdServiceSummary = "%s\n" %(chkConfigItem)
                     break;
-            currentSummary += "  /etc/init.d/%s runlevel status: %s\n" %(serviceName, clvmdServiceSummary)
+            currentSummary += "  %s runlevel status -> %s\n" %(serviceName, clvmdServiceSummary)
             # Add current summary to lvm summary
             if (len(currentSummary) > 0):
-                lvmSummary += "%s:\n%s\n" %(clusternode.getClusterNodeName(), currentSummary)
+                lvmSummary += "%s:\n%s" %(clusternode.getClusterNodeName(), currentSummary)
         # List the first 10 vgs and will have to search each report till all the
         # information is found on them. This means taking all the filesystems in
         # cluster.conf, finding vg informaiton on the first 10 found then add to
@@ -232,6 +234,25 @@ class ClusterHAStorage():
         Do note that tags in "volume_list" option are not checked.
         """
         rString = ""
+        baseClusterNode = self.__cnc.getBaseClusterNode()
+        if (baseClusterNode == None):
+            return rString
+        cca = ClusterHAConfAnalyzer(baseClusterNode.getPathToClusterConf())
+        fsTable = []
+        filesystemResourcesList = cca.getFilesystemResourcesList()
+        if (len(filesystemResourcesList) > 0):
+            for clusterConfMount in filesystemResourcesList:
+                currentFS = [clusterConfMount.getDeviceName(), clusterConfMount.getMountPoint(), clusterConfMount.getFSType()]
+                if (not currentFS in fsTable):
+                    fsTable.append(currentFS)
+        if (len(fsTable) > 0):
+            stringUtil = StringUtil()
+            sectionHeader =  "%s\nFilesystem and Clustered-Filesystem cluster.conf Summary\n%s" %(self.__seperator, self.__seperator)
+            description =  "There was %d filesystems resources(fs.sh) found in the cluster.conf. It is recommended that all filesystem resource\'s(fs.sh) " %(len(fsTable))
+            description += "underlying storage device is using one(not both) of the 2 methods for HALVM as described in article below for the underlying "
+            description += "storage device. The following article describes these procedures:"
+            urls = ["https://access.redhat.com/knowledge/solutions/3067"]
+            rString += StringUtil.formatBulletString(description, urls)
         # Disabled for now and will return an empty string
         """
         baseClusterNode = self.__cnc.getBaseClusterNode()
@@ -290,7 +311,7 @@ class ClusterHAStorage():
             for clusternode in self.__cnc.getClusterNodes():
                 if (len(clusternode.getClusterStorageFilesystemList()) > 0):
                     description =  "There is known limitations for GFS2 filesystem when using the "
-                    description += "following transports: \"broadcast\" or \"udpu\"."
+                    description += "following transports: \"%s\"." %(cca.getTransportMode())
                     urls = ["https://access.redhat.com/site/articles/146163", "https://access.redhat.com/site/solutions/459243"]
                     rString += "%s\n" %(StringUtil.formatBulletString(description, urls))
                     break;
@@ -333,12 +354,19 @@ class ClusterHAStorage():
             # Disabling this check for now cause still working on how to do it.
             """
             # Verify that the clustered filesystem has clusterbit set on the vg.
-            for csFilesystem in listOfClusterStorageFilesystems:
-                pathToDevice = str(csFilesystem.getDeviceName().strip().rstrip())
-                if (not lvm.isClusteredLVMDevice(pathToDevice)):
-                    currentFS = [pathToDevice, csFilesystem.getMountPoint(), csFilesystem.getFSType()]
-                    if (not currentFS in fsTable):
-                        fsTable.append(currentFS)
+            # Verify the locking_type is set to 3 cause built-in cluster locking is required.
+            fsTable = []
+            if (len(listOfClusterStorageFilesystems) > 0):
+                devicemapperCommandsMap =  self.__cnc.getStorageData(clusternode.getClusterNodeName()).getDMCommandsMap()
+                lvm = LVM(DeviceMapperParser.parseVGSVData(devicemapperCommandsMap.get("vgs_-v")),
+                          DeviceMapperParser.parseLVSAODevicesData(devicemapperCommandsMap.get("lvs_-a_-o_devices")),
+                          self.__cnc.getStorageData(clusternode.getClusterNodeName()).getLVMConfData())
+                for csFilesystem in listOfClusterStorageFilesystems:
+                   pathToDevice = str(csFilesystem.getDeviceName().strip().rstrip())
+                   if (not lvm.isClusteredLVMDevice(pathToDevice)):
+                       currentFS = [pathToDevice, csFilesystem.getMountPoint(), csFilesystem.getFSType()]
+                       if (not currentFS in fsTable):
+                           fsTable.append(currentFS)
             if (len(fsTable) > 0):
                 stringUtil = StringUtil()
                 description = "The following filesystems appears not to be on a clustered LVM volume. A clustered LVM volume is required for GFS/GFS2 fileystems."
@@ -451,18 +479,29 @@ class ClusterHAStorage():
             fsTable = []
             for csFilesystem in listOfClusterStorageFilesystems:
                 csFilesystemOptions = csFilesystem.getAllMountOptions()
-                if (not ((csFilesystemOptions.find("noatime") >= 0) and
-                         (csFilesystemOptions.find("nodiratime") >= 0))):
+                if (not csFilesystemOptions.find("noatime") >= 0):
                     fsTable.append([csFilesystem.getDeviceName(), csFilesystem.getMountPoint()])
             if (len(fsTable) > 0):
-                tableHeader = ["device_name", "mount_point"]
-                description =  "The following GFS/GFS2 file-systems did not have the mount option noatime or nodiratime set. "
-                description += "Unless atime support is essential, Red Hat recommends setting the mount option \"noatime\" and "
-                description += "\"nodiratime\" on every GFS/GFS2 mount point. This will significantly improve performance since "
-                description += "it prevents reads from turning into writes."
-                tableOfStrings = stringUtil.toTableStringsList(fsTable, tableHeader)
+                # Verified that noatime implies nodiratime, so nodiratime check
+                # does not need to be done.
+                description =  "There were GFS/GFS2 file-systems that did not have the mount option \"noatime\"(no \"nodiratime\" is implied. "
+                description += "when noatime is set) enabled. Unless atime support is essential, Red Hat recommends setting the mount option "
+                description += "\"noatime\" on every GFS/GFS2 mount point. This will significantly improve performance since it prevents "
+                description += "reads from turning into writes because the access time attribute will not be updated."
                 urls = ["https://access.redhat.com/knowledge/solutions/35662"]
-                clusterNodeEvalString += StringUtil.formatBulletString(description, urls, tableOfStrings)
+                clusterNodeEvalString += StringUtil.formatBulletString(description, urls)
+
+            # ###################################################################
+            # Make sure GFS/GFS2 filesystems dont have fsck option enable
+            # ###################################################################
+
+            for csFilesystem in listOfClusterStorageFilesystems:
+                if (csFilesystem.isEtcFstabMount()):
+                    if (not csFilesystem.getEtcFstabMount().getFSFsck() == "0"):
+                        description =  "There were GFS/GFS2 file-systems that had the fsck option enabled in the /etc/fstab file. This option "
+                        description += "should be disabled(set value to 0) or corruption will occur eventually."
+                        urls = ["https://access.redhat.com/site/solutions/766393"]
+                        clusterNodeEvalString += StringUtil.formatBulletString(description, urls)
 
             # ###################################################################
             # Add to string with the hostname and header if needed.

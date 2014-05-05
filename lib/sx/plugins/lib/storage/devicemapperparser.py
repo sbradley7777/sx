@@ -6,7 +6,7 @@ sos_commands/devicemapper
 
 @author    :  Shane Bradley
 @contact   :  sbradley@redhat.com
-@version   :  2.16
+@version   :  2.17
 @copyright :  GPLv2
 """
 from sx.plugins.lib.storage.lvm import PVS_AV

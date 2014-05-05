@@ -4,7 +4,7 @@ This contains Global variables for sx.
 
 @author    :  Shane Bradley
 @contact   :  sbradley@redhat.com
-@version   :  2.16
+@version   :  2.17
 @copyright :  GPLv2
 """
 import sys
@@ -70,8 +70,8 @@ class ArchiveLayout:
     and uid for all the directories that will be used by sx.
 
     Example of Layout:
-    Compressed Reports Path:   ~/sxarchive/creports/15555553/2.16-04-18_123703
-    Extracted Reports Path:    ~/sxarchive/ereports/15555553/2.16-04-18_123703
+    Compressed Reports Path:   ~/sxarchive/creports/15555553/2.17-04-18_123703
+    Extracted Reports Path:    ~/sxarchive/ereports/15555553/2.17-04-18_123703
     Non-report Files Path:     ~/sxarchive/ereports/15555553/files
     """
     def __init__(self, archivePath, uid, timestamp=""):
@@ -90,6 +90,8 @@ class ArchiveLayout:
         self.__timestamp = timestamp
         if (not len(self.__timestamp) > 0):
             self.__timestamp = time.strftime(UID_TIMESTAMP)
+        # Check to see if timestamp is valid and ValueError will be thrown if invalid.
+        time.strptime(self.__timestamp, UID_TIMESTAMP)
 
     def __str__(self) :
         """
@@ -167,8 +169,8 @@ class ArchivedLayout(ArchiveLayout):
     the correct strings to the path of all directories for sx.
 
     Example of Layout:
-    Compressed Reports Path:   ~/sxarchive/creports/15555553/2.16-04-18_123703
-    Extracted Reports Path:    ~/sxarchive/ereports/15555553/2.16-04-18_123703
+    Compressed Reports Path:   ~/sxarchive/creports/15555553/2.17-04-18_123703
+    Extracted Reports Path:    ~/sxarchive/ereports/15555553/2.17-04-18_123703
     Non-report Files Path:     ~/sxarchive/ereports/15555553/files
     """
     def __init__(self, pathToExistingArchive):
@@ -192,8 +194,8 @@ class ModifiedArchiveLayout(ArchiveLayout):
     and uid for all the directories that will be used by sx.
 
     Example of Layout:
-    Compressed Reports Path:   ~/sxarchive/15555553/2.16-04-18_122701/.creports
-    Extracted Reports Path:    ~/sxarchive/15555553/2.16-04-18_122701
+    Compressed Reports Path:   ~/sxarchive/15555553/2.17-04-18_122701/.creports
+    Extracted Reports Path:    ~/sxarchive/15555553/2.17-04-18_122701
     Non-report Files Path:     ~/sxarchive/15555553/files
     """
     def __init__(self, archivePath, uid, timestamp=""):
@@ -242,8 +244,8 @@ class ModifiedArchivedLayout(ModifiedArchiveLayout):
     the correct strings to the path of all directories for sx.
 
     Example of Layout:
-    Compressed Reports Path:   ~/sxarchive/15555553/2.16-04-18_122701/.creports
-    Extracted Reports Path:    ~/sxarchive/15555553/2.16-04-18_122701
+    Compressed Reports Path:   ~/sxarchive/15555553/2.17-04-18_122701/.creports
+    Extracted Reports Path:    ~/sxarchive/15555553/2.17-04-18_122701
     Non-report Files Path:     ~/sxarchive/15555553/files
     """
     def __init__(self, pathToExistingArchive):

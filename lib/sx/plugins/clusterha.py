@@ -13,7 +13,7 @@ fixed latter for just True on the plugin name and not class name.
 
 @author    :  Shane Bradley
 @contact   :  sbradley@redhat.com
-@version   :  2.16
+@version   :  2.17
 @copyright :  GPLv2
 """
 import string
@@ -25,6 +25,7 @@ import sx
 import sx.plugins
 from sx.logwriter import LogWriter
 
+from sx.tools import StringUtil
 from sx.plugins.lib.clusterha.clusterhaconfanalyzer import ClusterHAConfAnalyzer
 from sx.plugins.lib.clusterha.clusternodes import ClusterNodes
 from sx.plugins.lib.clusterha.clusternode import ClusterNode
@@ -129,36 +130,6 @@ class Clusterha(sx.plugins.PluginBase):
                 return
             cca = ClusterHAConfAnalyzer(baseClusterNode.getPathToClusterConf())
 
-            # Write a summary of the cluster.conf services
-            filename = "%s-services.txt" %(cca.getClusterName())
-            clusteredServicesList = cca.getClusteredServices()
-            clusteredServicesString = ""
-            clusteredVMServicesString = ""
-            regServiceCount = 0
-            vmServiceCount = 0
-            for clusteredService in clusteredServicesList:
-                if (not clusteredService.isVirtualMachineService()):
-                    sIndex = str(regServiceCount + 1)
-                    if ((regServiceCount + 1) < 10):
-                        sIndex = " %d" %(regServiceCount + 1)
-                    clusteredServicesString += "%s. %s\n\n" %(sIndex, str(clusteredService).rstrip())
-                    regServiceCount = regServiceCount + 1
-                elif (clusteredService.isVirtualMachineService()):
-                    sIndex = str(vmServiceCount + 1)
-                    if ((vmServiceCount + 1) < 10):
-                        sIndex = " %d" %(vmServiceCount + 1)
-                    clusteredVMServicesString += "%s. %s\n\n" %(sIndex, str(clusteredService).rstrip())
-                    vmServiceCount = vmServiceCount + 1
-            if (regServiceCount > 0):
-                self.writeSeperator(filename, "Clustered Services Summary");
-                self.write(filename, "There was %d clustered services.\n" %(regServiceCount))
-                self.write(filename, "%s\n" %(clusteredServicesString.rstrip()))
-
-            if (vmServiceCount > 0):
-                self.writeSeperator(filename, "Clustered Virtual Machine Services Summary");
-                self.write(filename, "There was %d clustered virtual machine services.\n" %(vmServiceCount))
-                self.write(filename, "%s\n" %(clusteredVMServicesString.rstrip()))
-
             # List of clusternodes in cluster.conf that do not have
             # corresponding sosreport/sysreport.
             filename = "%s-summary.txt" %(cca.getClusterName())
@@ -176,7 +147,7 @@ class Clusterha(sx.plugins.PluginBase):
             # ###################################################################
             result = cnc.getClusterNodesSystemSummary()
             if (len(result) > 0):
-                self.writeSeperator(filename, "Cluster Nodes Summary");
+                self.writeSeperator(filename, "Cluster Nodes Summary (%s - %d Cluster Nodes)" %(cca.getClusterName(), len(cca.getClusterNodeNames())))
                 self.write(filename, result.rstrip())
                 self.write(filename, "")
 
@@ -196,7 +167,7 @@ class Clusterha(sx.plugins.PluginBase):
             result = cnc.getClusterNodesNetworkSummary()
             if (len(result) > 0):
                 self.writeSeperator(filename, "Cluster Nodes Network Summary");
-                self.write(filename, "* =   heartbeat network\n** =  bonded slave interfaces\n*** = parent of alias interface\n")
+                self.write(filename, "*   = heartbeat network\n**  = bonded slave interfaces\n*** = parent of alias interface\n")
                 self.write(filename, result)
                 self.write(filename, "")
 
@@ -209,40 +180,70 @@ class Clusterha(sx.plugins.PluginBase):
             # ###################################################################
             # Check the cluster node services summary
             # ###################################################################
-            clusterHAServiceString = ""
+            listOfServicesforClusterNodes = []
+            # Get the list of services
             for clusternode in cnc.getClusterNodes():
                 chkConfigClusterServiceList = clusternode.getChkConfigClusterServicesStatus()
-                if (not len(chkConfigClusterServiceList) > 0):
-                    # If there is no chkconfig data then skip
-                    continue
-                currentEnabledServices = ""
-                currentDisabledServices = ""
+                if (len(chkConfigClusterServiceList) > 0):
+                    sortedChkConfigClusterServicesList = sorted(chkConfigClusterServiceList, key=lambda k: k.getStartOrderNumber())
+                    currentListOfServices = list(set(map(lambda m: m.getName(), sortedChkConfigClusterServicesList)))
+                    listOfServicesforClusterNodes = list(set(listOfServicesforClusterNodes) | set(currentListOfServices))
+            # Just sort alpha and not worry with order.
+            listOfServicesforClusterNodes.sort()
+            clusternodeServicesTable = []
+            for clusternode in cnc.getClusterNodes():
+                currentTable = [clusternode.getClusterNodeName()]
                 sortedChkConfigClusterServicesList = sorted(chkConfigClusterServiceList, key=lambda k: k.getStartOrderNumber())
-                for chkConfigClusterService in sortedChkConfigClusterServicesList:
-                    if ((chkConfigClusterService.getName() == "openais") or (chkConfigClusterService.getName() == "corosync")
-                        or (chkConfigClusterService.getName() == "scsi_reserve")):
-                        # These services are checked in evaluator if they are disabled.
-                        continue
-                    serviceEnabled = False
-                    if (not (chkConfigClusterService.isEnabledRunlevel3() and
-                        chkConfigClusterService.isEnabledRunlevel4() and
-                        chkConfigClusterService.isEnabledRunlevel5())):
-                        currentDisabledServices += " %s |" %(chkConfigClusterService.getName())
-                    else:
-                        currentEnabledServices += " %s |" %(chkConfigClusterService.getName())
-                if ((len(currentEnabledServices) > 0) or (len(currentDisabledServices) > 0)):
-                    clusterHAServiceString += "%s:\n  Enabled:  %s\n  Disabled: %s\n\n" %(clusternode.getClusterNodeName(), currentEnabledServices.rstrip("|"), currentDisabledServices.rstrip("|"))
-                else:
-                    clusterHAServiceString += "%s:\n  There was either an error finding the services used by Cluster HA or there was none installed.\n\n" %(clusternode.getClusterNodeName())
-            clusterHAServiceString = clusterHAServiceString.rstrip()
-            self.writeSeperator(filename, "Cluster Services Summary");
-            header =  "The following lists the clustered services that were found runlevel start(enabled) state. Services\nin enabled list have the service enabled in runlevels 3,4,5.\n"
-            header += "-  https://access.redhat.com/knowledge/solutions/5898 \n"
-            self.write(filename, header)
-            if (len(clusterHAServiceString) > 0):
-                self.write(filename, "%s\n" %(clusterHAServiceString))
-            else:
-                self.write(filename, "There was either an error finding the services used by Cluster HA or there was none installed.")
+                for serviceName in listOfServicesforClusterNodes:
+                    serviceStatus = "-"
+                    for chkConfigClusterService in sortedChkConfigClusterServicesList:
+                        if (chkConfigClusterService.getName() == serviceName):
+                            if (chkConfigClusterService.isEnabledRunlevel3() and
+                                chkConfigClusterService.isEnabledRunlevel4() and
+                                chkConfigClusterService.isEnabledRunlevel5()):
+                                serviceStatus = "E"
+                            else:
+                                serviceStatus = "D"
+                    currentTable.append(serviceStatus)
+                clusternodeServicesTable.append(currentTable)
+            if (len(clusternodeServicesTable) > 0):
+                stringUtil = StringUtil()
+                tableHeader = ["hostame"] + listOfServicesforClusterNodes
+                self.writeSeperator(filename, "Cluster Services Summary");
+                header =  "List of Clustered Services that are enabled for all of these runlevel 3, 4, and 5:\n"
+                header += "- https://access.redhat.com/knowledge/solutions/5898\n\nE = Enabled\nD = Disabled\n- = Unknown Status\n"
+                self.write(filename, header)
+                self.write(filename, "%s\n" %(stringUtil.toTableString(clusternodeServicesTable, tableHeader)))
+
+            # Write a summary of the cluster.conf services
+            #filename = "%s-services.txt" %(cca.getClusterName())
+            clusteredServicesList = cca.getClusteredServices()
+            clusteredServicesString = ""
+            clusteredVMServicesString = ""
+            regServiceCount = 0
+            vmServiceCount = 0
+            for clusteredService in clusteredServicesList:
+                if (not clusteredService.isVirtualMachineService()):
+                    sIndex = str(regServiceCount + 1)
+                    if ((regServiceCount + 1) < 10):
+                        sIndex = " %d" %(regServiceCount + 1)
+                    # clusteredServicesString += "%s. %s\n\n" %(sIndex, str(clusteredService).rstrip())
+                    regServiceCount = regServiceCount + 1
+                elif (clusteredService.isVirtualMachineService()):
+                    sIndex = str(vmServiceCount + 1)
+                    if ((vmServiceCount + 1) < 10):
+                        sIndex = " %d" %(vmServiceCount + 1)
+                    # clusteredVMServicesString += "%s. %s\n\n" %(sIndex, str(clusteredService).rstrip())
+                    vmServiceCount = vmServiceCount + 1
+            if (regServiceCount > 0):
+                self.writeSeperator(filename, "Clustered Services Summary");
+                self.write(filename, "There was %d clustered services managed by rgmanager.\n" %(regServiceCount))
+                #self.write(filename, "%s\n" %(clusteredServicesString.rstrip()))
+
+            if (vmServiceCount > 0):
+                self.writeSeperator(filename, "Clustered Virtual Machine Services Summary");
+                self.write(filename, "There was %d clustered virtual machine services managed by rgmanager.\n" %(vmServiceCount))
+                #self.write(filename, "%s\n" %(clusteredVMServicesString.rstrip()))
 
             # ###################################################################
             # Verify the cluster node configuration
@@ -253,7 +254,7 @@ class Clusterha(sx.plugins.PluginBase):
             if (len(evaluatorResult) > 0):
                 if (len(missingNodesList) > 0):
                     self.write(filenameCE, "%s\n\n" %(missingNodesMessage))
-                self.writeSeperator(filenameCE, "Known Issues with Cluster");
+                self.writeSeperator(filenameCE, "Known Issues with Cluster (%s - %d Cluster Nodes)" %(cca.getClusterName(), len(cca.getClusterNodeNames())))
                 self.write(filenameCE, "NOTE: The known issues below may or may not be related to solving the current issue or preventing")
                 self.write(filenameCE, "      a issue. These are meant to be a guide in making sure that the cluster is happy and healthy")
                 self.write(filenameCE, "      healthy all the time. Please use report as a guide in reviewing the cluster.\n")

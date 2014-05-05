@@ -6,7 +6,7 @@ cluster tools.
 
 @author    :  Shane Bradley
 @contact   :  sbradley@redhat.com
-@version   :  2.16
+@version   :  2.17
 @copyright :  GPLv2
 """
 import re
@@ -169,12 +169,12 @@ class ClusterNode:
     RHEL6_PACKAGE_LIST = ["cman", "ccs", "omping", "rgmanager", "cluster-cim", "modcluster",
                           "corosync", "fence-agents", "clusterlib", "fence-virt",
                           "openais", "openaislib", "pexpect", "resource-agents",
-                          "cluster-glue-libs-devel", "cluster-snmp", "clusterlib-devel",
-                          "corosynclib-devel", "fence-virtd-checkpoint", "foghorn",
-                          "libesmtp-devel", "openaislib-devel", "pacemaker", "python-tw-forms",
-                          "pacemaker-libs-devel", "python-repoze-what-quickstart",
-                          "luci", "ricci", "gfs2-utils", "lvm2-cluster", "cmirror",
-                          "ctdb", "ctdb-devel", "dlm-pcmk", "gfs-pcmk"]
+                          "cluster-snmp","fence-virtd-checkpoint", "foghorn",
+                          "python-tw-forms", "python-repoze-what-quickstart", "luci", "ricci",
+                          "gfs2-utils", "lvm2-cluster", "cmirror", "ctdb",
+                          "pacemaker", "pcs", "pacemaker-cli","pacemaker-libs",
+                          "pacemaker-cluster-libs", "heartbeat",
+                          "dlm-pcmk", "gfs-pcmk"]
 
     # Packages that are modules for the kernel
     RHEL4_MODULE_LIST = ["cman-kernel", "cman-kernel-smp", "cman-kernel-largesmp", "cman-kernel-xenU", "cman-kernel-hugemem", "cman-kernel-xen",
@@ -205,7 +205,7 @@ class ClusterNode:
                                6:"gfs", 7:"gfs2", 8:"rgmanager", 9:"modclusterd", 10:"ricci", 11:"luci"}
 
     RHEL6_CLUSTER_SERVICES = { 0:"corosync", 1:"cman", 2:"cmirror", 3:"clvmd", 4:"gfs2",
-                               5:"rgmanager", 6:"modclusterd", 7:"ricci", 8:"luci"}
+                               5:"rgmanager", 6:"modclusterd", 7:"ricci", 8:"luci", 9:"pacemaker"}
 
     RHEL_CLUSTER_DEFAULT_TRANSPORT_MODE = {4:"broadcast", 5:"multicast", 6:"multicast"}
 
@@ -303,6 +303,10 @@ class ClusterNode:
         nameMessage = "Node Name:    %s\n" %(self.getClusterNodeName())
         nodeIDMessage = "Node ID:      %s\n" %(self.getClusterNodeID())
         transportModeMessage = "Transport:    %s\n" %(self.getCmanTransportMode())
+        isPacemakerClusterNode = "No"
+        if (self.isPacemakerClusterNode()):
+            isPacemakerClusterNode = "Yes"
+        isPacemakerClusterNodeMessage = "Pacemaker:    %s\n" %(isPacemakerClusterNode)
         hbNetworkMap = self.getHeartbeatNetworkMap()
         hbNetworkMessage = ""
         if (not hbNetworkMap == None) :
@@ -334,7 +338,7 @@ class ClusterNode:
                 fenceMessage += "Fence Dev:    %s(Level %s)\n" %(fd.getName(), fd.getMethodName())
             else:
                 fenceMessage += "              %s(Level %s)\n" %(fd.getName(), fd.getMethodName())
-        return  "%s%s%s%s%s%s" %(nameMessage, nodeIDMessage, transportModeMessage, hbNetworkMessage, multicastMessage, fenceMessage)
+        return  "%s%s%s%s%s%s%s" %(nameMessage, nodeIDMessage, transportModeMessage, isPacemakerClusterNodeMessage, hbNetworkMessage, multicastMessage, fenceMessage)
 
 
     # #######################################################################
@@ -361,6 +365,32 @@ class ClusterNode:
         @rtype: Boolean
         """
         return (len(RPMUtils.getPackageVersion(self.getInstalledRPMS(), ClusterNode.OPENSHARED_ROOT_PACKAGE_LIST)) > 0)
+
+
+    def isPacemakerClusterNode(self):
+        if (self.isPacemakerEnabledinRunlevel()):
+            return True
+        fenceDeviceList = self.__clusterNodeProperties.getFenceDevicesList()
+        for fenceDevice in fenceDeviceList:
+            # A cluster that uses cman for membership and pacemaker to manage
+            # services requires a specific fencing agent.
+            if (fenceDevice.getAgent() == "fence_pcmk"):
+                return True
+        for rpm in self.getClusterPackagesVersion():
+            if (rpm.find("pacemaker") >= 0):
+                # If any pacemaker rpm is found installed then considered this a
+                # pacemaker cluster.
+                return True
+        return False
+
+    def isPacemakerEnabledinRunlevel(self):
+        for chkConfigItem in self.getChkConfigList():
+            if ((chkConfigItem.getName() == "pacemaker") and
+                (chkConfigItem.isEnabledRunlevel3() or
+                 chkConfigItem.isEnabledRunlevel4() or
+                 chkConfigItem.isEnabledRunlevel5())):
+                return True
+        return False
 
     def isAcpiDisabledinRunlevel(self) :
         """

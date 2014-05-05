@@ -5,7 +5,7 @@ objects.
 
 @author    :  Shane Bradley
 @contact   :  sbradley@redhat.com
-@version   :  2.16
+@version   :  2.17
 @copyright :  GPLv2
 """
 import re
@@ -150,7 +150,7 @@ class ClusterNodes:
                 elif (nodeName.split(".")[0] in hostnames):
                     # Try and see if we can match based on subset name
                     # of string up until first peroid:
-                    # 192.168.1.100 rh5node1 (/etc/hosts) == rh5node1.examplerh.com (cluster.conf)
+                    # 192.178.1.100 rh5node1 (/etc/hosts) == rh5node1.examplerh.com (cluster.conf)
                     possibleClusterNodeNetworkMapMatch = ClusterNodeNetworkMap(networkMap.getInterface(),
                                                                                networkMap.getHardwareAddress(),
                                                                                networkMap.getIPv4Address(),

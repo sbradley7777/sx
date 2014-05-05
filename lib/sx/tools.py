@@ -5,7 +5,7 @@ sosreports/sysreports.
 
 @author    :  Shane Bradley
 @contact   :  sbradley@redhat.com
-@version   :  2.16
+@version   :  2.17
 @copyright :  GPLv2
 """
 import sys
@@ -671,15 +671,16 @@ class StringUtil:
         return rString
     wrapParagraphURLs = staticmethod(wrapParagraphURLs)
 
-    def formatBulletString(description, urls, tableOfStrings=None, indentChar="*", indentSize=3, width=98) :
+    def formatBulletString(description, urls, tableOfStrings=None, indentChar="*", indentSize=4, width=98, bulletSeperator="") :
         # Orginal width was 65.
         # Only the first character will be used for the bullet. If no
         # character is passed then a whitespace will be used.
         if (len(indentChar) > 1):
             indentChar = indentChar[:1]
-        elif (len(indentChar) <= 0):
+        elif (len(indentChar) == 0):
             indentChar = " "
-        initIndent = indentChar
+        #initIndent = indentChar
+        initIndent = "%s%s" %(indentChar, bulletSeperator)
         # Add in the whitespaces that will finish the indents
         if (not len(initIndent) >= indentSize):
             initIndent += " " * (indentSize - len(initIndent))
@@ -687,13 +688,14 @@ class StringUtil:
         # whitespaces.
         subIndent = " " * indentSize
 
+
         # Format the string with textwrap
         rString = "\n".join(textwrap.wrap(description, width=width, initial_indent=initIndent, subsequent_indent=subIndent))
         rString += "\n"
         # Append the urls to the return string
         if (not urls == None):
             for url in urls:
-                rString += "%s - %s\n" %(subIndent, url)
+                rString += "%s- %s\n" %(subIndent, url)
             rString = rString.strip("\n")
             rString += "\n"
         # Add the table string if not None
@@ -817,7 +819,7 @@ class StringUtil:
         same for each row in the table.
 
         I got code from this url and modified it:
-        http://ginstrom.com/scribbles/2.16/09/04/pretty-printing-a-table-in-python/
+        http://ginstrom.com/scribbles/2.17/09/04/pretty-printing-a-table-in-python/
 
         Example(added spacing to make example clear):
         table = [["",       "names", "birthyear", "age"], ["NCuser", "bob",   1976,         35]]
