@@ -1,0 +1,55 @@
+#!/usr/bin/env python
+"""
+This code will check the source code for python bugs with "pychecker".
+
+URL: http://pychecker.sourceforge.net/
+
+TODO:
+* Would it be better to add long file list, files in dir, or dir?
+
+@author    :  Shane Bradley
+@contact   :  sbradley@redhat.com
+@version   :  2.10
+@copyright :  GPLv2
+"""
+import sys
+import os.path
+import logging
+
+import sx
+from sx.logwriter import LogWriter
+import sx.sxconsole
+from sx.sxconsole import SXConsole
+from sx.reports import ReportsHelper
+from sx.plugins import PluginsHelper
+# ###############################################################################
+# Main Function
+# ###############################################################################
+if __name__ == "__main__":
+    try:
+        sxconsole = SXConsole()
+        message = "Example on how to get the data from SXConsole after the analysis is complete."
+        logging.getLogger(sx.MAIN_LOGGER_NAME).info(message)
+
+        # Verify a uid was given unless path is given.
+        uid = "42424242"
+        options = {"disableAllPlugins": True, "disablePlugins": [],
+                   "enableAllPlugins": False, "enablePlugins": ["cluster", "storage", "networking"],
+                   "pluginOptions": [], "disableUserDefinedModules": False,
+                   "enableDebugLogging": False, "modifiedArchiveLayout": True, "listModules": False,
+                   "filePathArray": [], "timestamp": "2014-06-27_090042",
+                   "archivePath": "/home/sbradley-devel/sxarchive", "pathToExtractedReports": "",
+                   "reportPath": "/home/sbradley-devel/tmp",
+                   "listOfReports": ["/home/sbradley-devel/Downloads/sosreport-rh6node1.examplerh.com.tar.xz",
+                                     "/home/sbradley-devel/Downloads/sosreport-rh6node2.examplerh.com.tar.xz",
+                                     "/home/sbradley-devel/Downloads/sosreport-rh6node3.examplerh.com..tar.xz"]}
+        sxconsole.run(options, uid)
+    except KeyboardInterrupt:
+        print ""
+        message =  "This script will exit since control-c was executed by end user."
+        logging.getLogger(sx.MAIN_LOGGER_NAME).error(message)
+        sys.exit(2)
+    # #######################################################################
+    # Exit the application with zero exit code since we cleanly exited.
+    # #######################################################################
+    sys.exit()

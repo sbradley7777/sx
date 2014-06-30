@@ -25,6 +25,10 @@ from sx.plugins.lib.networking.networkdeviceparser import NetworkDeviceParser
 from sx.plugins.lib.networking.networkdeviceparser import NetworkMap
 from sx.plugins.lib.networking.networkdeviceparser import NetworkMaps
 from sx.plugins.lib.kernel.modulesparser import ModulesParser
+
+from sx.analysisreport import AnalysisReport
+from sx.analysisreport import ARSection
+from sx.analysisreport import ARSectionItem
 class NetworkingData:
     def __init__(self, hostname, uptime, distroRelease, uname, networkMaps):
         """
@@ -196,18 +200,18 @@ class Networking(sx.plugins.PluginBase):
             self.clean()
 
         for networkingData in self.__listOfNetworkingData:
-            message = "Writing the storage report for: %s." %(networkingData.getHostname())
+            message = "Writing the network report for: %s." %(networkingData.getHostname())
             logging.getLogger(sx.MAIN_LOGGER_NAME).debug(message)
 
-            # Write a summary of the machine
-            filenameSummary = "%s-summary.txt" %(networkingData.getHostname())
-            self.writeSeperator(filenameSummary, "System Summary", False)
-            self.write(filenameSummary, networkingData.getSummary())
-            self.write(filenameSummary, "")
+            # could be a problem if they are all using localhost.
+            ar = AnalysisReport("networking_summary-%s" %(networkingData.getHostname()), "Network Summary")
+            self.addAnalysisReport(ar)
+            arSectionSystemSummary = ARSection("networking-system_summary", "System Summary")
+            ar.addSection(arSectionSystemSummary)
+            arSectionSystemSummary.addItem(ARSectionItem(networkingData.getHostname(), networkingData.getSummary()))
 
             # Get all the network maps that were built.
             networkMaps = networkingData.getNetworkMaps()
-
             # Bonded Interface Summary
             bondedInterfaceList = networkMaps.getListOfBondedNetworkMaps()
             bondedInterfaceTable = []
@@ -221,10 +225,10 @@ class Networking(sx.plugins.PluginBase):
                 bondedInterfaceTable.append([bondedInterface.getInterface(),
                                              bondingNumber, bondingName, slaveInterfaces, bondedInterface.getIPv4Address()])
             if (len(bondedInterfaceTable) > 0):
-                self.writeSeperator(filenameSummary, "Bonding Summary", True)
                 tableHeader = ["device", "mode_#", "mode_name", "slave_interfaces", "ipv4_address"]
-                self.write(filenameSummary, stringUtil.toTableString(bondedInterfaceTable, tableHeader))
-                self.write(filenameSummary, "")
+                arSectionBondedSummary = ARSection("networking-bonding_summary", "Bonding Summary")
+                ar.addSection(arSectionBondedSummary)
+                arSectionBondedSummary.addItem(ARSectionItem(networkingData.getHostname(), stringUtil.toTableString(bondedInterfaceTable, tableHeader)))
 
             # Bridged Inteface Summary
             bridgedInterfaceTable = []
@@ -234,10 +238,10 @@ class Networking(sx.plugins.PluginBase):
                     bridgedInterfaceTable.append([networkMap.getInterface(), virtualBridgeNetworkMap.getInterface(),
                                                   virtualBridgeNetworkMap.getIPv4Address()])
             if (len(bridgedInterfaceTable) > 0):
-                self.writeSeperator(filenameSummary, "Bridged Summary", True)
                 tableHeader = ["bridge_device", "virtual_bridge_device", "ipv4_addr"]
-                self.write(filenameSummary, stringUtil.toTableString(bridgedInterfaceTable, tableHeader))
-                self.write(filenameSummary, "")
+                arSectionBridgedInterfacesSummary = ARSection("networking-bridged_interfaces_summary", "Bridged Interfaces Summary")
+                ar.addSection(arSectionBridgedInterfacesSummary)
+                arSectionBridgedInterfacesSummary.addItem(ARSectionItem(networkingData.getHostname(), stringUtil.toTableString(bridgedInterfaceTable, tableHeader)))
 
             # Aliases Interface Summary
             aliasesInterfaceTable = []
@@ -251,10 +255,10 @@ class Networking(sx.plugins.PluginBase):
                     aliasesInterfaceTable.append([key, aliasInterfacesString])
 
             if (len(aliasesInterfaceTable) > 0):
-                self.writeSeperator(filenameSummary, "Aliases Summary", True)
                 tableHeader = ["device", "alias_interfaces"]
-                self.write(filenameSummary, stringUtil.toTableString(aliasesInterfaceTable, tableHeader))
-                self.write(filenameSummary, "")
+                arSectionNetworkingAliasesSummary = ARSection("networking-networking_aliases_summary", "Networking Aliases Summary")
+                ar.addSection(arSectionNetworkingAliasesSummary)
+                arSectionNetworkingAliasesSummary.addItem(ARSectionItem(networkingData.getHostname(), stringUtil.toTableString(aliasesInterfaceTable, tableHeader)))
 
             # Network Summary
             networkInterfaceTable = []
@@ -262,11 +266,11 @@ class Networking(sx.plugins.PluginBase):
                 networkInterfaceTable.append([networkMap.getInterface(), networkMap.getNetworkInterfaceModule(),
                                               networkMap.getHardwareAddress(), networkMap.getIPv4Address()])
             if (len(networkInterfaceTable) > 0):
-                self.writeSeperator(filenameSummary, "Networking Summary", True)
                 tableHeader = ["device", "module", "hw_addr", "ipv4_addr"]
-                self.write(filenameSummary, stringUtil.toTableString(networkInterfaceTable, tableHeader))
-                self.write(filenameSummary, "")
-
-
+                arSectionNetworkingSummary = ARSection("networking-networking_summary", "Networking Summary")
+                ar.addSection(arSectionNetworkingSummary)
+                arSectionNetworkingSummary.addItem(ARSectionItem(networkingData.getHostname(), stringUtil.toTableString(networkInterfaceTable, tableHeader)))
+            # Wrtite the output to a file.
+            self.write("%s-summary.txt" %(networkingData.getHostname()), "%s\n" %(str(ar)))
 
 

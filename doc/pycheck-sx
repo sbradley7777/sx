@@ -1,9 +1,8 @@
 #!/usr/bin/env python
 """
-This is the main script that will extract reports and then run various
-plugins on them.
+This code will check the source code for python bugs with "pychecker".
 
-All reports have to be a a compressed tarfile of type bzip2/gunzip.
+URL: http://pychecker.sourceforge.net/
 
 TODO:
 * Would it be better to add long file list, files in dir, or dir?

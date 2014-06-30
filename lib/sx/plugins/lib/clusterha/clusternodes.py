@@ -629,7 +629,14 @@ class ClusterNodes:
             rstring += "%s:" %(clusternode.getHostname())
 
             # Verify cluster packages
-            packages = clusternode.getClusterPackagesVersion()
+            # Combine the packages of cluster and storage
+            packages = dict(clusternode.getClusterPackagesVersion(), **clusternode.getClusterModulePackagesVersion())
+            # Create a simple list of packages that are kernel modules to
+            # compare with later.
+            mPackages = []
+            for cPackages in clusternode.getClusterModulePackagesVersion().values():
+                for cPackage in cPackages:
+                    mPackages.append(cPackage)
             keys = packages.keys()
             keys.sort()
             index = 0
@@ -639,6 +646,8 @@ class ClusterNodes:
                 cPackages = packages[key]
                 cPackages.sort()
                 for cPackage in cPackages:
+                    if (cPackage in mPackages):
+                        cPackage = "*%s" %(cPackage)
                     if (index % 2 == 0):
                         if (len(currentTable) > 0):
                             fsTable.append(currentTable)
@@ -657,36 +666,6 @@ class ClusterNodes:
                 rstring += ("\n%s\n") %(packageTableString)
             else:
                 rstring += "\nThere was no High Availability or Resilient Storage Packages Found.\n"
-
-            # Verify cluster-storage package
-            packages = clusternode.getClusterModulePackagesVersion()
-            keys = packages.keys()
-            keys.sort()
-            index = 0
-            fsTable  = []
-            currentTable = []
-            for key in keys:
-                cPackages = packages[key]
-                cPackages.sort()
-                for cPackage in cPackages:
-                    if (index % 2 == 0):
-                        if (len(currentTable) > 0):
-                            fsTable.append(currentTable)
-                        currentTable = []
-                        currentTable.append("%s      " %(cPackage))
-                    else:
-                        currentTable.append(cPackage)
-                    index += 1
-            if (len(currentTable) > 0):
-                startIndex = len(currentTable)
-                for i in range(len(currentTable), 2):
-                    currentTable.append(" ")
-                fsTable.append(currentTable)
-            if (len(fsTable) > 0):
-                packageTableString = stringUtil.toTableString(fsTable)
-                rstring += ("\n%s\n") %(packageTableString)
-            else:
-                rstring += "\nThere was no High Availability Module or Resilient Storage Module Packages Found.\n"
         # Remove an extra newline
         rstring = rstring.rstrip("\n")
         return rstring

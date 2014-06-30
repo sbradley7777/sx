@@ -9,8 +9,8 @@ This contains Global variables for sx.
 """
 import sys
 import os.path
-import time
 import logging
+import datetime
 
 from sx.logwriter import LogWriter
 """
@@ -88,10 +88,13 @@ class ArchiveLayout:
         self.__archivePath = archivePath
         self.__uid = uid
         self.__timestamp = timestamp
-        if (not len(self.__timestamp) > 0):
-            self.__timestamp = time.strftime(UID_TIMESTAMP)
-        # Check to see if timestamp is valid and ValueError will be thrown if invalid.
-        time.strptime(self.__timestamp, UID_TIMESTAMP)
+        if (not len(timestamp) > 0):
+            self.__timestamp = datetime.datetime.now().strftime(UID_TIMESTAMP)
+        else:
+            # Check to see if timestamp is valid and ValueError will be thrown
+            # if invalid. This needs to be caught because the format would be
+            # invalid.
+            self.__timestamp = datetime.datetime.strptime(timestamp, UID_TIMESTAMP).strftime(UID_TIMESTAMP)
 
     def __str__(self) :
         """
@@ -304,7 +307,7 @@ class SXConfigurationFiles:
                     return False
 
         # Create the python module __init_.py file so modules can be imported
-        timestamp = time.strftime(UID_TIMESTAMP)
+        timestamp = datetime.datetime.now().strftime(UID_TIMESTAMP)
         for path in (os.path.join(os.path.join(SXConfigurationFiles.CONFIGURATION_DIR, SXConfigurationFiles.REPORT_USER_IMPORT), "__init__.py"),
                      os.path.join(os.path.join(SXConfigurationFiles.CONFIGURATION_DIR, SXConfigurationFiles.PLUGIN_USER_IMPORT), "__init__.py")) :
             if (not os.access(path, os.F_OK)) :

@@ -161,6 +161,7 @@ class Clusterha(sx.plugins.PluginBase):
             result = cnc.getClusterNodesPackagesInstalledSummary()
             if (len(result) > 0):
                 self.writeSeperator(filename, "Cluster/Cluster-Storage Packages Installed");
+                self.write(filename, "The list of installed High Availability and Resilient Storage packages installed. Kernel Module \npackages will have an asterick(*) after their name.\n")
                 self.write(filename, result.rstrip())
                 self.write(filename, "")
 

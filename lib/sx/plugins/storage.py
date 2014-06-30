@@ -22,6 +22,9 @@ from sx.plugins.lib.storage import StorageData
 from sx.plugins.lib.storage import StorageDataGenerator
 from sx.plugins.lib.storage.storageevaluator import StorageEvaluator
 
+from sx.analysisreport import AnalysisReport
+from sx.analysisreport import ARSection
+from sx.analysisreport import ARSectionItem
 class Storage(sx.plugins.PluginBase):
     """
     A class that can run analyze the storage aspect of a sosreport.
@@ -85,20 +88,20 @@ class Storage(sx.plugins.PluginBase):
             message = "Writing the storage report for: %s." %(storageData.getHostname())
             logging.getLogger(sx.MAIN_LOGGER_NAME).debug(message)
 
-            # Write a summary of the machine
-            filenameSummary = "%s-summary.txt" %(storageData.getHostname())
-            self.writeSeperator(filenameSummary, "System Summary", False)
-            self.write(filenameSummary, storageData.getSummary())
-            self.write(filenameSummary, "")
+            # could be a problem if they are all using localhost.
+            ar = AnalysisReport("storage_summary-%s" %(storageData.getHostname()), "Storage Summary")
+            self.addAnalysisReport(ar)
+            arSectionSystemSummary = ARSection("storage-system_summary", "System Summary")
+            ar.addSection(arSectionSystemSummary)
+            arSectionSystemSummary.addItem(ARSectionItem(storageData.getHostname(), storageData.getSummary()))
 
             # The block device tree has some of the information that
             # is needed to report on.
             bdt = storageData.getBlockDeviceTree()
 
-            # Write all the mounts on the machine
+            # Get all the mounted filesystems.
             mountedFSList = bdt.getFilesysMountList()
             if (len(mountedFSList) > 0):
-                self.writeSeperator(filenameSummary, "Mounted Filesystems")
                 fsTable = []
 
                 for fs in mountedFSList:
@@ -106,17 +109,20 @@ class Storage(sx.plugins.PluginBase):
                                     fs.getFSType(), fs.getFSAttributes(),
                                     fs.getMountOptions()])
                 tableHeader = ["device", "mount_point", "fs_type", "fs_attributes", "fs_options"]
-                self.write(filenameSummary, stringUtil.toTableString(fsTable, tableHeader))
-                self.write(filenameSummary, "")
+                arSectionMountedFS = ARSection("storage-mounted_fs", "Mounted Filesystems")
+                ar.addSection(arSectionMountedFS)
+                arSectionMountedFS.addItem(ARSectionItem(storageData.getHostname(), stringUtil.toTableString(fsTable, tableHeader)))
 
             # Write out any multipath data
             blockDeviceMap = bdt.generateDMBlockDeviceMap()
             multipathMap = bdt.getTargetTypeMap(blockDeviceMap, "multipath")
             if (len(multipathMap.keys()) > 0):
-                self.writeSeperator(filenameSummary, "Multipath Summary", True)
+                multipathSummary = ""
                 for key in multipathMap.keys():
-                    self.write(filenameSummary, "%s" %(str(multipathMap.get(key)).strip()))
-                self.write(filenameSummary, "")
+                    multipathSummary += "%s\n" %(str(multipathMap.get(key)).strip())
+                arSectionMultipathSummary = ARSection("storage-multipath_summary", "Multipath Summary")
+                ar.addSection(arSectionMultipathSummary)
+                arSectionMultipathSummary.addItem(ARSectionItem(storageData.getHostname(), multipathSummary.strip().rstrip()))
 
             # ###################################################################
             # Run the evaluator to look for know issues
@@ -124,8 +130,9 @@ class Storage(sx.plugins.PluginBase):
             storageEvaluator = StorageEvaluator(storageData)
             rstring = storageEvaluator.evaluate()
             if (len(rstring) > 0):
-                self.writeSeperator(filenameSummary, "Known Issues with Storage")
-                self.write(filenameSummary, rstring)
+                arSectionKnownIssues = ARSection("storage-known_issues", "Known Issues with Storage")
+                ar.addSection(arSectionKnownIssues)
+                arSectionKnownIssues.addItem(ARSectionItem(storageData.getHostname(), rstring))
 
             # ###################################################################
             # Create the blockDeviceTree file
@@ -133,5 +140,11 @@ class Storage(sx.plugins.PluginBase):
             blockDeviceTreeFilename = "%s-block_device_tree.txt" %(storageData.getHostname())
             blockDeviceTreeSummary = bdt.getSummary()
             if (len(blockDeviceTreeSummary) > 0):
-                self.writeSeperator(blockDeviceTreeFilename, "Block Device Tree  Summary", False)
-                self.write(blockDeviceTreeFilename, blockDeviceTreeSummary)
+                arBDT = AnalysisReport("storage_block_device_tree-%s" %(storageData.getHostname()), "Block Device Tree")
+                self.addAnalysisReport(arBDT)
+                arSectionBDT = ARSection("storage_block_device_tree-block_device_tree_summary", "Block Device Tree Summary")
+                arBDT.addSection(arSectionBDT)
+                arSectionBDT.addItem(ARSectionItem(storageData.getHostname(), blockDeviceTreeSummary))
+                self.write("%s-block_device_tree.txt" %(storageData.getHostname()), "%s\n" %(str(arBDT)))
+            # Wrtite the output to a file.
+            self.write("%s-summary.txt" %(storageData.getHostname()), "%s\n" %(str(ar)))

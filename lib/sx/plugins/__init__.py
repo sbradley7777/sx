@@ -18,6 +18,10 @@ from sx.logwriter import LogWriter
 from sx.modulesloader import PluginsLoader
 from sx.tools import ConsoleUtil
 
+from sx.analysisreport import AnalysisReport
+from sx.analysisreport import ARSection
+from sx.analysisreport import ARSectionItem
+
 class PluginsHelper:
     def printPluginsList(self, includeUserPlugins=True):
         # Load up all plugins and pass the directory to write reports
@@ -143,6 +147,7 @@ class PluginsHelper:
                         mapOfPluginReportPaths[plugin.getName()].append(filename)
         return mapOfPluginReportPaths
 
+
 class PluginBase:
     """
     This is the base class for all plugins.
@@ -219,6 +224,8 @@ class PluginBase:
         else:
             self.__pathToPluginReportDir = os.path.join(os.path.join(pathToPluginReportDir, "reports"),
                                                         self.__class__.__name__.lower())
+
+        self.__analysisReports = []
 
     def __str__(self) :
         """
@@ -324,6 +331,20 @@ class PluginBase:
         if self.__optionValues.has_key(optionName):
             return self.__optionValues[optionName]
         return None
+
+    def getAnalysisReports(self):
+        return self.__analysisReports
+
+    def addAnalysisReport(self, analysisReport):
+        duplicate_found = False
+        for ar in self.__analysisReports:
+            if (ar.getName() == analysisReport.getName()):
+                duplicate_found = True
+                break;
+        if (not duplicate_found):
+            self.__analysisReports.append(analysisReport)
+            return True
+        return False
 
     def setOptionValue(self, optionName, value) :
         """

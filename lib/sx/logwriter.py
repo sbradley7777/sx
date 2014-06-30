@@ -60,55 +60,44 @@ class LogWriter :
         @type disableConsoleLog: Boolean
         """
         self.__loggerName = loggerName
-        # add new custom logging level
-        # logging.PASSED = LogWriter.PASSED_LEVEL
-        # logging.FAILED = LogWriter.FAILED_LEVEL
-        # logging.addLevelName(logging.PASSED, "PASSED")
-        # logging.addLevelName(logging.FAILED, "FAILED")
-        logging.STATUS = LogWriter.STATUS_LEVEL
-        logging.addLevelName(logging.STATUS, "STATUS")
-        logger = logging.getLogger(self.__loggerName)
-        # Create a function for the STATUS_LEVEL since not defined by
-        # python. This means you can call it like the other predefined message
-        # functions. Example: logging.getLogger("loggerName").status(message)
-        setattr(logger, "status", lambda *args: logger.log(LogWriter.STATUS_LEVEL, *args))
-        # set formatter
-        formatter = logging.Formatter(format)
-        # get logger and set format
-        self.__logwriter = logging.getLogger(loggerName)
-        self.__logwriter.setLevel(loglevel)
+        if (self.__loggerName in logging.getLogger().manager.loggerDict.keys()):
+            message = "The logger already exists and a new one will not be created called: %s" %(self.__loggerName)
+            logging.getLogger(self.__loggerName).warning(message)
+        else:
+            # add new custom logging level
+            logging.STATUS = LogWriter.STATUS_LEVEL
+            logging.addLevelName(logging.STATUS, "STATUS")
+            logger = logging.getLogger(self.__loggerName)
+            # Create a function for the STATUS_LEVEL since not defined by
+            # python. This means you can call it like the other predefined message
+            # functions. Example: logging.getLogger("loggerName").status(message)
+            setattr(logger, "status", lambda *args: logger.log(LogWriter.STATUS_LEVEL, *args))
+            # set formatter and level
+            formatter = logging.Formatter(format)
+            logger.setLevel(loglevel)
 
-        # set the handler for writing to standard out
-        self.__hdlrConsole = None
-        if disableConsoleLog:
-            # set standard out to blackhole
-            sys.stdout = open('/dev/null', 'w')
-        self.__hdlrConsole = StreamHandlerColorized(sys.stdout)
-        self.__hdlrConsole.setFormatter(formatter)
-        self.__logwriter.addHandler(self.__hdlrConsole)
+            # set the handler for writing to standard out
+            self.__hdlrConsole = None
+            if disableConsoleLog:
+                # set standard out to blackhole
+                sys.stdout = open('/dev/null', 'w')
+            self.__hdlrConsole = StreamHandlerColorized(sys.stdout)
+            self.__hdlrConsole.setFormatter(formatter)
+            logger.addHandler(self.__hdlrConsole)
 
-        # set the handler for writing to file if enabled
-        self.__pathToLogFile = ""
-        self.__hdlrFile = None
-        if (logtoFile) :
-            pathToLogFile = "/tmp/%s.log" %(loggerName)
-            if ((os.access(pathToLogFile, os.W_OK)) or (not os.path.exists(pathToLogFile))):
-                self.__pathToLogFile = pathToLogFile
-                self.__hdlrFile = logging.FileHandler(self.__pathToLogFile)
-                self.__hdlrFile.setFormatter(formatter)
-                self.__logwriter.addHandler(self.__hdlrFile)
-            else:
-                message = "There was permission problem accessing the write attributes for the log file: %s." %(pathToLogFile)
-                self.__logwriter.error(message)
-
-    def getLogWriter(self) :
-        """
-        Returns the logger that was setup for this object.
-
-        @return: Returns the logger object.
-        @rtype: Logger
-        """
-        return self.__logwriter
+            # set the handler for writing to file if enabled
+            self.__pathToLogFile = ""
+            self.__hdlrFile = None
+            if (logtoFile) :
+                pathToLogFile = "/tmp/%s.log" %(loggerName)
+                if ((os.access(pathToLogFile, os.W_OK)) or (not os.path.exists(pathToLogFile))):
+                    self.__pathToLogFile = pathToLogFile
+                    self.__hdlrFile = logging.FileHandler(self.__pathToLogFile)
+                    self.__hdlrFile.setFormatter(formatter)
+                    logger.addHandler(self.__hdlrFile)
+                else:
+                    message = "There was permission problem accessing the write attributes for the log file: %s." %(pathToLogFile)
+                    logging.getLogger(self.__loggerName).error(message)
 
     def getPathToLogFile(self):
         """

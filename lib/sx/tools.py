@@ -77,8 +77,8 @@ class ConfigurationFileParser:
             if ((not len(line) > 0) or (remComments.match(line.strip().rstrip()))):
                 # Skip empty lines and comments
                 continue
-            # Split the lines if there is inline comments.
-            item = line.split("#")[0].strip().rstrip()
+            # Split the lines if there is inline comments. .
+            item = line.split("#")[0].strip().rstrip() # Do I need this line cause comments are ignored.
             searchRes = res.search(item)
             if (searchRes):
                 key = searchRes.group("key")

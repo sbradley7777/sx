@@ -21,6 +21,10 @@ from sx.reports.sosreport import Sosreport
 from sx.reports.sysreport import Sysreport
 from sx.tools import FileUtil
 
+from sx.analysisreport import AnalysisReport
+from sx.analysisreport import ARSection
+from sx.analysisreport import ARSectionItem
+
 class Checksysreport(sx.plugins.PluginBase):
     """
     A class that can run checksysreport against a report and then
@@ -231,6 +235,10 @@ class Checksysreport(sx.plugins.PluginBase):
         for key in self.__chksysData.keys():
             if (len(self.__chksysData[key]) > 0):
                 (head, tail) = os.path.split(key)
-                # We will not append the data because we are only writing once.
-                self.write("%s.txt" %(tail), self.__chksysData[key], False)
+                ar = AnalysisReport("checksysreport-%s" %(tail), "Checksysreport Summary")
+                self.addAnalysisReport(ar)
+                arSection = ARSection("checksysreport-summary", "Checksysreport Summary")
+                ar.addSection(arSection)
+                arSection.addItem(ARSectionItem("checksysreport-data", self.__chksysData[key]))
+                self.write("%s.txt" %(tail), str(ar), False)
 
