@@ -238,7 +238,7 @@ class Checksysreport(sx.plugins.PluginBase):
                 ar = AnalysisReport("checksysreport-%s" %(tail), "Checksysreport Summary")
                 self.addAnalysisReport(ar)
                 arSection = ARSection("checksysreport-summary", "Checksysreport Summary")
-                ar.addSection(arSection)
-                arSection.addItem(ARSectionItem("checksysreport-data", self.__chksysData[key]))
+                ar.add(arSection)
+                arSection.add(ARSectionItem("checksysreport-data", self.__chksysData[key]))
                 self.write("%s.txt" %(tail), str(ar), False)
 

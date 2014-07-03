@@ -207,8 +207,8 @@ class Networking(sx.plugins.PluginBase):
             ar = AnalysisReport("networking_summary-%s" %(networkingData.getHostname()), "Network Summary")
             self.addAnalysisReport(ar)
             arSectionSystemSummary = ARSection("networking-system_summary", "System Summary")
-            ar.addSection(arSectionSystemSummary)
-            arSectionSystemSummary.addItem(ARSectionItem(networkingData.getHostname(), networkingData.getSummary()))
+            ar.add(arSectionSystemSummary)
+            arSectionSystemSummary.add(ARSectionItem(networkingData.getHostname(), networkingData.getSummary()))
 
             # Get all the network maps that were built.
             networkMaps = networkingData.getNetworkMaps()
@@ -227,8 +227,8 @@ class Networking(sx.plugins.PluginBase):
             if (len(bondedInterfaceTable) > 0):
                 tableHeader = ["device", "mode_#", "mode_name", "slave_interfaces", "ipv4_address"]
                 arSectionBondedSummary = ARSection("networking-bonding_summary", "Bonding Summary")
-                ar.addSection(arSectionBondedSummary)
-                arSectionBondedSummary.addItem(ARSectionItem(networkingData.getHostname(), stringUtil.toTableString(bondedInterfaceTable, tableHeader)))
+                ar.add(arSectionBondedSummary)
+                arSectionBondedSummary.add(ARSectionItem(networkingData.getHostname(), stringUtil.toTableString(bondedInterfaceTable, tableHeader)))
 
             # Bridged Inteface Summary
             bridgedInterfaceTable = []
@@ -240,8 +240,8 @@ class Networking(sx.plugins.PluginBase):
             if (len(bridgedInterfaceTable) > 0):
                 tableHeader = ["bridge_device", "virtual_bridge_device", "ipv4_addr"]
                 arSectionBridgedInterfacesSummary = ARSection("networking-bridged_interfaces_summary", "Bridged Interfaces Summary")
-                ar.addSection(arSectionBridgedInterfacesSummary)
-                arSectionBridgedInterfacesSummary.addItem(ARSectionItem(networkingData.getHostname(), stringUtil.toTableString(bridgedInterfaceTable, tableHeader)))
+                ar.add(arSectionBridgedInterfacesSummary)
+                arSectionBridgedInterfacesSummary.add(ARSectionItem(networkingData.getHostname(), stringUtil.toTableString(bridgedInterfaceTable, tableHeader)))
 
             # Aliases Interface Summary
             aliasesInterfaceTable = []
@@ -257,8 +257,8 @@ class Networking(sx.plugins.PluginBase):
             if (len(aliasesInterfaceTable) > 0):
                 tableHeader = ["device", "alias_interfaces"]
                 arSectionNetworkingAliasesSummary = ARSection("networking-networking_aliases_summary", "Networking Aliases Summary")
-                ar.addSection(arSectionNetworkingAliasesSummary)
-                arSectionNetworkingAliasesSummary.addItem(ARSectionItem(networkingData.getHostname(), stringUtil.toTableString(aliasesInterfaceTable, tableHeader)))
+                ar.add(arSectionNetworkingAliasesSummary)
+                arSectionNetworkingAliasesSummary.add(ARSectionItem(networkingData.getHostname(), stringUtil.toTableString(aliasesInterfaceTable, tableHeader)))
 
             # Network Summary
             networkInterfaceTable = []
@@ -268,9 +268,9 @@ class Networking(sx.plugins.PluginBase):
             if (len(networkInterfaceTable) > 0):
                 tableHeader = ["device", "module", "hw_addr", "ipv4_addr"]
                 arSectionNetworkingSummary = ARSection("networking-networking_summary", "Networking Summary")
-                ar.addSection(arSectionNetworkingSummary)
-                arSectionNetworkingSummary.addItem(ARSectionItem(networkingData.getHostname(), stringUtil.toTableString(networkInterfaceTable, tableHeader)))
+                ar.add(arSectionNetworkingSummary)
+                arSectionNetworkingSummary.add(ARSectionItem(networkingData.getHostname(), stringUtil.toTableString(networkInterfaceTable, tableHeader)))
             # Wrtite the output to a file.
-            self.write("%s-summary.txt" %(networkingData.getHostname()), "%s\n" %(str(ar)))
+            self.write("%s.txt" %(ar.getName()), "%s\n" %(str(ar)))
 
 

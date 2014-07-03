@@ -92,8 +92,8 @@ class Storage(sx.plugins.PluginBase):
             ar = AnalysisReport("storage_summary-%s" %(storageData.getHostname()), "Storage Summary")
             self.addAnalysisReport(ar)
             arSectionSystemSummary = ARSection("storage-system_summary", "System Summary")
-            ar.addSection(arSectionSystemSummary)
-            arSectionSystemSummary.addItem(ARSectionItem(storageData.getHostname(), storageData.getSummary()))
+            ar.add(arSectionSystemSummary)
+            arSectionSystemSummary.add(ARSectionItem(storageData.getHostname(), storageData.getSummary()))
 
             # The block device tree has some of the information that
             # is needed to report on.
@@ -110,8 +110,8 @@ class Storage(sx.plugins.PluginBase):
                                     fs.getMountOptions()])
                 tableHeader = ["device", "mount_point", "fs_type", "fs_attributes", "fs_options"]
                 arSectionMountedFS = ARSection("storage-mounted_fs", "Mounted Filesystems")
-                ar.addSection(arSectionMountedFS)
-                arSectionMountedFS.addItem(ARSectionItem(storageData.getHostname(), stringUtil.toTableString(fsTable, tableHeader)))
+                ar.add(arSectionMountedFS)
+                arSectionMountedFS.add(ARSectionItem(storageData.getHostname(), stringUtil.toTableString(fsTable, tableHeader)))
 
             # Write out any multipath data
             blockDeviceMap = bdt.generateDMBlockDeviceMap()
@@ -121,8 +121,8 @@ class Storage(sx.plugins.PluginBase):
                 for key in multipathMap.keys():
                     multipathSummary += "%s\n" %(str(multipathMap.get(key)).strip())
                 arSectionMultipathSummary = ARSection("storage-multipath_summary", "Multipath Summary")
-                ar.addSection(arSectionMultipathSummary)
-                arSectionMultipathSummary.addItem(ARSectionItem(storageData.getHostname(), multipathSummary.strip().rstrip()))
+                ar.add(arSectionMultipathSummary)
+                arSectionMultipathSummary.add(ARSectionItem(storageData.getHostname(), multipathSummary.strip().rstrip()))
 
             # ###################################################################
             # Run the evaluator to look for know issues
@@ -131,8 +131,8 @@ class Storage(sx.plugins.PluginBase):
             rstring = storageEvaluator.evaluate()
             if (len(rstring) > 0):
                 arSectionKnownIssues = ARSection("storage-known_issues", "Known Issues with Storage")
-                ar.addSection(arSectionKnownIssues)
-                arSectionKnownIssues.addItem(ARSectionItem(storageData.getHostname(), rstring))
+                ar.add(arSectionKnownIssues)
+                arSectionKnownIssues.add(ARSectionItem(storageData.getHostname(), rstring))
 
             # ###################################################################
             # Create the blockDeviceTree file
@@ -143,8 +143,8 @@ class Storage(sx.plugins.PluginBase):
                 arBDT = AnalysisReport("storage_block_device_tree-%s" %(storageData.getHostname()), "Block Device Tree")
                 self.addAnalysisReport(arBDT)
                 arSectionBDT = ARSection("storage_block_device_tree-block_device_tree_summary", "Block Device Tree Summary")
-                arBDT.addSection(arSectionBDT)
-                arSectionBDT.addItem(ARSectionItem(storageData.getHostname(), blockDeviceTreeSummary))
-                self.write("%s-block_device_tree.txt" %(storageData.getHostname()), "%s\n" %(str(arBDT)))
+                arBDT.add(arSectionBDT)
+                arSectionBDT.add(ARSectionItem(storageData.getHostname(), blockDeviceTreeSummary))
+                self.write("%s.txt" %(arBDT.getName()), "%s\n" %(str(arBDT)))
             # Wrtite the output to a file.
-            self.write("%s-summary.txt" %(storageData.getHostname()), "%s\n" %(str(ar)))
+            self.write("%s.txt" %(ar.getName()), "%s\n" %(str(ar)))
