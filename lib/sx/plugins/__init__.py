@@ -135,19 +135,6 @@ class PluginsHelper:
             if ((plugin.isReportsRequired()) and (len(listOfReports) > 0)):
                 plugin.action()
 
-        # Generate a map of all the files created by the plugins
-        mapOfPluginReportPaths = {}
-        for plugin in listOfEnabledPlugins:
-            listOfFiles = plugin.getFileList()
-            if (len(listOfFiles) > 0) :
-                for filename in listOfFiles:
-                    if (not mapOfPluginReportPaths.has_key(plugin.getName())):
-                        mapOfPluginReportPaths[plugin.getName()] = [filename]
-                    else:
-                        mapOfPluginReportPaths[plugin.getName()].append(filename)
-        return mapOfPluginReportPaths
-
-
 class PluginBase:
     """
     This is the base class for all plugins.

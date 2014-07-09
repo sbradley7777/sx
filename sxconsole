@@ -14,6 +14,7 @@ import sys
 import os.path
 from optparse import OptionParser, Option
 import logging
+import shutil
 
 import sx
 from sx.logwriter import LogWriter
@@ -21,11 +22,91 @@ import sx.sxconsole
 from sx.sxconsole import SXConsole
 from sx.reports import ReportsHelper
 from sx.plugins import PluginsHelper
+from sx.tools import ConsoleUtil
 """
 @cvar VERSION_NUMBER: The current version number of sxconsole.
 @type VERSION_NUMBER: String
 """
 VERSION_NUMBER = "2.17-2"
+SXC_LOGGER_NAME = "sxconsole"
+
+def moveNonReportFiles(nonReportFilesPath, filePathArray) :
+    # Assume the logger object is already created.
+    filePathsAdded = []
+    if (not os.access(nonReportFilesPath, os.F_OK)):
+        try:
+            os.makedirs(nonReportFilesPath)
+        except (IOError, os.error):
+            message = "Could not create the directory: %s" %(nonReportFilesPath)
+            logging.getLogger(SXC_LOGGER_NAME).error(message)
+            return filePathsAdded
+
+    for src in filePathArray:
+        if (os.path.exists(src)):
+            (head, tail) = os.path.split(src)
+            dst_filename = os.path.join(nonReportFilesPath, tail)
+            message = "Moving the file to the archive directory: %s." %(tail)
+            logging.getLogger(SXC_LOGGER_NAME).status(message)
+            try:
+                shutil.move(src, dst_filename)
+                filePathsAdded.append(dst_filename)
+            except IOError:
+                message = "Cannot move the file %s to %s " %(src, dst_filename)
+                logging.getLogger(SXC_LOGGER_NAME).error(message)
+    return filePathsAdded
+
+# ###############################################################################
+# Prints the files that were created.
+# ###############################################################################
+def printToConsole(pathToCompressedReports, pathToExtractedReports, mapOfPluginReportPaths, listOfNonReportPaths):
+    # If any path starts with home directory then change to tilda.
+    homeDirectory = os.environ["HOME"]
+
+    wasInformationPrintedToConsole = False
+    # Print all the paths to files created by the plugins
+    if (len(mapOfPluginReportPaths.keys()) > 0):
+        headerPrinted = False
+        wasInformationPrintedToConsole = True
+        for key in mapOfPluginReportPaths.keys():
+            index = 1;
+            for pathToPluginReport in mapOfPluginReportPaths[key]:
+                if (not index == 1):
+                    print "%s %s" %(ConsoleUtil.colorText("%s plugin File %d: " %(key, index),"lgreen"), pathToPluginReport.replace(homeDirectory, "~"))
+                else:
+                    if(headerPrinted):
+                        print "\n%s %s" %(ConsoleUtil.colorText("%s plugin File %d: " %(key, index),"lgreen"), pathToPluginReport.replace(homeDirectory, "~"))
+                    else:
+                        print "\n%s" %(ConsoleUtil.colorText("List of Files Created by the Plugins: ","lcyan"))
+                        print "%s %s" %(ConsoleUtil.colorText("%s plugin File %d: " %(key, index),"lgreen"), pathToPluginReport.replace(homeDirectory, "~"))
+                        headerPrinted = True
+                index += 1;
+
+    # Print paths to all files that are not reports.
+    if (len(listOfNonReportPaths) > 0) :
+        wasInformationPrintedToConsole = True
+        print "\n%s" %(ConsoleUtil.colorText("Details for Non-Report Files: ","lcyan"))
+        index = 1;
+        for pathToNonReportFile in listOfNonReportPaths:
+            if (index == 1):
+                (dirPath, filename) = os.path.split(pathToNonReportFile)
+                print "%s %s" %(ConsoleUtil.colorText("Non-Report Files Directory:", "lgreen"), dirPath.replace(homeDirectory, "~"))
+            spacingCount = 7
+            if (index >= 10):
+                spacingCount = 6
+            print "%s %s %s" %(ConsoleUtil.colorText("Non-Report File %d: " %(index),"lgreen"), (" " * spacingCount), pathToNonReportFile.replace(homeDirectory, "~"))
+            index += 1;
+
+    # Print the report archive location
+    if ((os.path.exists(pathToCompressedReports)) or
+        (os.path.exists(pathToExtractedReports))):
+        wasInformationPrintedToConsole = True
+        print "\n%s" %(ConsoleUtil.colorText("Details of Report Extraction: ","lcyan"))
+        print "%s%s" %(ConsoleUtil.colorText("Compressed Reports Directory: ","lgreen"), pathToCompressedReports.replace(homeDirectory, "~"))
+        print "%s%s" %(ConsoleUtil.colorText("Extracted Reports Directory:  ","lgreen"), pathToExtractedReports.replace(homeDirectory, "~"))
+
+    if (not wasInformationPrintedToConsole):
+        message = "There was zero reports extracted and zero non-report files added."
+        logging.getLogger(SXC_LOGGER_NAME).warning(message)
 
 # ##############################################################################
 # Get user selected options
@@ -254,7 +335,7 @@ class ExtendOption (Option):
                                 valueList.append(v)
                             else:
                                 message = "The filepath does not exist: %s" %(v)
-                                logging.getLogger(sx.MAIN_LOGGER_NAME).error(message)
+                                logging.getLogger(SXC_LOGGER_NAME).error(message)
                         elif ((opt == "-o") or (opt == "--pluginOptions")):
                             # Verify that is the format: key=value, where key is of format parent.optionname
                             # Example: Opensosreport.browser=konqueror
@@ -263,7 +344,7 @@ class ExtendOption (Option):
                             if ((len(keyEqualSplit) == 2) and (len(peroidEqualSplit) == 2)) :
                                 valueList.append(v)
                             else:
-                                logging.getLogger(sx.MAIN_LOGGER_NAME).error("The plugin option has invalid syntax:" %(v))
+                                logging.getLogger(SXC_LOGGER_NAME).error("The plugin option has invalid syntax:" %(v))
                         elif ((opt == "-e") or (opt == "--enable_plugin") or
                               (opt == "-n") or (opt == "--disable_plugin")) :
                             if ((v == "clusterha") or (v == "cluster")):
@@ -288,12 +369,15 @@ if __name__ == "__main__":
     # Setup the logger
     # #######################################################################
     try:
-        sxconsole = SXConsole()
+        sxcLogger = LogWriter(SXC_LOGGER_NAME,
+                              logging.INFO,
+                              sx.MAIN_LOGGER_FORMAT,
+                              disableConsoleLog=False)
+
         (cmdLineOpts, cmdLineArgs) = __getOptions(VERSION_NUMBER)
         # #######################################################################
         # List the plugins if option enabled
         # #######################################################################
-        # Print list of plugins if selected and exit
         if (cmdLineOpts.listModules):
             versionMessage = "%s %s\n" %(os.path.basename(sys.argv[0]), VERSION_NUMBER)
             versionMessage += "This program was written by Shane Bradley(sbradley@redhat.com): https://fedorahosted.org/sx \n"
@@ -303,17 +387,48 @@ if __name__ == "__main__":
             pluginsHelper = PluginsHelper()
             pluginsHelper.printPluginsList(includeUserPlugins=(not cmdLineOpts.disableUserDefinedModules))
             sys.exit()
-        # Verify a uid was given unless path is given.
+
+        # Convert the options result instance into a map with "var".
+        optionsMap = vars(cmdLineOpts)
+        # Get the uid if there is one
         uid = ""
         if (len(cmdLineArgs) > 0):
             uid = cmdLineArgs[0]
 
-        # Convert the options result instance into a map with "var".
-        sxconsole.run(vars(cmdLineOpts), uid)
+        sxconsole = SXConsole(optionsMap, uid)
+        # #######################################################################
+        # Move all non-report files before extracting reports so
+        # that non-report files will not be scanned.
+        # #######################################################################
+        listOfNonReportPaths = []
+        if (len(optionsMap.get("filePathArray")) > 0):
+            message = "Moving all the non-report files into the archive directory before extracting reports so they will not be scanned."
+            logging.getLogger(SXC_LOGGER_NAME).status(message)
+            listOfNonReportPaths = moveNonReportFiles(sxconsole.getArchiveLayout().getPathToNonReportFiles(), optionsMap.get("filePathArray"))
 
+        # Peform any extraction and analysis on the reports if needed.
+        listOfEnabledPlugins = sxconsole.run()
+        al = sxconsole.getArchiveLayout()
+        if (not al == None):
+            # Print a list of enabled plugins.
+            mapOfPluginReportPaths = {}
+            if (len(listOfEnabledPlugins) > 0) :
+                # Generate a map of all the files created by the plugins
+                for plugin in listOfEnabledPlugins:
+                    listOfFiles = plugin.getFileList()
+                    if (len(listOfFiles) > 0) :
+                        for filename in listOfFiles:
+                            if (not mapOfPluginReportPaths.has_key(plugin.getName())):
+                                mapOfPluginReportPaths[plugin.getName()] = [filename]
+                            else:
+                                mapOfPluginReportPaths[plugin.getName()].append(filename)
+            # Print the result to console:
+            printToConsole(al.getPathToCompressedReports(),
+                           al.getPathToExtractedReports(),
+                           mapOfPluginReportPaths, listOfNonReportPaths)
     except KeyboardInterrupt:
         message =  "This script will exit since control-c was executed by end user."
-        logging.getLogger(sx.MAIN_LOGGER_NAME).error(message)
+        logging.getLogger(SXC_LOGGER_NAME).error(message)
         sys.exit(2)
     except Exception, e:
         import time
@@ -336,21 +451,21 @@ if __name__ == "__main__":
         # Write the ouput to a file.
         pathToErrorFile = "/tmp/%s-%s-%s.txt" %(os.path.basename(sys.argv[0]), time.strftime("%Y-%m-%d"), int(time.time()))
         message =  "An error occurred and a debug file containing the error will be written to the file: %s" %(pathToErrorFile)
-        logging.getLogger(sx.MAIN_LOGGER_NAME).error(message)
+        logging.getLogger(SXC_LOGGER_NAME).error(message)
         try:
             fout = open(pathToErrorFile, "w")
             fout.write(errorString + "\n")
             fout.close()
         except UnicodeEncodeError:
             message = "There was a unicode encode error on file: %s." %(pathToErrorFile)
-            logging.getLogger(sx.MAIN_LOGGER_NAME).error(message)
+            logging.getLogger(SXC_LOGGER_NAME).error(message)
             message = "The data that was going to be written to the file is below: \n%s" %(errorString)
-            logging.getLogger(sx.MAIN_LOGGER_NAME).info(message)
+            logging.getLogger(SXC_LOGGER_NAME).info(message)
         except IOError:
             message = "There was an error writing the file: %s." %(pathToErrorFile)
-            logging.getLogger(sx.MAIN_LOGGER_NAME).error(message)
+            logging.getLogger(SXC_LOGGER_NAME).error(message)
             message = "The data that was going to be written to the file is below: \n%s" %(errorString)
-            logging.getLogger(sx.MAIN_LOGGER_NAME).info(message)
+            logging.getLogger(SXC_LOGGER_NAME).info(message)
         print errorString
         sys.exit(2)
 

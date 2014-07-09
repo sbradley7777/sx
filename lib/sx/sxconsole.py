@@ -19,7 +19,6 @@ import logging
 
 import sx
 from sx.logwriter import LogWriter
-from sx.tools import ConsoleUtil
 from sx.tools import FileUtil
 from sx import SXConfigurationFiles
 
@@ -37,69 +36,31 @@ from sx.analysisreport import AnalysisReport
 from sx.analysisreport import ARSection
 from sx.analysisreport import ARSectionItem
 
-# ###############################################################################
-# THIS WILL BE DEFUNCT WITH THE AR STUFF: Simple function to print info about what files were uploaded.
-# ###############################################################################
-def printToConsole(pathToCompressedReports, pathToExtractedReports, mapOfPluginReportPaths, listOfNonReportPaths):
-    # If any path starts with home directory then change to tilda.
-    homeDirectory = os.environ["HOME"]
-
-    wasInformationPrintedToConsole = False
-    # Print all the paths to files created by the plugins
-    if (len(mapOfPluginReportPaths.keys()) > 0):
-        headerPrinted = False
-        wasInformationPrintedToConsole = True
-        for key in mapOfPluginReportPaths.keys():
-            index = 1;
-            for pathToPluginReport in mapOfPluginReportPaths[key]:
-                if (not index == 1):
-                    print "%s %s" %(ConsoleUtil.colorText("%s plugin File %d: " %(key, index),"lgreen"), pathToPluginReport.replace(homeDirectory, "~"))
-                else:
-                    if(headerPrinted):
-                        print "\n%s %s" %(ConsoleUtil.colorText("%s plugin File %d: " %(key, index),"lgreen"), pathToPluginReport.replace(homeDirectory, "~"))
-                    else:
-                        print "\n%s" %(ConsoleUtil.colorText("List of Files Created by the Plugins: ","lcyan"))
-                        print "%s %s" %(ConsoleUtil.colorText("%s plugin File %d: " %(key, index),"lgreen"), pathToPluginReport.replace(homeDirectory, "~"))
-                        headerPrinted = True
-                index += 1;
-
-    # Print paths to all files that are not reports.
-    if (len(listOfNonReportPaths) > 0) :
-        wasInformationPrintedToConsole = True
-        print "\n%s" %(ConsoleUtil.colorText("Details for Non-Report Files: ","lcyan"))
-        index = 1;
-        for pathToNonReportFile in listOfNonReportPaths:
-            if (index == 1):
-                (dirPath, filename) = os.path.split(pathToNonReportFile)
-                print "%s %s" %(ConsoleUtil.colorText("Non-Report Files Directory:", "lgreen"), dirPath.replace(homeDirectory, "~"))
-            spacingCount = 7
-            if (index >= 10):
-                spacingCount = 6
-            print "%s %s %s" %(ConsoleUtil.colorText("Non-Report File %d: " %(index),"lgreen"), (" " * spacingCount), pathToNonReportFile.replace(homeDirectory, "~"))
-            index += 1;
-
-    # Print the report archive location
-    if ((os.path.exists(pathToCompressedReports)) or
-        (os.path.exists(pathToExtractedReports))):
-        wasInformationPrintedToConsole = True
-        print "\n%s" %(ConsoleUtil.colorText("Details of Report Extraction: ","lcyan"))
-        print "%s%s" %(ConsoleUtil.colorText("Compressed Reports Directory: ","lgreen"), pathToCompressedReports.replace(homeDirectory, "~"))
-        print "%s%s" %(ConsoleUtil.colorText("Extracted Reports Directory:  ","lgreen"), pathToExtractedReports.replace(homeDirectory, "~"))
-
-    if (not wasInformationPrintedToConsole):
-        message = "There was zero reports extracted and zero non-report files added."
-        logging.getLogger(sx.MAIN_LOGGER_NAME).warning(message)
-# #######################################################################
-# #######################################################################
-
-
-
 class SXConsole:
-    def __init__(self):
+    def __init__(self, optionsMap, uid):
+        self.__optionsMap = optionsMap
+        self.__uid = uid
         lwObjSXC = LogWriter(sx.MAIN_LOGGER_NAME,
                              logging.INFO,
                              sx.MAIN_LOGGER_FORMAT,
                              disableConsoleLog=False)
+
+        if (self.__optionsMap.get("enableDebugLogging")) :
+            logging.getLogger(sx.MAIN_LOGGER_NAME).setLevel(logging.DEBUG)
+            message = "Debugging has been enabled."
+            logging.getLogger(sx.MAIN_LOGGER_NAME).debug(message)
+
+        # Make sure that ~ is expanded on any path variable that is path to some
+        # file or directory.
+        if (self.__optionsMap.get("archivePath").startswith("~")):
+            self.__optionsMap["archivePath"] = self.__optionsMap.get("archivePath").replace("~", os.path.expanduser("~"), 1)
+        if (self.__optionsMap.get("reportPath").startswith("~")):
+            self.__optionsMap["reportPath"] = self.__optionsMap.get("reportPath").replace("~", os.path.expanduser("~"), 1)
+        listOfReports = self.__optionsMap.get("listOfReports")
+        for i in range(0, len(listOfReports)):
+            pathToReport = listOfReports[i]
+            if (pathToReport.startswith("~")):
+                listOfReports[i] = pathToReport.replace("~", os.path.expanduser("~"), 1)
 
         # #######################################################################
         # Create configuration directory if it does not exist and set debug
@@ -110,8 +71,25 @@ class SXConsole:
             message = "There was an error creating the user configuration directory. sxconsole will proceed without it."
             logging.getLogger(sx.MAIN_LOGGER_NAME).warning(message)
 
+        self.__al = None
+        # Archive Layout
+        if (self.__validateOptions(self.getUID(), self.__optionsMap.get("pathToExtractedReports"))):
+            try:
+                self.__al = self.__getArchiveLayout(self.getUID(), self.__optionsMap.get("archivePath"),
+                                             self.__optionsMap.get("pathToExtractedReports"),
+                                             self.__optionsMap.get("modifiedArchiveLayout"),
+                                             self.__optionsMap.get("timestamp"))
+            except ValueError:
+                message = "The timestamp value (for the -t option) is using an incorrect format. See --help for the correct format to use with the -t option."
+                logging.getLogger(sx.MAIN_LOGGER_NAME).error(message)
 
-    def __validateOptions(self, caseNumber, pathToExtractedReports) :
+    def getArchiveLayout(self):
+        return self.__al
+
+    def getUID(self):
+        return self.__uid
+
+    def __validateOptions(self, uid, pathToExtractedReports) :
         """
         This function validates that options that is given. It will exit
         if invalid args and return True if no errors.
@@ -119,8 +97,8 @@ class SXConsole:
         @return: Returns True if no validation errors on user options.
         @rtype: Boolean
 
-        @param caseNumber: The case number.
-        @type caseNumber: String
+        @param uid: The case number.
+        @type uid: String
         @param pathToExtractedReports: Path to the root directory for an
         extracted reports.
         @type pathToExtractedReports: String
@@ -128,31 +106,31 @@ class SXConsole:
         # #######################################################################
         # Validate that either a uid or extracted path was given.
         # #######################################################################
-        if ((not len(caseNumber) > 0) and (not len(pathToExtractedReports) > 0)):
+        if ((not len(uid) > 0) and (not len(pathToExtractedReports) > 0)):
             # No uid or path args are given
             message =  "No args given. A unique idenification number as an argument or a path to extracted reports with -p option is required."
             logging.getLogger(sx.MAIN_LOGGER_NAME).error(message)
-            sys.exit(2)
-        elif ((len(caseNumber) > 0) and (len(pathToExtractedReports) > 0)):
+            return False
+        elif ((len(uid) > 0) and (len(pathToExtractedReports) > 0)):
             # Both options were given
             message =  "A uid and path (-p option) was given. Please choose only 1 option."
             logging.getLogger(sx.MAIN_LOGGER_NAME).error(message)
-            sys.exit(2)
+            return False
         elif ((len(pathToExtractedReports) > 0) and (not os.path.exists(pathToExtractedReports))):
             # If path has greater length than zero and path does not exist
             message = "The path passed with -p option is not a valid path of archived reports."
             logging.getLogger(sx.MAIN_LOGGER_NAME).error(message)
-            sys.exit(2)
-        elif (len(caseNumber) > 0):
-            if (not caseNumber.isalnum()):
-                # If no path was given and caseNumber is greater than zero and is not alphanumeric uid
+            return False
+        elif (len(uid) > 0):
+            if (not uid.isalnum()):
+                # If no path was given and uid is greater than zero and is not alphanumeric uid
                 message = "Only numeric ticket numbers  are valid."
                 logging.getLogger(sx.MAIN_LOGGER_NAME).error(message)
-                sys.exit(2)
+                return False
         # Since we did not exit then can proceed to run.
         return True
 
-    def __getArchiveLayout(self, caseNumber, pathToArchiveDirectory, pathToExtractedReports,
+    def __getArchiveLayout(self, uid, pathToArchiveDirectory, pathToExtractedReports,
                            isModifiedArchiveLayoutEnabled, timestamp="") :
         """
         This function is what will take the user options and do the action
@@ -181,11 +159,11 @@ class SXConsole:
         else:
             # This will extracted a list of reports since they have not
             # been extracted.
-            al = ArchiveLayout(pathToArchiveDirectory, caseNumber, timestamp)
+            al = ArchiveLayout(pathToArchiveDirectory, uid, timestamp)
             if (isModifiedArchiveLayoutEnabled):
                 message = "Enabling the Modified Archive Layout."
                 logging.getLogger(sx.MAIN_LOGGER_NAME).debug(message)
-                al = ModifiedArchiveLayout(pathToArchiveDirectory, caseNumber, timestamp)
+                al = ModifiedArchiveLayout(pathToArchiveDirectory, uid, timestamp)
         return al
 
     def __getPluginOptions(self, cmdLineListOfPluginOptions) :
@@ -241,7 +219,7 @@ class SXConsole:
                     return False
         return True
 
-    def __extractReports(self, caseNumber, al, pathToExtractedReports, listOfReports,
+    def __extractReports(self, al, pathToExtractedReports, listOfReports,
                          pathToReportsDirectory, includeUserDefinedModules) :
 
         # Create the reporter object based on layout of the paths
@@ -279,42 +257,6 @@ class SXConsole:
             message = "There was %d reports extracted to the directory: %s" %(len(reportsExtracted), al.getPathToExtractedReports())
             logging.getLogger(sx.MAIN_LOGGER_NAME).info(message)
         return reportsExtracted
-
-    # ##############################################################################
-    # Extract/Load Helper Functions
-    # ##############################################################################
-    def __load(self, pathToExtractedReports, includeUserDefinedModules):
-        """
-        Returns the list of report paths that have already been
-        extracted based on the path of pathToExtractedReports pass to
-        init.
-
-        @return: Returns the list of report paths that have already
-        been extracted based on the path of pathToExtractedReports pass
-        to init.
-        @rtype: Array
-
-        @param includeUserDefinedModules: If True then user defined
-        reports/plugins are enabled.
-        @type includeUserDefinedModules: Boolean
-        """
-        message = "Loading all the known report types for previously extracted reports."
-        logging.getLogger(sx.MAIN_LOGGER_NAME).status(message)
-        # Zero out the list because this is new load of reports
-        listOfReports = []
-        reportsLoader = ReportsLoader()
-        for filename in os.listdir(pathToExtractedReports):
-            if (filename == "reports"):
-                continue
-            elif (filename.startswith(".")):
-                continue
-            else:
-                pathToFilename = os.path.join(pathToExtractedReports, filename)
-                report = reportsLoader.getReport(pathToFilename, includeUserDefinedModules)
-                if (not report == None) :
-                    report.setPathToExtractedReport(pathToFilename)
-                    listOfReports.append(report)
-        return listOfReports
 
     def __extract(self, listOfUnextractedReports, pathToCompressedReports,
                   pathToExtractedReports, includeUserDefinedModules) :
@@ -383,8 +325,8 @@ class SXConsole:
                             message += "to see if contain any other known report types."
                             logging.getLogger(sx.MAIN_LOGGER_NAME).status(message)
                             # Now do a little recursion
-                            reportsWithinReportList += extract(listOfFilesInExtractedReports, pathToCompressedReports,
-                                                               pathToExtractedReports, includeUserDefinedModules)
+                            reportsWithinReportList += self.__extract(listOfFilesInExtractedReports, pathToCompressedReports,
+                                                                      pathToExtractedReports, includeUserDefinedModules)
                 else:
                     message = "There was an error extracting the report: %s." %(str(extractor))
                     logging.getLogger(sx.MAIN_LOGGER_NAME).error(message)
@@ -392,6 +334,38 @@ class SXConsole:
         listOfReports += reportsWithinReportList
         return listOfReports
 
+    def __load(self, pathToExtractedReports, includeUserDefinedModules):
+        """
+        Returns the list of report paths that have already been
+        extracted based on the path of pathToExtractedReports pass to
+        init.
+
+        @return: Returns the list of report paths that have already
+        been extracted based on the path of pathToExtractedReports pass
+        to init.
+        @rtype: Array
+
+        @param includeUserDefinedModules: If True then user defined
+        reports/plugins are enabled.
+        @type includeUserDefinedModules: Boolean
+        """
+        message = "Loading all the known report types for previously extracted reports."
+        logging.getLogger(sx.MAIN_LOGGER_NAME).status(message)
+        # Zero out the list because this is new load of reports
+        listOfReports = []
+        reportsLoader = ReportsLoader()
+        for filename in os.listdir(pathToExtractedReports):
+            if (filename == "reports"):
+                continue
+            elif (filename.startswith(".")):
+                continue
+            else:
+                pathToFilename = os.path.join(pathToExtractedReports, filename)
+                report = reportsLoader.getReport(pathToFilename, includeUserDefinedModules)
+                if (not report == None) :
+                    report.setPathToExtractedReport(pathToFilename)
+                    listOfReports.append(report)
+        return listOfReports
 
     # ##############################################################################
     # Helper functions for moving files to different location.
@@ -429,43 +403,6 @@ class SXConsole:
         if (os.path.isfile(dst)):
             return True
         return False
-
-    def __moveNonReportFiles(self, nonReportFilesPath, filePathArray) :
-        """
-        This function will move all nonreports files that were specified
-        on commandline.
-
-        @return: Returns an array of files that were moved.
-        @rtype: Array
-
-        @param nonReportFilesPath: Path to location where the paths in array should be
-        moved to.
-        @type nonReportFilesPath: String
-        @param filePathArray: An array of paths to files.
-        @type filePathArray: Array
-        """
-        filePathsAdded = []
-        if (not os.access(nonReportFilesPath, os.F_OK)):
-            try:
-                os.makedirs(nonReportFilesPath)
-            except (IOError, os.error):
-                message = "Could not create the directory: %s" %(nonReportFilesPath)
-                logging.getLogger(sx.MAIN_LOGGER_NAME).error(message)
-                return filePathsAdded
-
-        for src in filePathArray:
-            if (os.path.exists(src)):
-                (head, tail) = os.path.split(src)
-                dst_filename = os.path.join(nonReportFilesPath, tail)
-                message = "Moving the file to the archive directory: %s." %(tail)
-                logging.getLogger(sx.MAIN_LOGGER_NAME).status(message)
-                try:
-                    shutil.move(src, dst_filename)
-                    filePathsAdded.append(dst_filename)
-                except IOError:
-                    message = "Cannot move the file %s to %s " %(src, dst_filename)
-                    logging.getLogger(sx.MAIN_LOGGER_NAME).error(message)
-        return filePathsAdded
 
     def __getListOfReports(self, cmdLineListOfReports, cmdLineReportPath):
         """
@@ -526,130 +463,90 @@ class SXConsole:
         return listOfReports
 
 
+    def __cleanup(self, listOfReportsExtracted):
+        # #######################################################################
+        # Remove the compressed and extraction directory since nothing was
+        # extracted and we do not want empty directories. This is ran after the
+        # run() method is ran.
+        # #######################################################################
+        # Remove the compressed directory if it is empty.
+        if ((os.path.exists(self.__al.getPathToCompressedReports())) and (not len(listOfReportsExtracted) > 0)):
+            if (not FileUtil.dirFileCount(self.__al.getPathToCompressedReports()) > 0):
+                try:
+                    os.rmdir(self.__al.getPathToCompressedReports())
+                except OSError:
+                    message = "There was an error removing the non-empty directory: %s." %(self.__al.getPathToCompressedReports())
+                    logging.getLogger(sx.MAIN_LOGGER_NAME).debug(message)
+        # Remove the extraction directory if it is empty.
+        if ((os.path.exists(self.__al.getPathToExtractedReports())) and (not len(listOfReportsExtracted) > 0)):
+            if (not FileUtil.dirFileCount(self.__al.getPathToExtractedReports()) > 0):
+                try:
+                    os.rmdir(self.__al.getPathToExtractedReports())
+                except OSError:
+                    message = "There was an error removing the non-empty directory: %s." %(self.__al.getPathToExtractedReports())
+                    logging.getLogger(sx.MAIN_LOGGER_NAME).debug(message)
+        # #######################################################################
+        # Remove all the temporary files created by the extraction. The
+        # temporary directory created by Extraction classes, usually directory
+        # /tmp/sx-*. All tarballs extract to here.
+        # #######################################################################
+        Extractor.clean()
+        # #######################################################################
+        # The plugins are done running and post-sxconsole action is done.
+        # Remove tmp files since we are done with reportExtractor object
+        # #######################################################################
+        for report in listOfReportsExtracted:
+            report.clean()
+
+
     # #######################################################################
     # The main functino to do the setup, extraction and analyzing.
     # #######################################################################
-    def run(self, optionsMap, uid):
+    def run(self):
         """
         This is main method that will start the extraction and analyzing then
-        return the results.
+        return a list of plugins that were ran.
         """
-        if (optionsMap.get("enableDebugLogging")) :
-            logging.getLogger(sx.MAIN_LOGGER_NAME).setLevel(logging.DEBUG)
-            message = "Debugging has been enabled."
-            logging.getLogger(sx.MAIN_LOGGER_NAME).debug(message)
-
         # #######################################################################
-        # Exeute the main function to do the action if options are validated.
+        # Execute the main function to do the action if an ArchiveLayout object
+        # created which means that all the information needed is valid.
         # #######################################################################
-        if (self.__validateOptions(uid, optionsMap.get("pathToExtractedReports"))):
-            # Get Layout
-            al = None
-            try:
-                al = self.__getArchiveLayout(uid, optionsMap.get("archivePath"),
-                                             optionsMap.get("pathToExtractedReports"),
-                                             optionsMap.get("modifiedArchiveLayout"),
-                                             optionsMap.get("timestamp"))
-            except ValueError:
-                message = "The timestamp value (for the -t option) is using an incorrect format. See --help for the correct format to use with the -t option."
-                logging.getLogger(sx.MAIN_LOGGER_NAME).error(message)
-                sys.exit()
-            # List of files that were added to the archive that were not known
-            # report types.
-            listOfNonReportPaths = []
-            # #######################################################################
-            # Move all non-report files before extracting reports so
-            # that non-report files will not be scanned.
-            # #######################################################################
-            if (len(optionsMap.get("filePathArray")) > 0):
-                message = "Moving all the non-report files into the archive directory before extracting reports so they will not be scanned."
-                logging.getLogger(sx.MAIN_LOGGER_NAME).status(message)
-                pathToNonReports = al.getPathToNonReportFiles()
-                listOfNonReportPaths = self.__moveNonReportFiles(pathToNonReports, optionsMap.get("filePathArray"))
-
+        listOfEnabledPlugins = []
+        if (not self.__al == None):
             # #######################################################################
             # Get the list of extracted reports that were extracted or loaded.
             # #######################################################################
-            listOfReportsExtracted = self.__extractReports(uid, al,
-                                                           optionsMap.get("pathToExtractedReports"),
-                                                           optionsMap.get("listOfReports"),
-                                                           optionsMap.get("reportPath"),
-                                                           (not optionsMap.get("disableUserDefinedModules")))
+            listOfReportsExtracted = self.__extractReports(self.__al,
+                                                           self.__optionsMap.get("pathToExtractedReports"),
+                                                           self.__optionsMap.get("listOfReports"),
+                                                           self.__optionsMap.get("reportPath"),
+                                                           (not self.__optionsMap.get("disableUserDefinedModules")))
 
-            # Map of the files that were created by the plugins.
-            mapOfPluginReportPaths = {}
             # Set archive location if there was reports load/extracted.
             if (len(listOfReportsExtracted) > 0):
-
                 # #######################################################################
                 # Run the plugins on the extracted reports
                 # #######################################################################
                 # Get list of enabled plugins.
                 pluginsHelper = PluginsHelper()
                 # For now this map is empty
-                optionsForPluginsMap = self.__getPluginOptions(optionsMap.get("pluginOptions"))
-                listOfEnabledPlugins = pluginsHelper.getEnabledPluginsList(al.getPathToExtractedReports(),
-                                                                           optionsMap.get("enableAllPlugins"),
-                                                                           optionsMap.get("disableAllPlugins"),
-                                                                           optionsMap.get("enablePlugins"),
-                                                                           optionsMap.get("disablePlugins"),
-                                                                           optionsForPluginsMap,
-                                                                           (not optionsMap.get("disableUserDefinedModules")))
+                listOfEnabledPlugins = pluginsHelper.getEnabledPluginsList(self.__al.getPathToExtractedReports(),
+                                                                           self.__optionsMap.get("enableAllPlugins"),
+                                                                           self.__optionsMap.get("disableAllPlugins"),
+                                                                           self.__optionsMap.get("enablePlugins"),
+                                                                           self.__optionsMap.get("disablePlugins"),
+                                                                           self.__getPluginOptions(self.__optionsMap.get("pluginOptions")),
+                                                                           (not self.__optionsMap.get("disableUserDefinedModules")))
                 # Print a list of enabled plugins.
                 if (len(listOfEnabledPlugins) > 0) :
                     message = "There was %d plugins enabled." %(len(listOfEnabledPlugins))
                     logging.getLogger(sx.MAIN_LOGGER_NAME).info(message)
                     # Generate map of all plugins reports that were created after they run.
-                    mapOfPluginReportPaths = pluginsHelper.generatePluginReports(listOfReportsExtracted, listOfEnabledPlugins)
-                    print "##############sxconsole.py run()##########################"
-                    print "Should AR do the write or should plugin"
-                    #for plugin in listOfEnabledPlugins:
-                        #print plugin
-                        #for ar in plugin.getAnalysisReports():
-                        #    print ar
-                    print "###################################################"
+                    pluginsHelper.generatePluginReports(listOfReportsExtracted, listOfEnabledPlugins)
                 else:
                     logging.getLogger(sx.MAIN_LOGGER_NAME).info("Skipping plugins since there was no plugins enabled.")
-            # #######################################################################
-            # Remove the compressed and extraction directory since nothing was
-            # extracted and we do not want empty directories.
-            # #######################################################################
-            # Remove the compressed directory if it is empty.
-            if ((os.path.exists(al.getPathToCompressedReports())) and (not len(listOfReportsExtracted) > 0)):
-                if (not FileUtil.dirFileCount(al.getPathToCompressedReports()) > 0):
-                    try:
-                        os.rmdir(al.getPathToCompressedReports())
-                    except OSError:
-                        message = "There was an error removing the non-empty directory: %s." %(al.getPathToCompressedReports())
-                        logging.getLogger(sx.MAIN_LOGGER_NAME).debug(message)
 
-            # Remove the extraction directory if it is empty.
-            if ((os.path.exists(al.getPathToExtractedReports())) and (not len(listOfReportsExtracted) > 0)):
-                if (not FileUtil.dirFileCount(al.getPathToExtractedReports()) > 0):
-                    try:
-                        os.rmdir(al.getPathToExtractedReports())
-                    except OSError:
-                        message = "There was an error removing the non-empty directory: %s." %(al.getPathToExtractedReports())
-                        logging.getLogger(sx.MAIN_LOGGER_NAME).debug(message)
-
-
-            # #######################################################################
-            # Remove all the temporary files created by the
-            # extraction. The temporary directory created by
-            # Extraction classes, usually directory /tmp/sx-*. All
-            # tarballs extract to here.
-            # #######################################################################
-            Extractor.clean()
-
-            # #######################################################################
-            # The plugins are done running and post-sxconsole action is done.
-            # Remove tmp files since we are done with reportExtractor object
-            # #######################################################################
-            for report in listOfReportsExtracted:
-                report.clean()
-
-            # Print console information about the ConsoleReport
-            printToConsole(al.getPathToCompressedReports(), al.getPathToExtractedReports(), mapOfPluginReportPaths, listOfNonReportPaths)
-
+                self.__cleanup(listOfReportsExtracted)
+            return listOfEnabledPlugins
 
 

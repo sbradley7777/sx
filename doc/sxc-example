@@ -1,11 +1,8 @@
 #!/usr/bin/env python
 """
-This code will check the source code for python bugs with "pychecker".
-
-URL: http://pychecker.sourceforge.net/
-
-TODO:
-* Would it be better to add long file list, files in dir, or dir?
+This script demostrates the use of sx API to make native calls that will extract
+and analysze reports. Then after the analysis is complete, the analysis data can
+be retrieved.
 
 @author    :  Shane Bradley
 @contact   :  sbradley@redhat.com
@@ -22,28 +19,52 @@ import sx.sxconsole
 from sx.sxconsole import SXConsole
 from sx.reports import ReportsHelper
 from sx.plugins import PluginsHelper
+
+SXCE_LOGGER_NAME = "sxc-exmaple"
+
 # ###############################################################################
 # Main Function
 # ###############################################################################
 if __name__ == "__main__":
     try:
-        sxconsole = SXConsole()
+        sxceLogger = LogWriter(SXCE_LOGGER_NAME,
+                              logging.INFO,
+                              sx.MAIN_LOGGER_FORMAT,
+                              disableConsoleLog=False)
+
         message = "Example on how to get the data from SXConsole after the analysis is complete."
-        logging.getLogger(sx.MAIN_LOGGER_NAME).info(message)
+        logging.getLogger(SXCE_LOGGER_NAME).info(message)
 
         # Verify a uid was given unless path is given.
         uid = "42424242"
-        options = {"disableAllPlugins": True, "disablePlugins": [],
-                   "enableAllPlugins": False, "enablePlugins": ["cluster", "storage", "networking"],
-                   "pluginOptions": [], "disableUserDefinedModules": False,
-                   "enableDebugLogging": False, "modifiedArchiveLayout": True, "listModules": False,
-                   "filePathArray": [], "timestamp": "2014-06-27_090042",
-                   "archivePath": "/home/sbradley-devel/sxarchive", "pathToExtractedReports": "",
-                   "reportPath": "/home/sbradley-devel/tmp",
-                   "listOfReports": ["/home/sbradley-devel/Downloads/sosreport-rh6node1.examplerh.com.tar.xz",
-                                     "/home/sbradley-devel/Downloads/sosreport-rh6node2.examplerh.com.tar.xz",
-                                     "/home/sbradley-devel/Downloads/sosreport-rh6node3.examplerh.com..tar.xz"]}
-        sxconsole.run(options, uid)
+        # The "listOfReports" list is paths to some sosreports that are used as
+        # examples.
+        optionsMap = {"disableAllPlugins": True, "disablePlugins": [],
+                      "enableAllPlugins": False, "enablePlugins": ["cluster", "storage", "networking"],
+                      "pluginOptions": [], "disableUserDefinedModules": False,
+                      "enableDebugLogging": False, "modifiedArchiveLayout": True, "listModules": False,
+                      "filePathArray": [], "timestamp": "2014-06-27_090042",
+                      "archivePath": "~/sxarchive", "pathToExtractedReports": "",
+                      "reportPath": "~/tmp",
+                      "listOfReports": ["~/Downloads/sosreport-rh6node1.examplerh.com.tar.xz",
+                                        "~/Downloads/sosreport-rh6node2.examplerh.com.tar.xz",
+                                        "~/Downloads/sosreport-rh6node3.examplerh.com..tar.xz"]}
+        sxconsole = SXConsole(optionsMap, uid)
+        message = "Extracting and Analyzing the reports with \"%s\"." %(os.path.basename(sys.argv[0]))
+        logging.getLogger(SXCE_LOGGER_NAME).status(message)
+        listOfEnabledPlugins = sxconsole.run()
+        # This example will print out information showing the analysis that
+        # plugins created.
+        for plugin in listOfEnabledPlugins:
+            print "%s analysis reports count: %d" %(plugin.getName(), len(plugin.getAnalysisReports()))
+            for ar in plugin.getAnalysisReports():
+                print "\t%s (Analysis Report)" %(ar.getName())
+                for arSection in ar.list():
+                    print "\t\t%s (Analysis Report Section)" %(arSection.getName())
+                    for arSectionItem in arSection.list():
+                        print "\t\t\t%s (Analysis Report Section Item)" %(arSectionItem.getName())
+                        #print "%s" %(str(arSectionItem))
+
     except KeyboardInterrupt:
         print ""
         message =  "This script will exit since control-c was executed by end user."
