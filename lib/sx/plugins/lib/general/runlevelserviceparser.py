@@ -66,30 +66,16 @@ class ChkConfigServiceStatus:
         self.__rl5 = self.__convertStringToBoolean(rl5.strip())
         self.__rl6 = self.__convertStringToBoolean(rl6.strip())
 
-        # The default will be zero can be specified later in set
-        # method if needed.
-        self.__startOrderNumber = 0
-        self.__stopOrderNumber = 0
-
     def __str__(self):
-        if ((self.__stopOrderNumber == 0) and (self.__startOrderNumber == 0)):
-            return "%s: 0:%s 1:%s 2:%s 3:%s 4:%s 5:%s 6:%s" %(self.getName(),
-                                                                     self.__convertBooleanToString(self.isEnabledRunlevel0()),
-                                                                     self.__convertBooleanToString(self.isEnabledRunlevel1()),
-                                                                     self.__convertBooleanToString(self.isEnabledRunlevel2()),
-                                                                     self.__convertBooleanToString(self.isEnabledRunlevel3()),
-                                                                     self.__convertBooleanToString(self.isEnabledRunlevel4()),
-                                                                     self.__convertBooleanToString(self.isEnabledRunlevel5()),
-                                                                     self.__convertBooleanToString(self.isEnabledRunlevel6()))
+        return "%s: 0:%s 1:%s 2:%s 3:%s 4:%s 5:%s 6:%s" %(self.getName(),
+                                                          self.__convertBooleanToString(self.isEnabledRunlevel0()),
+                                                          self.__convertBooleanToString(self.isEnabledRunlevel1()),
+                                                          self.__convertBooleanToString(self.isEnabledRunlevel2()),
+                                                          self.__convertBooleanToString(self.isEnabledRunlevel3()),
+                                                          self.__convertBooleanToString(self.isEnabledRunlevel4()),
+                                                          self.__convertBooleanToString(self.isEnabledRunlevel5()),
+                                                          self.__convertBooleanToString(self.isEnabledRunlevel6()))
 
-        return "%s(%d/%d): 0:%s 1:%s 2:%s 3:%s 4:%s 5:%s 6:%s" %(self.getName(), self.getStartOrderNumber(), self.getStopOrderNumber(),
-                                                                 self.__convertBooleanToString(self.isEnabledRunlevel0()),
-                                                                 self.__convertBooleanToString(self.isEnabledRunlevel1()),
-                                                                 self.__convertBooleanToString(self.isEnabledRunlevel2()),
-                                                                 self.__convertBooleanToString(self.isEnabledRunlevel3()),
-                                                                 self.__convertBooleanToString(self.isEnabledRunlevel4()),
-                                                                 self.__convertBooleanToString(self.isEnabledRunlevel5()),
-                                                                 self.__convertBooleanToString(self.isEnabledRunlevel6()))
 
     def __convertBooleanToString(self, boolean):
         if (boolean):
@@ -108,28 +94,6 @@ class ChkConfigServiceStatus:
         elif (booleanString == "activo"):
             return True
         return False
-
-    def setStartOrderNumber(self, startOrderNumber):
-        """
-        Set the start order number. Can be used to set ordering for
-        collection of services.
-
-        @param startOrderNumber: A number that represents the start
-        order for this service.
-        @type startOrderNumber: Int
-        """
-        self.__startOrderNumber = startOrderNumber
-
-    def setStopOrderNumber(self, stopOrderNumber):
-        """
-        Set the stop order number. Can be used to set ordering for
-        collection of services.
-
-        @param stopOrderNumber: A number that represents the stop
-        order for this service.
-        @type stopOrderNumber: Int
-        """
-        self.__stopOrderNumber = stopOrderNumber
 
     def getName(self):
         return self.__name
@@ -173,3 +137,4 @@ class ChkConfigServiceStatus:
 
     def getStopOrderNumber(self):
         return self.__stopOrderNumber
+

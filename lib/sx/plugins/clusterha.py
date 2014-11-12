@@ -212,7 +212,7 @@ class Clusterha(sx.plugins.PluginBase):
                 tableHeader = ["hostame"] + listOfServicesforClusterNodes
                 self.writeSeperator(filename, "Cluster Services Summary");
                 header =  "List of Clustered Services that are enabled for all of these runlevel 3, 4, and 5:\n"
-                header += "- https://access.redhat.com/knowledge/solutions/5898\n\nE = Enabled\nD = Disabled\n- = Unknown Status\n"
+                header += "- https://access.redhat.com/solutions/5898\n\nE = Enabled\nD = Disabled\n- = Unknown Status\n"
                 self.write(filename, header)
                 self.write(filename, "%s\n" %(stringUtil.toTableString(clusternodeServicesTable, tableHeader)))
 

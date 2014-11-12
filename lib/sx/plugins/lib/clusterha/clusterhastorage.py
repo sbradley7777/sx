@@ -67,7 +67,7 @@ class ClusterHAStorage():
         if (len(rString) > 0):
             description =  "All GFS or GFS2 filesystem are required to be created on a clustered lvm(clvm) device. All GFS or GFS2 filesystems "
             description += "should be verified that they meet this requirement. The following article describes this requirement:"
-            urls = ["https://access.redhat.com/knowledge/solutions/46637"]
+            urls = ["https://access.redhat.com/solutions/46637"]
             legend = "C = file-system is in /etc/cluster/cluster.conf\nF = file-system is in /etc/fstab\nM = file-system is mounted\n"
             rString = "%s\n%s\n%s" %(StringUtil.wrapParagraphURLs(description, urls), legend, rString)
         return rString.strip()
@@ -114,7 +114,7 @@ class ClusterHAStorage():
             #tableOfStrings = stringUtil.toTableString(fsTable, tableHeader)
             description =  "There was %d filesystems resources found. It is recommended that all filesystem resources(fs.sh) are created on a HALVM device." %(len(fsTable))
             description += "The following article describes this procedure:"
-            urls = ["https://access.redhat.com/knowledge/solutions/3067"]
+            urls = ["https://access.redhat.com/solutions/3067"]
             # rString += "%s\n%s\n%s\n\n" %(sectionHeader, StringUtil.wrapParagraphURLs(description, urls), tableOfStrings)
             rString += "%s\n%s\n" %(sectionHeader, StringUtil.wrapParagraphURLs(description, urls))
         """
@@ -251,7 +251,7 @@ class ClusterHAStorage():
             description =  "There was %d filesystems resources(fs.sh) found in the cluster.conf. It is recommended that all filesystem resource\'s(fs.sh) " %(len(fsTable))
             description += "underlying storage device is using one(not both) of the 2 methods for HALVM as described in article below for the underlying "
             description += "storage device. The following article describes these procedures:"
-            urls = ["https://access.redhat.com/knowledge/solutions/3067"]
+            urls = ["https://access.redhat.com/solutions/3067"]
             rString += StringUtil.formatBulletString(description, urls)
         # Disabled for now and will return an empty string
         """
@@ -274,7 +274,7 @@ class ClusterHAStorage():
                     description =  "The option \"volume_list\" and \"locking_type = 3\" in /etc/lvm/lvm.conf are both in use. Using "
                     description += "both options at the same time is supported, but not recommended except for certain configurations. "
                     description += "This configuration should be reviewed to verify that configuration is correct."
-                    urls = ["https://access.redhat.com/knowledge/solutions/3067"]
+                    urls = ["https://access.redhat.com/solutions/3067"]
                     clusterNodeEvalString += StringUtil.formatBulletString(description, urls)
             # Check to see if device is either has volume_list set or has
             # cluster bit set on each fs resource.
@@ -292,14 +292,14 @@ class ClusterHAStorage():
             description += "used in the \"volume_list\" option of the /etc/lvm/lvm.conf file:"
             tableHeader = ["device_name", "mount_point", "fs_type"]
             tableOfStrings = stringUtil.toTableStringsList(fsTable, tableHeader)
-            urls = ["https://access.redhat.com/knowledge/solutions/3067"]
+            urls = ["https://access.redhat.com/solutions/3067"]
             rString += StringUtil.formatBulletString(description, urls, tableOfStrings)
         """
         return rString
 
     def evaluateClusteredFilesystems(self):
         # Is active/active nfs supported? Sorta
-        # urls = ["https://access.redhat.com/knowledge/solutions/59498"]
+        # urls = ["https://access.redhat.com/solutions/59498"]
 
         rString = ""
         baseClusterNode = self.__cnc.getBaseClusterNode()
@@ -312,7 +312,7 @@ class ClusterHAStorage():
                 if (len(clusternode.getClusterStorageFilesystemList()) > 0):
                     description =  "There is known limitations for GFS2 filesystem when using the "
                     description += "following transports: \"%s\"." %(cca.getTransportMode())
-                    urls = ["https://access.redhat.com/site/articles/146163", "https://access.redhat.com/site/solutions/459243"]
+                    urls = ["https://access.redhat.com/articles/146163", "https://access.redhat.com/solutions/459243"]
                     rString += "%s\n" %(StringUtil.formatBulletString(description, urls))
                     break;
         for clusternode in self.__cnc.getClusterNodes():
@@ -327,7 +327,7 @@ class ClusterHAStorage():
                 # Check if GFS2 module should be removed on RH5 nodes
                 if (self.__doesGFS2ModuleNeedRemoval(clusternode.getUnameA(), clusternode.getClusterModulePackagesVersion())) :
                     description = "The kmod-gfs2 is installed on a running kernel >= 2.6.18-128. This module should be removed since the module is included in the kernel."
-                    urls = ["https://access.redhat.com/knowledge/solutions/17832"]
+                    urls = ["https://access.redhat.com/solutions/17832"]
                     clusterNodeEvalString += StringUtil.formatBulletString(description, urls)
 
             # ###################################################################
@@ -348,7 +348,7 @@ class ClusterHAStorage():
                 if (not lvm.isLockingTypeClustering()):
                     description =  "The locking_type is not set to type 3 for built-in cluster locking. A GFS/GFS2 filesystem requires the filesystem be on a "
                     description += "clustered LVM volume with locking_type 3 enabled in the /etc/lvm/lvm.conf."
-                    urls = ["https://access.redhat.com/knowledge/solutions/46637"]
+                    urls = ["https://access.redhat.com/solutions/46637"]
                     clusterNodeEvalString += StringUtil.formatBulletString(description, urls)
 
             # Disabling this check for now cause still working on how to do it.
@@ -372,7 +372,7 @@ class ClusterHAStorage():
                 description = "The following filesystems appears not to be on a clustered LVM volume. A clustered LVM volume is required for GFS/GFS2 fileystems."
                 tableHeader = ["device_name", "mount_point", "fs_type"]
                 tableOfStrings = stringUtil.toTableStringsList(fsTable, tableHeader)
-                urls = ["https://access.redhat.com/knowledge/solutions/46637"]
+                urls = ["https://access.redhat.com/solutions/46637"]
                 clusterNodeEvalString += StringUtil.formatBulletString(description, urls, tableOfStrings)
             """
             # ###################################################################
@@ -449,7 +449,7 @@ class ClusterHAStorage():
                 description += "nfs export via /etc/cluster/cluster.conf (CN)                                                       "
                 description += "samba export via /etc/exports for samba (ES)                                                        "
                 description += "samba export via /etc/cluster/cluster.conf for samba (CS)"
-                urls = ["https://access.redhat.com/knowledge/solutions/39855"]
+                urls = ["https://access.redhat.com/solutions/39855"]
                 tableOfStrings = stringUtil.toTableStringsList(fsTable, tableHeader)
                 clusterNodeEvalString += StringUtil.formatBulletString(description, urls, tableOfStrings)
 
@@ -470,7 +470,7 @@ class ClusterHAStorage():
                 description = "Any GFS/GFS2 filesystem that is exported with NFS should have the option \"localflocks\" set."
                 description += "The following GFS/GFS2 filesystem do not have the option set."
                 tableOfStrings = stringUtil.toTableStringsList(fsTable, tableHeader)
-                urls = ["https://access.redhat.com/knowledge/solutions/20327", "http://docs.redhat.com/docs/en-US/Red_Hat_Enterprise_Linux/5/html-single/Configuration_Example_-_NFS_Over_GFS/index.html#locking_considerations"]
+                urls = ["https://access.redhat.com/solutions/20327", "http://docs.redhat.com/docs/en-US/Red_Hat_Enterprise_Linux/5/html-single/Configuration_Example_-_NFS_Over_GFS/index.html#locking_considerations"]
                 clusterNodeEvalString += StringUtil.formatBulletString(description, urls, tableOfStrings)
 
             # ###################################################################
@@ -488,7 +488,7 @@ class ClusterHAStorage():
                 description += "when noatime is set) enabled. Unless atime support is essential, Red Hat recommends setting the mount option "
                 description += "\"noatime\" on every GFS/GFS2 mount point. This will significantly improve performance since it prevents "
                 description += "reads from turning into writes because the access time attribute will not be updated."
-                urls = ["https://access.redhat.com/knowledge/solutions/35662"]
+                urls = ["https://access.redhat.com/solutions/35662"]
                 clusterNodeEvalString += StringUtil.formatBulletString(description, urls)
 
             # ###################################################################
@@ -500,7 +500,7 @@ class ClusterHAStorage():
                     if (not csFilesystem.getEtcFstabMount().getFSFsck() == "0"):
                         description =  "There were GFS/GFS2 file-systems that had the fsck option enabled in the /etc/fstab file. This option "
                         description += "should be disabled(set value to 0) or corruption will occur eventually."
-                        urls = ["https://access.redhat.com/site/solutions/766393"]
+                        urls = ["https://access.redhat.com/solutions/766393"]
                         clusterNodeEvalString += StringUtil.formatBulletString(description, urls)
 
             # ###################################################################

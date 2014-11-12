@@ -45,25 +45,25 @@ class ClusterEvaluator():
         if (clusterNameCharSize > 16):
             description = "The name of the cluster cannot be more than 16 characters in size. The cluster's name "
             description += "\%s\" is %d characters long." %(cca.getClusterName(), clusterNameCharSize)
-            urls = ["https://access.redhat.com/site/solutions/32.17"]
+            urls = ["https://access.redhat.com/solutions/32.17"]
             rString += StringUtil.formatBulletString(description, urls)
 
         if (cca.hasAttributeCleanStart()):
             description =  "The clean_start option in the /etc/cluster/cluster.conf is not supported "
             description += "for production clusters and is set to %s. The option is for testing and debugging only." %(cca.getCleanStart())
-            urls = ["https://access.redhat.com/site/solutions/23238"]
+            urls = ["https://access.redhat.com/solutions/23238"]
             rString += StringUtil.formatBulletString(description, urls)
 
         # Disable the post_join_delay check for now
         if (not int(cca.getPostJoinDelay()) > 3):
             description =  "The post_join_delay option was 3 (which is the default value) in the /etc/cluster/cluster.conf file. "
             description += "In some cluster environments a value of 3 for post_join_delay is to too low."
-            urls = ["https://access.redhat.com/site/solutions/21742", "https://access.redhat.com/site/solutions/3641"]
+            urls = ["https://access.redhat.com/solutions/21742", "https://access.redhat.com/solutions/3641"]
             rString += StringUtil.formatBulletString(description, urls)
         if (not (int(cca.getPostFailDelay()) == 0)):
             description =  "The post_fail_delay option in the /etc/cluster/cluster.conf file was not zero(default). "
             description += "Most clusters should not modify the default value of zero."
-            urls = ["https://access.redhat.com/site/solutions/21742", "https://access.redhat.com/site/solutions/5929"]
+            urls = ["https://access.redhat.com/solutions/21742", "https://access.redhat.com/solutions/5929"]
             rString += StringUtil.formatBulletString(description, urls)
         # Check for single node configurations and clusters that are larger than 16 nodes.
         clusterNodeCount = len(cca.getClusterNodeNames())
@@ -71,18 +71,18 @@ class ClusterEvaluator():
             description =  "This is a single node cluster and does not meet the minimum number of cluster nodes required for "
             description += "high-availibility. Red Hat recommends that clusters always have a minimum of two nodes to protect "
             description += "against hardware failures."
-            urls = ["https://access.redhat.com/site/articles/5892"]
+            urls = ["https://access.redhat.com/articles/5892"]
             rString += StringUtil.formatBulletString(description, urls)
         elif (clusterNodeCount > 16):
             descriptioin = "The maximum number of cluster nodes supported by the High Availability Add-On is 16, and the same "
             description += "is true for the Resilient Storage Add-On that includes GFS2 and CLVM. "
             description += "This cluster currently has %d number of cluster nodes which exceeds the supported 16 number of cluster nodes." %(clusterNodeCount)
-            urls = ["https://access.redhat.com/site/articles/40051"]
+            urls = ["https://access.redhat.com/articles/40051"]
             rString += StringUtil.formatBulletString(description, urls)
         # Check if two_node is 1 and if expected_votes is 1
         if ((cca.isCmanTwoNodeEnabled()) and ((not cca.getCmanExpectedVotes() == "1") or (not len(cca.getCmanExpectedVotes()) > 0))):
             description = "If the \"cman/@two_node\" option is set to 1 then the option \"cman/@expected_votes\" should be set to 1."
-            urls = ["https://access.redhat.com/site/solutions/30398"]
+            urls = ["https://access.redhat.com/solutions/30398"]
             rString += StringUtil.formatBulletString(description, urls)
 
         # ###################################################################
@@ -96,7 +96,7 @@ class ClusterEvaluator():
                 # was compared.
                 description += "There was only %d cluster.conf files compared for the %d node cluster. " %(len(self.__cnc.getPathToClusterConfFiles()),
                                                                                                           len(cca.getClusterNodeNames()))
-            urls = ["https://access.redhat.com/site/solutions/19808"]
+            urls = ["https://access.redhat.com/solutions/19808"]
             rString += StringUtil.formatBulletString(description, urls)
 
         # ###################################################################
@@ -133,7 +133,7 @@ class ClusterEvaluator():
         urls = []
         if (transportMode == "broadcast"):
             # RHEL 4 and RHEL 5 is fully supported. RHEL 6, Tech Preview.
-            urls = ["https://access.redhat.com/site/articles/146163", "https://access.redhat.com/site/articles/32881"]
+            urls = ["https://access.redhat.com/articles/146163", "https://access.redhat.com/articles/32881"]
             if (distroRelease.getMajorVersion() == 5):
                 description = "There is known limitations with \"broadcast\" mode as noted in the following articles: "
             elif (distroRelease.getMajorVersion() >= 5):
@@ -144,7 +144,7 @@ class ClusterEvaluator():
             description = "The transport mode udpu is only support on RHEL 6.2+."
             if ((distroRelease.getMajorVersion() == 6) and (distroRelease.getMajorVersion() >= 2)):
                 description = "There is known limitations with \"udpu\" mode as noted in the following articles: "
-            urls = ["https://access.redhat.com/site/articles/146163", "https://access.redhat.com/site/solutions/178423"]
+            urls = ["https://access.redhat.com/articles/146163", "https://access.redhat.com/solutions/178423"]
 
         if (len(description) > 0):
             return StringUtil.formatBulletString(description, urls)
@@ -157,19 +157,19 @@ class ClusterEvaluator():
             distroRelease = clusternode.getDistroRelease()
             if (clusternode.isPacemakerClusterNode()):
                 # List of pacemaker limitiations to add:
-                # - https://access.redhat.com/site/solutions/509783
+                # - https://access.redhat.com/solutions/509783
                 if (not len(evaluationMap.get("01-isPacemakerCluster")) > 0):
                     description =  "This is a pacemaker cluster which requires special configuration as outlined in the following document. "
                     description += "Our recommendation is to use rgmanager unless rgmanager does not provide support for a particular "
                     description += "use case, whereas pacemaker does."
-                    urls = ["https://access.redhat.com/site/solutions/509783"]
+                    urls = ["https://access.redhat.com/solutions/509783"]
                     evaluationMap["01-isPacemakerCluster"] = StringUtil.formatBulletString(description, urls)
                 if ((not ((distroRelease.getMajorVersion() == 6) and (distroRelease.getMinorVersion() >= 5))) and (not len(evaluationMap.get("02-supportedVersion")) > 0)):
                     # if not greater that 6.5 then print msg about tech preview and openstack suppport only.
                     description =  "This appears to be a RHEL %d.%d cluster. Pacemaker is only supported in the " %(distroRelease.getMajorVersion(), distroRelease.getMinorVersion())
                     description += "following configurations: RHEL 6.4 when using openstack, RHEL 6.5. Pacemaker was technology preview "
                     description += "on RHEL 6.4 except for when using with openstack."
-                    urls = ["https://access.redhat.com/site/solutions/509783"]
+                    urls = ["https://access.redhat.com/solutions/509783"]
                     evaluationMap["02-supportedVersion"] = StringUtil.formatBulletString(description, urls)
                     # Print message about pacemaker installed but not coonfigured. check for pacemaker rpms or that pacemaker service
                 if (not len(evaluationMap.get("03-pacemakerRPMSInstalled")) > 0):
@@ -207,13 +207,13 @@ class ClusterEvaluator():
             # Check to see if there exists a fence device on each cluster node.
             if (not len(cnFenceDeviceList) > 0):
                 description = "There was no fence device defined for one or more cluster nodes. A fencing device is required for all cluster nodes."
-                urls = ["https://access.redhat.com/site/solutions/15575"]
+                urls = ["https://access.redhat.com/solutions/15575"]
                 stringUtil = StringUtil()
                 fenceEvaluationsMap["fence_devices_none"] = StringUtil.formatBulletString(description, urls)
             # Check if fence_manual is enabled on any node.
             if (cca.isFenceDeviceAgentEnabledOnClusterNode(clusternodeName, "fence_manual")):
                 description = "The fence device \"fence_manual\" is defined as a fence agent on one or more cluster nodes. This fencing agent \"fence_manual\" is unsupported. "
-                urls = ["https://access.redhat.com/site/articles/36302"]
+                urls = ["https://access.redhat.com/articles/36302"]
                 stringUtil = StringUtil()
                 fenceEvaluationsMap["fence_manual"] = StringUtil.formatBulletString(description, urls)
 
@@ -221,13 +221,13 @@ class ClusterEvaluator():
             if (cca.isFenceDeviceAgentEnabledOnClusterNode(clusternodeName, "fence_vmware")):
                 description =  "The fence device \"fence_vmware\" is defined as a fence agent on one or more cluster nodes. This fencing agent \"fence_vmware\" is unsupported. "
                 description += "The only supported fencing method for VMWare is fence_vmware_soap and fence_scsi."
-                urls = ["https://access.redhat.com/site/articles/29440"]
+                urls = ["https://access.redhat.com/articles/29440"]
                 stringUtil = StringUtil()
                 fenceEvaluationsMap["fence_vmware"] = StringUtil.formatBulletString(description, urls)
             # Make sure there is secondary fence device configured.
             if (not len(list(set(map(lambda m: m.getMethodName(), cnFenceDeviceList)))) > 1):
                 description = "One or more cluster nodes did not have a secondary fence device. A secondary fence device is recommended on all cluster nodes."
-                urls = ["https://access.redhat.com/site/solutions/15575" , "https://access.redhat.com/site/solutions/16657"]
+                urls = ["https://access.redhat.com/solutions/15575" , "https://access.redhat.com/solutions/16657"]
                 stringUtil = StringUtil()
                 fenceEvaluationsMap["fence_secondary_agent"] = StringUtil.formatBulletString(description, urls)
 
@@ -244,7 +244,7 @@ class ClusterEvaluator():
                 if (not foundUnfenceableFenceAgent):
                     description = "The <unfence/> tag is only used for fabric fencing, fence_sanlock, and fence_scsi for enabling the shared storage device. "
                     description += " There was no fencing agent found that can use the <unfence/> tag. The <unfence/> tag(s) should be removed."
-                    urls = ["https://access.redhat.com/site/solutions/789203"]
+                    urls = ["https://access.redhat.com/solutions/789203"]
                     stringUtil = StringUtil()
                     fenceEvaluationsMap["fence_unfence_invalid"] = StringUtil.formatBulletString(description, urls)
         # Build the evaluation string that will be returned.
@@ -273,7 +273,7 @@ class ClusterEvaluator():
                     description = "The service \"acpid\" is not disabled on all runlevels(0 - 6). " + \
                         "This service should be disabled since a system management fence device(%s) "%(fd.getAgent()) + \
                         "was detected. If acpid is enabled the fencing operation may not work as intended."
-                    urls = ["https://access.redhat.com/site/solutions/5414"]
+                    urls = ["https://access.redhat.com/solutions/5414"]
                     rString += StringUtil.formatBulletString(description, urls)
                     break;
             # Check to verify that if fence_scsi is used on virtual machines that iscsi is used on all shared storage.
@@ -282,7 +282,7 @@ class ClusterEvaluator():
                     if ((clusternode.getMachineType().lower().find("vmware") >= 0) or (clusternode.getMachineType().lower().find("rhev") >= 0)):
                         description = "This fencing agent fence_scsi requires that all shared storage is over iscsi when the cluster node is a %s. " %(clusternode.getMachineType().strip())
                         description += "Make sure that all the shared storage will be over iscsi if fence_scsi agent is used on this clusternode that is a vitual machine."
-                        urls = ["https://access.redhat.com/site/articles/29440", "https://access.redhat.com/site/documentation/en-US/Red_Hat_Enterprise_Linux/6/html-single/High_Availability_Add-On_Overview/index.html#s2-virt-guestcluster-scsi"]
+                        urls = ["https://access.redhat.com/articles/29440", "https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_Linux/6/html-single/High_Availability_Add-On_Overview/index.html#s2-virt-guestcluster-scsi"]
                         rString += StringUtil.formatBulletString(description, urls)
         return rString
 
@@ -297,7 +297,7 @@ class ClusterEvaluator():
         if (len(quorumd.getStatusFile()) > 0):
             description =  "The \"status_file\" option for quorumd should be removed prior to production "
             description += "cause it is know to cause qdiskd to hang unnecessarily."
-            urls = ["https://access.redhat.com/site/solutions/35941", "https://access.redhat.com/site/solutions/456123"]
+            urls = ["https://access.redhat.com/solutions/35941", "https://access.redhat.com/solutions/456123"]
             rString += StringUtil.formatBulletString(description, urls)
         if (not quorumd.getUseUptime() == "1"):
             description =  "The changing of the internal timers used by qdisk by setting "
@@ -328,7 +328,7 @@ class ClusterEvaluator():
         # If master_wins is 1 and no heuristics = PASS
         # If master_wins is 1 and 1 or more heuristics = FAIL
         # If 2 node cluster and master_wins is 0 and no heuristics = FAIL
-        # urls = ["https://access.redhat.com/site/solutions/24037"]
+        # urls = ["https://access.redhat.com/solutions/24037"]
 
         heurisitcCount = len(quorumd.getHeuristics())
         masterWins = quorumd.getMasterWins()
@@ -347,13 +347,13 @@ class ClusterEvaluator():
         # If master_wins is 1 and 1 or more heuristics = FAIL
         if ((masterWins == "1") and (heurisitcCount > 0)):
             description = "There cannot be any heuristics set in the cluster.conf if \"master_wins\" is enabled."
-            urls = ["https://access.redhat.com/site/solutions/24037", "https://access.redhat.com/site/solutions/708393"]
+            urls = ["https://access.redhat.com/solutions/24037", "https://access.redhat.com/solutions/708393"]
             rString += StringUtil.formatBulletString(description, urls)
         # If master_wins is 1 and 1 or more heuristics = FAIL
         if ((masterWins == "0") and (heurisitcCount == 0) and (len(cca.getClusterNodeNames()) >= 2)):
             description =  "If a quorumd tag is in the cluster.conf and there is no heuristic defined then "
             description += "enabled \"master_wins\" or define some heuristics for quorumd."
-            urls = ["https://access.redhat.com/site/solutions/24037", "https://access.redhat.com/site/solutions/708393"]
+            urls = ["https://access.redhat.com/solutions/24037", "https://access.redhat.com/solutions/708393"]
             rString += StringUtil.formatBulletString(description, urls)
 
         # cman/@two_node: Must be set to 0 when qiskd is in use with one EXCEPTION and
@@ -404,7 +404,7 @@ class ClusterEvaluator():
             if (not len(cca.getTotemToken()) > 0):
                 description =  "There was no <totem token/> value set. If <cman quorum_dev_poll/> is defined in cluster.conf then the "
                 description += "<totem token/> value should be the same as the <cman quorum_dev_poll/>."
-                urls = ["https://access.redhat.com/site/solutions/128083", "https://access.redhat.com/site/articles/216443"]
+                urls = ["https://access.redhat.com/solutions/128083", "https://access.redhat.com/articles/216443"]
                 rString += StringUtil.formatBulletString(description, urls)
             else:
                 try:
@@ -415,7 +415,7 @@ class ClusterEvaluator():
                         description += "the cluster.conf because they will be auto-calculated which is not done on previous versions. The only time these "
                         description += "values should be set on RHEL 6+ is when there is issues with the storage or network that prevents the cluster "
                         description += "from using the defaults that will be auto-calculated."
-                        urls = ["https://access.redhat.com/site/solutions/128083", "https://access.redhat.com/site/articles/216443"]
+                        urls = ["https://access.redhat.com/solutions/128083", "https://access.redhat.com/articles/216443"]
                         rString += StringUtil.formatBulletString(description, urls)
                     # Check to verify values are correct.
                     try:
@@ -423,20 +423,20 @@ class ClusterEvaluator():
                         if (not (totem_token / 2) > ((int(quorumd.getInterval()) * int(quorumd.getTKO())) * 1000)):
                             description = "The <quorumd tko=%s> multipled by <quorumd interval=%s> is not less than <totem token=%d> divided by 2. " %(quorumd.getInterval(), quorumd.getTKO(), totem_token)
                             description += "These values should be changed as described in the articles below."
-                            urls = ["https://access.redhat.com/site/solutions/128083", "https://access.redhat.com/site/articles/216443"]
+                            urls = ["https://access.redhat.com/solutions/128083", "https://access.redhat.com/articles/216443"]
                             rString += StringUtil.formatBulletString(description, urls)
                     except ValueError:
                         pass
                     if (not quorum_dev_poll >= totem_token):
                         description = "The <cman quorum_dev_poll/> value should be equal to or higher than the <totem token/> value."
-                        urls = ["https://access.redhat.com/site/solutions/128083", "https://access.redhat.com/site/articles/216443"]
+                        urls = ["https://access.redhat.com/solutions/128083", "https://access.redhat.com/articles/216443"]
                         rString += StringUtil.formatBulletString(description, urls)
                     if ((quorum_dev_poll > 22000) or (totem_token > 22000)):
                         # There is no reason(or some rule) for choosing 22000, but allows for some networks that have congestion.
                         description =  "Setting a large <totem token=%d/> value and/or <cman quorum_dev_poll=%d/> value are no longer needed in order to " %(quorum_dev_poll, totem_token)
                         description += "account for scsi timeouts. Ideally the attribute <totem token/> value should be as low a value as possible as described in "
                         description += "in the articles below. See the requirements for this feature in the articles below."
-                        urls = ["https://access.redhat.com/site/solutions/128083", "https://access.redhat.com/site/articles/216443"]
+                        urls = ["https://access.redhat.com/solutions/128083", "https://access.redhat.com/articles/216443"]
                         rString += StringUtil.formatBulletString(description, urls)
                     # Not sure exactly what I was checking here. expected_votes
                     # should equal expected, maybe what I was looking to checks
@@ -451,19 +451,19 @@ class ClusterEvaluator():
                     #        description =  "The <cman expected_votes=%d/> ideally should equal the number of cluster nodes(found: %d) multiplied by 2 minus 1. " %(int(cca.getCmanExpectedVotes()), len(cca.getClusterNodeNames()))
                     #        description += "Based on the configuration found in the cluster.conf that would be \n  (%d cluster nodes * 2 - 1) = %d. Ideally the <cman expected_votes/> " %(len(cca.getClusterNodeNames()), len(cca.getClusterNodeNames()) * 2 - 1)
                     #        description += "should be %d unless a \"last man standing\" or other special configuration is being used." %(len(cca.getClusterNodeNames()) * 2 - 1)
-                    #        urls = ["https://access.redhat.com/site/solutions/128083", "https://access.redhat.com/site/articles/216443"]
+                    #        urls = ["https://access.redhat.com/solutions/128083", "https://access.redhat.com/articles/216443"]
                     #        rString += StringUtil.formatBulletString(description, urls)
                     #except ValueError:
                     #    message = "The corrected expected_votes could not be analyzed because of a parsing error."
                     #    logging.getLogger(sx.MAIN_LOGGER_NAME).debug(message)
                 except ValueError:
                    description = "There was an invalid value found in the cluster.conf for either <totem/token /> and/or <cman/quorum_dev_poll />."
-                   urls = ["https://access.redhat.com/site/solutions/128083", "https://access.redhat.com/site/articles/216443"]
+                   urls = ["https://access.redhat.com/solutions/128083", "https://access.redhat.com/articles/216443"]
                    rString += StringUtil.formatBulletString(description, urls)
         elif ((not len(cca.getCmanQuorumDevPoll()) > 0) and (distroRelease.getMajorVersion() == 5)):
             description =  "When using a quorum disk with RHEL 5, the <cman quorum_dev_poll/> and <totem token/> should be configured "
             description += "as stated in the following articles."
-            urls = ["https://access.redhat.com/site/solutions/128083", "https://access.redhat.com/site/articles/216443"]
+            urls = ["https://access.redhat.com/solutions/128083", "https://access.redhat.com/articles/216443"]
             rString += StringUtil.formatBulletString(description, urls)
         # ###################################################################
         # Configurations that should print a warning message, but are still
@@ -486,7 +486,7 @@ class ClusterEvaluator():
             description += "the cluster nodes that openais or corosync think are dead cluster nodes when disabled. Cluster nodes "
             description += "are still evicted via the qdiskd which will cause a reboot to occur. By default this option "
             description += "is set to 1(enabled)."
-            urls = ["https://access.redhat.com/site/solutions/266683"]
+            urls = ["https://access.redhat.com/solutions/266683"]
             rString += StringUtil.formatBulletString(description, urls)
 
         # ###################################################################
@@ -517,7 +517,7 @@ class ClusterEvaluator():
             description =  "Any heuristic that is using the ping command must enabled the "
             description += "-w (deadline timeout) with a value equal to or larger than one. "
             description += "The following heuristic program values were invalid: \n"
-            urls = ["https://access.redhat.com/site/solutions/64633"]
+            urls = ["https://access.redhat.com/solutions/64633"]
 
             tableHeader = ["program", "interval", "min_score", "tko"]
             fsTable = []
@@ -557,7 +557,7 @@ class ClusterEvaluator():
             if (len(description) > 0):
                 descriptionHeader =  "The only supported bonding mode on the heartbeat network is mode 1(active-backup) on releases "
                 descriptionHeader += "prior to RHEL 6.4. RHEL 6.4 supports the following bonding modes 0, 1, 2."
-                urls = ["https://access.redhat.com/site/solutions/27604"]
+                urls = ["https://access.redhat.com/solutions/27604"]
                 rString += StringUtil.formatBulletString("%s %s" %(descriptionHeader, description), urls)
 
         """
@@ -568,14 +568,14 @@ class ClusterEvaluator():
         # 44475 | requires a firmware upgrade to the nic
         # 35299 | Fixed in RHEL 5.5.z (kernel-2.6.18-194.32.1.el5) and RHEL 5.6 (kernel-2.6.18-238.el5)
         # 46663 | Fixed in RHEL 5.7   (kernel-2.6.18-274.el5)
-        netxenUrlsList = ["https://access.redhat.com/site/solutions/44475"]
+        netxenUrlsList = ["https://access.redhat.com/solutions/44475"]
         kernelRelease = clusternode.getUnameA().getKernelRelease()
         if (str(kernelRelease) > 0):
-            # netxenUrlsList.append("https://access.redhat.com/site/solutions/35299")
+            # netxenUrlsList.append("https://access.redhat.com/solutions/35299")
             result = kernelRelease.compareGT("2.6.18-194.32.1.el5")
             result = kernelRelease.compareGT("2.6.18-238.el5")
 
-            # netxenUrlsList.append("https://access.redhat.com/site/solutions/46663")
+            # netxenUrlsList.append("https://access.redhat.com/solutions/46663")
             result = kernelRelease.compareGT("2.6.18-274.el5")
 
             # Need to rewrite the compare on kmod-gfs2.
@@ -677,7 +677,7 @@ class ClusterEvaluator():
         #pathToQuroumDisk = self.__cnc.getPathToQuorumDisk()
         #if (self.__isQDiskLVMDevice(pathToQuroumDisk)):
         #    description =  "The quorum disk %s cannot be an lvm device." %(pathToQuroumDisk)
-        #    urls = ["https://access.redhat.com/site/solutions/41726"]
+        #    urls = ["https://access.redhat.com/solutions/41726"]
         #    quorumdConfigString += StringUtil.formatBulletString(description, urls)
         distroRelease = baseClusterNode.getDistroRelease()
         quorumdConfigString += self.__evaluateQuorumdConfiguration(cca, distroRelease)
@@ -712,8 +712,8 @@ class ClusterEvaluator():
             if (not self.__cnc.isClusterNodeNamesInHostsFile(cca.getClusterNodeNames(), clusternode.getNetworkMaps().getListOfNetworkMaps())) :
                 description = "The clusternode names were not all defined in the /etc/hosts file. This is not a requirement, but does "
                 description += "make troubleshooting a cluster a lot easier."
-                urls = ["https://access.redhat.com/site/articles/5934",
-                        "https://access.redhat.com/site/solutions/81123"]
+                urls = ["https://access.redhat.com/articles/5934",
+                        "https://access.redhat.com/solutions/81123"]
                 clusterNodeEvalString += StringUtil.formatBulletString(description, urls)
 
             # Check the networking configuration of the cluster node's
@@ -739,7 +739,7 @@ class ClusterEvaluator():
                         description =  "The service %s should be disabled since there are virtual machines that are " %(serviceName)
                         description += "being managed by rgmanager in the /etc/cluster/cluster.conf file. "
                         description += "The following runlevels have %s enabled: %s." %(serviceName, serviceRunlevelEnabledString.strip())
-                        urls = ["https://access.redhat.com/site/solutions/96543"]
+                        urls = ["https://access.redhat.com/solutions/96543"]
                         clusterNodeEvalString += StringUtil.formatBulletString(description, urls)
                         # Break out because if we find a vm then we break out
                         # cause we just need one instance.
@@ -760,8 +760,8 @@ class ClusterEvaluator():
                         description = "The packages %s and %s need to be on the same major/minor version number. " %(lvm2Package, lvm2clusterPackage)
                         description += "If the packages do not have the same major/minor version number then there could be communications issues or "
                         description += "problems starting clvmd which is part of the lvm2-cluster package."
-                        urls = ["https://access.redhat.com/site/solutions/169913", "https://access.redhat.com/site/solutions/18999",
-                                "https://access.redhat.com/site/solutions/58778"]
+                        urls = ["https://access.redhat.com/solutions/169913", "https://access.redhat.com/solutions/18999",
+                                "https://access.redhat.com/solutions/58778"]
                         clusterNodeEvalString += StringUtil.formatBulletString(description, urls)
 
             # ###################################################################
@@ -775,7 +775,7 @@ class ClusterEvaluator():
                 # Make sure that multicast tags are not on clusternode stanzas
                 if (((len(cnp.getMulticastAddress()) > 0) or (len(cnp.getMulticastInterface()) > 0))) :
                     description = "The multicast tags should not be in the <clusternodes> stanzas. These tags are only supported on RHEL 4."
-                    urls = ["https://access.redhat.com/site/solutions/32242"]
+                    urls = ["https://access.redhat.com/solutions/32242"]
                     clusterNodeEvalString += StringUtil.formatBulletString(description, urls)
 
             # ###################################################################
@@ -788,7 +788,7 @@ class ClusterEvaluator():
                 if (len(serviceRunlevelEnabledString) > 0):
                     description =  "The service %s should be disabled if the host is part of a cluster since the service cman starts the service %s." %(serviceName, serviceName)
                     description += "The following runlevels have %s enabled: %s." %(serviceName, serviceRunlevelEnabledString.strip())
-                    urls = ["https://access.redhat.com/site/solutions/5898"]
+                    urls = ["https://access.redhat.com/solutions/5898"]
                     clusterNodeEvalString += StringUtil.formatBulletString(description, urls)
 
                 # Check if scsi_reserve service is enabled with no scsi fencing device in cluster.conf
@@ -798,7 +798,7 @@ class ClusterEvaluator():
                     if (len(serviceRunlevelEnabledString) > 0):
                         description =  "The service %s should be disabled since there was no fence_scsi device detected for this node." %(serviceName)
                         description += "The following runlevels have %s enabled: %s." %(serviceName, serviceRunlevelEnabledString.strip())
-                        urls = ["https://access.redhat.com/site/solutions/42530", "https://access.redhat.com/site/solutions/17784"]
+                        urls = ["https://access.redhat.com/solutions/42530", "https://access.redhat.com/solutions/17784"]
                         clusterNodeEvalString += StringUtil.formatBulletString(description, urls)
 
             # ###################################################################
@@ -811,7 +811,7 @@ class ClusterEvaluator():
                 if (len(serviceRunlevelEnabledString) > 0):
                     description =  "The service %s should be disabled if the host is part of a cluster since the service cman starts the service %s." %(serviceName, serviceName)
                     description += "The following runlevels have %s enabled: %s." %(serviceName, serviceRunlevelEnabledString.strip())
-                    urls = ["https://access.redhat.com/site/solutions/5898"]
+                    urls = ["https://access.redhat.com/solutions/5898"]
                     clusterNodeEvalString += StringUtil.formatBulletString(description, urls)
             # ###################################################################
             if (len(clusterNodeEvalString) > 0):

@@ -40,6 +40,9 @@ class AR:
     def list(self):
         return self.__container
 
+    def isEmpty(self):
+        return (not len(self.__container) > 0)
+
     def add(self, object):
         foundDuplicate = False
         for item in self.list():
