@@ -312,7 +312,7 @@ class ClusterHAStorage():
                 if (len(clusternode.getClusterStorageFilesystemList()) > 0):
                     description =  "There is known limitations for GFS2 filesystem when using the "
                     description += "following transports: \"%s\"." %(cca.getTransportMode())
-                    urls = ["https://access.redhat.com/articles/146163", "https://access.redhat.com/solutions/459243"]
+                    urls = ["https://access.redhat.com/solutions/162193", "https://access.redhat.com/articles/146163", "https://access.redhat.com/solutions/459243"]
                     rString += "%s\n" %(StringUtil.formatBulletString(description, urls))
                     break;
         for clusternode in self.__cnc.getClusterNodes():
@@ -488,7 +488,7 @@ class ClusterHAStorage():
                 description += "when noatime is set) enabled. Unless atime support is essential, Red Hat recommends setting the mount option "
                 description += "\"noatime\" on every GFS/GFS2 mount point. This will significantly improve performance since it prevents "
                 description += "reads from turning into writes because the access time attribute will not be updated."
-                urls = ["https://access.redhat.com/solutions/35662"]
+                urls = ["https://access.redhat.com/articles/628093#slowdown_due_to_system_configuration_issues"]
                 clusterNodeEvalString += StringUtil.formatBulletString(description, urls)
 
             # ###################################################################

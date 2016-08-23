@@ -61,7 +61,7 @@ class Tarextractor(Extractor) :
             return "tf"
         return None
 
-    def getExtactArgs(self) :
+    def getExtractArgs(self) :
         if (not self.isValidMimeType()):
             return None;
         compressionType = mimetypes.guess_type(self.getPathToFile())[1]
@@ -92,7 +92,7 @@ class Tarextractor(Extractor) :
                     fullPathToFile = item
                     break;
         # Get the options to extract
-        commandOptions = self.getExtactArgs()
+        commandOptions = self.getExtractArgs()
         if (commandOptions == None) :
             message =  "This file is unknown type and will not be extracted: %s." %(self.getPathToFile())
             logging.getLogger(sx.MAIN_LOGGER_NAME).debug(message)
@@ -131,7 +131,7 @@ class Tarextractor(Extractor) :
         return []
 
     def extract(self, extractDir, stripDirectoriesDepth=1) :
-        commandOptions = self.getExtactArgs()
+        commandOptions = self.getExtractArgs()
         if (commandOptions == None) :
             message =  "This file is unknown type and will not be extracted: %s." %(self.getPathToFile())
             logging.getLogger(sx.MAIN_LOGGER_NAME).debug(message)

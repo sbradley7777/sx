@@ -421,7 +421,7 @@ class ClusterEvaluator():
                     try:
                         # Need to convert to milliseconds on interval and tko comapare
                         if (not (totem_token / 2) > ((int(quorumd.getInterval()) * int(quorumd.getTKO())) * 1000)):
-                            description = "The <quorumd tko=%s> multipled by <quorumd interval=%s> is not less than <totem token=%d> divided by 2. " %(quorumd.getInterval(), quorumd.getTKO(), totem_token)
+                            description = "The <quorumd tko=%s> multiplied by <quorumd interval=%s> is not less than <totem token=%d> divided by 2. " %(quorumd.getInterval(), quorumd.getTKO(), totem_token)
                             description += "These values should be changed as described in the articles below."
                             urls = ["https://access.redhat.com/solutions/128083", "https://access.redhat.com/articles/216443"]
                             rString += StringUtil.formatBulletString(description, urls)
@@ -543,8 +543,15 @@ class ClusterEvaluator():
             if (hbNetworkMap.getBondedModeNumber() == "-1"):
                 # Unknown bonding mode.
                 description += "The bonding mode for this host could not be determined."
-            elif ((distroRelease.getDistroName() == "RHEL") and (distroRelease.getMajorVersion() >= 6) and (distroRelease.getMinorVersion() >= 4)):
-                if (not ((hbNetworkMap.getBondedModeNumber() == "0") or (hbNetworkMap.getBondedModeNumber() == "1") or  (hbNetworkMap.getBondedModeNumber() == "2"))):
+            elif (((distroRelease.getDistroName() == "RHEL") and (distroRelease.getMajorVersion() >= 6) and (distroRelease.getMinorVersion() >= 6)) and
+                  (not ((hbNetworkMap.getBondedModeNumber() == "0") or (hbNetworkMap.getBondedModeNumber() == "1") or
+                        (hbNetworkMap.getBondedModeNumber() == "2") or (hbNetworkMap.getBondedModeNumber() == "4")))):
+                    description += "The heartbeat network(%s) is currently using bonding mode %s(%s).\n" %(hbNetworkMap.getInterface(),
+                                                                                                           hbNetworkMap.getBondedModeNumber(),
+                                                                                                           hbNetworkMap.getBondedModeName())
+            elif (((distroRelease.getDistroName() == "RHEL") and (distroRelease.getMajorVersion() >= 6) and (distroRelease.getMinorVersion() >= 4)) and
+                  (not ((hbNetworkMap.getBondedModeNumber() == "0") or (hbNetworkMap.getBondedModeNumber() == "1") or
+                        (hbNetworkMap.getBondedModeNumber() == "2")))):
                     # RHEL 6.4 or higher and not modes 0,1,2.
                     description += "The heartbeat network(%s) is currently using bonding mode %s(%s).\n" %(hbNetworkMap.getInterface(),
                                                                                                            hbNetworkMap.getBondedModeNumber(),
@@ -556,7 +563,7 @@ class ClusterEvaluator():
                                                                                                        hbNetworkMap.getBondedModeName())
             if (len(description) > 0):
                 descriptionHeader =  "The only supported bonding mode on the heartbeat network is mode 1(active-backup) on releases "
-                descriptionHeader += "prior to RHEL 6.4. RHEL 6.4 supports the following bonding modes 0, 1, 2."
+                descriptionHeader += "prior to RHEL 6.4. RHEL 6.4 supports the following bonding modes 0, 1, 2. RHEL 6.6 added support for mode 4."
                 urls = ["https://access.redhat.com/solutions/27604"]
                 rString += StringUtil.formatBulletString("%s %s" %(descriptionHeader, description), urls)
 

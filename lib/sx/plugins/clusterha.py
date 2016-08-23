@@ -186,7 +186,8 @@ class Clusterha(sx.plugins.PluginBase):
             for clusternode in cnc.getClusterNodes():
                 chkConfigClusterServiceList = clusternode.getChkConfigClusterServicesStatus()
                 if (len(chkConfigClusterServiceList) > 0):
-                    sortedChkConfigClusterServicesList = sorted(chkConfigClusterServiceList, key=lambda k: k.getStartOrderNumber())
+                    #sortedChkConfigClusterServicesList = sorted(chkConfigClusterServiceList, key=lambda k: k.getStartOrderNumber())
+                    sortedChkConfigClusterServicesList = sorted(chkConfigClusterServiceList, key=lambda k: k.getName())
                     currentListOfServices = list(set(map(lambda m: m.getName(), sortedChkConfigClusterServicesList)))
                     listOfServicesforClusterNodes = list(set(listOfServicesforClusterNodes) | set(currentListOfServices))
             # Just sort alpha and not worry with order.
@@ -194,7 +195,8 @@ class Clusterha(sx.plugins.PluginBase):
             clusternodeServicesTable = []
             for clusternode in cnc.getClusterNodes():
                 currentTable = [clusternode.getClusterNodeName()]
-                sortedChkConfigClusterServicesList = sorted(chkConfigClusterServiceList, key=lambda k: k.getStartOrderNumber())
+                #sortedChkConfigClusterServicesList = sorted(chkConfigClusterServiceList, key=lambda k: k.getStartOrderNumber())
+                sortedChkConfigClusterServicesList = sorted(chkConfigClusterServiceList, key=lambda k: k.getName())
                 for serviceName in listOfServicesforClusterNodes:
                     serviceStatus = "-"
                     for chkConfigClusterService in sortedChkConfigClusterServicesList:

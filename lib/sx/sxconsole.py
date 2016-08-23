@@ -546,7 +546,7 @@ class SXConsole:
                 else:
                     logging.getLogger(sx.MAIN_LOGGER_NAME).info("Skipping plugins since there was no plugins enabled.")
 
-                self.__cleanup(listOfReportsExtracted)
+            self.__cleanup(listOfReportsExtracted)
             return listOfEnabledPlugins
 
 

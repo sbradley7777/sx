@@ -653,7 +653,7 @@ class ClusterNode:
                 if (chkConfigItem.getName() == clusterServices.get(key)):
                     # Set the order so we know the correct start order
                     # of services.
-                    chkConfigItem.setStartOrderNumber(key)
+                    #chkConfigItem.setStartOrderNumber(key)
                     chkConfigClusterServiceList.append(chkConfigItem)
         return chkConfigClusterServiceList
 

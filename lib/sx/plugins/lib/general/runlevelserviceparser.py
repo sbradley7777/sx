@@ -132,9 +132,9 @@ class ChkConfigServiceStatus:
                 not self.isEnabledRunlevel3() and not self.isEnabledRunlevel4() and
                 not self.isEnabledRunlevel5() and not self.isEnabledRunlevel6())
 
-    def getStartOrderNumber(self):
-        return self.__startOrderNumber
+    #def getStartOrderNumber(self):
+    #    return self.__startOrderNumber
 
-    def getStopOrderNumber(self):
-        return self.__stopOrderNumber
+    #def getStopOrderNumber(self):
+    #    return self.__stopOrderNumber
 

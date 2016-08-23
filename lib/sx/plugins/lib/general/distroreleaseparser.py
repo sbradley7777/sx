@@ -41,8 +41,6 @@ class DistroReleaseParser:
                 "(?P<distroMinorVersion1>\d{1,})?\s*" + \
                 "(?P<isbeta>Beta)?\s*" + \
                 "\(\D*(?P<distroMinorVersion2>\d{1,})?\)"
-
-
             rem = re.compile(regex)
             mo = rem.match(etcRedHatReleaseData[0].strip())
             if mo:

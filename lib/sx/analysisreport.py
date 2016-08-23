@@ -68,7 +68,7 @@ class AnalysisReport(AR):
             if (len(rstring) > 0):
                 rstring += "\n\n%s" %(str(section))
             else:
-                rstring += "\n%s" %(str(section))
+                rstring += "%s" %(str(section))
         return rstring
 
 class ARSection(AR):
@@ -86,8 +86,7 @@ class ARSection(AR):
         rstring += "%s\n%s\n%s" %(self.__separator, self.getDescription(), self.__separator)
         for item in self.list():
             rstring += "\n%s\n" %(item)
-        rstring = rstring.strip().rstrip()
-        return "%s" %(rstring)
+        return "%s" %(rstring.strip().rstrip())
 
 class ARSectionItem(AR):
     """

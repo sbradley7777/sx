@@ -644,6 +644,10 @@ class ClusterHAConfAnalyzer :
                 if (not line.startswith("<?xml")):
                     if (line.find("=***") >= 0):
                         line = re.sub("=\*\*\*", "=\"***\"", line)
+                    if (line.find('"<') >=0):
+                        line = re.sub('="<', '="', line)
+                    if (line.find('>"') >=0):
+                        line = re.sub('>"', '"', line)
                     clusterConfString += line
             if (len(clusterConfString) > 0):
                 # #######################################################################

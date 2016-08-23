@@ -855,11 +855,11 @@ class StringUtil:
             for currentRow in copyOfTable:
                 currentColCount = len(currentRow)
                 if (not (currentColCount == colCount)):
-                    message = "The table continues columns with a different columns counts and will not be processed."
+                    message = "The table contains columns with a different columns counts and will not be processed."
                     logging.getLogger(sx.MAIN_LOGGER_NAME).debug(message)
                     return []
         else:
-            message = "The table continues no rows in the table and will not be processed."
+            message = "The table contains no rows in the table and will not be processed."
             logging.getLogger(sx.MAIN_LOGGER_NAME).debug(message)
             return []
         # This function will append new rows if the item in the column

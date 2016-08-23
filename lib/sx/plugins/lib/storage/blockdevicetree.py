@@ -30,6 +30,9 @@ from sx.plugins.lib.storage.devicemapperparser import DMSetupTable
 from sx.plugins.lib.storage.filesysparser import FilesysParser
 from sx.plugins.lib.storage.filesysparser import FilesysMount
 
+from sx.analysisreport import ARSection
+from sx.analysisreport import ARSectionItem
+
 class BlockDevice:
     def __init__(self, deviceName, majorNumber, minorNumber):
         self.__deviceName = deviceName
@@ -167,6 +170,9 @@ class BlockDeviceTree:
     # ###########################################################################
     # These are the get functions to get private vars
     # ###########################################################################
+    def getValidTargetTypes(self):
+        return self.__validTargetTypes
+
     def getProcPartitionsMap(self):
         return self.__procPartitionsMap
 
@@ -293,24 +299,3 @@ class BlockDeviceTree:
                     rMap[key] = currentBlockDevice
         return rMap
 
-    def getSummary(self):
-        rstring = ""
-        blockDeviceMap = self.generateDMBlockDeviceMap()
-        if (not len(blockDeviceMap.keys())):
-            return rstring
-        # Print a summary of the devicemapper devices. Group by target type.
-        for targetType in self.__validTargetTypes:
-            currentBlockDeviceMap = self.getTargetTypeMap(blockDeviceMap, targetType)
-            if (len(currentBlockDeviceMap) > 0):
-                rstring += "Target Type: %s (%d targets)\n------------------------------------------\n" %(targetType, len(currentBlockDeviceMap))
-                for key in currentBlockDeviceMap.keys():
-                    currentBlockDevice = currentBlockDeviceMap[key]
-                    rstring += "\n%s\n-------\n" %str(currentBlockDevice)
-                rstring += "\n"
-
-        rstring += "Non-DeviceMapper Devices \n------------------------------------------\n"
-        for key in blockDeviceMap.keys():
-            currentBlockDevice = blockDeviceMap[key]
-            if(not (currentBlockDevice.__class__.__name__ == "DeviceMapperBlockDevice")):
-                rstring += "\n%s\n\n-------\n" %str(currentBlockDevice)
-        return rstring

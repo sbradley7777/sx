@@ -134,17 +134,24 @@ class Storage(sx.plugins.PluginBase):
                 ar.add(arSectionKnownIssues)
                 arSectionKnownIssues.add(ARSectionItem(storageData.getHostname(), rstring))
 
+            # Wrtite the output to a file.
+            self.write("%s.txt" %(ar.getName()), "%s\n" %(str(ar)))
+                
             # ###################################################################
             # Create the blockDeviceTree file
             # ###################################################################
-            blockDeviceTreeFilename = "%s-block_device_tree.txt" %(storageData.getHostname())
-            blockDeviceTreeSummary = bdt.getSummary()
-            if (len(blockDeviceTreeSummary) > 0):
+            blockDeviceMap = bdt.generateDMBlockDeviceMap()
+            if (len(blockDeviceMap.keys())):
+                # Print a summary of the devicemapper devices. Group by target type.
                 arBDT = AnalysisReport("storage_block_device_tree-%s" %(storageData.getHostname()), "Block Device Tree")
                 self.addAnalysisReport(arBDT)
-                arSectionBDT = ARSection("storage_block_device_tree-block_device_tree_summary", "Block Device Tree Summary")
-                arBDT.add(arSectionBDT)
-                arSectionBDT.add(ARSectionItem(storageData.getHostname(), blockDeviceTreeSummary))
+                for targetType in bdt.getValidTargetTypes():
+                    currentBlockDeviceMap = bdt.getTargetTypeMap(blockDeviceMap, targetType)
+                    if (len(currentBlockDeviceMap) > 0):
+                        arSectionBDT = ARSection("storage_block_device_tree-block_device_target_types", "Block Device for Target Type: %s (%d targets)" %(targetType, len(currentBlockDeviceMap)))
+                        arBDT.add(arSectionBDT)
+                        for key in currentBlockDeviceMap.keys():
+                            currentBlockDevice = currentBlockDeviceMap[key]
+                            arSectionBDT.add(ARSectionItem("%s-%s" %(storageData.getHostname(), targetType), "%s" %(str(currentBlockDevice))))
                 self.write("%s.txt" %(arBDT.getName()), "%s\n" %(str(arBDT)))
-            # Wrtite the output to a file.
-            self.write("%s.txt" %(ar.getName()), "%s\n" %(str(ar)))
+
