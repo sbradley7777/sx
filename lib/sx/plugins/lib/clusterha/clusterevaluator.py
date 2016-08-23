@@ -537,26 +537,30 @@ class ClusterEvaluator():
         # Check if bonding is being used on the heartbeat network
         # ###################################################################
         distroRelease = clusternode.getDistroRelease()
+        bondingModeNumber = -1
+        try:
+            bondingModeNumber = int(hbNetworkMap.getBondedModeNumber())
+        except ValueError:
+            pass
         if (hbNetworkMap.isBondedMasterInterface() and (not hbNetworkMap.getBondedModeNumber() == "1")):
             description = ""
             # Is Bonded master and is not mode 1.
             if (hbNetworkMap.getBondedModeNumber() == "-1"):
                 # Unknown bonding mode.
                 description += "The bonding mode for this host could not be determined."
-            elif (((distroRelease.getDistroName() == "RHEL") and (distroRelease.getMajorVersion() >= 6) and (distroRelease.getMinorVersion() >= 6)) and
-                  (not ((hbNetworkMap.getBondedModeNumber() == "0") or (hbNetworkMap.getBondedModeNumber() == "1") or
-                        (hbNetworkMap.getBondedModeNumber() == "2") or (hbNetworkMap.getBondedModeNumber() == "4")))):
-                    description += "The heartbeat network(%s) is currently using bonding mode %s(%s).\n" %(hbNetworkMap.getInterface(),
-                                                                                                           hbNetworkMap.getBondedModeNumber(),
-                                                                                                           hbNetworkMap.getBondedModeName())
-            elif (((distroRelease.getDistroName() == "RHEL") and (distroRelease.getMajorVersion() >= 6) and (distroRelease.getMinorVersion() >= 4)) and
-                  (not ((hbNetworkMap.getBondedModeNumber() == "0") or (hbNetworkMap.getBondedModeNumber() == "1") or
-                        (hbNetworkMap.getBondedModeNumber() == "2")))):
+            elif ((distroRelease.getDistroName() == "RHEL") and (distroRelease.getMajorVersion() >= 6) and
+                   (distroRelease.getMinorVersion() >= 6) and (bondingModeNumber > 4)):
+                description += "The heartbeat network(%s) is currently using bonding mode %s(%s).\n" %(hbNetworkMap.getInterface(),
+                                                                                                       hbNetworkMap.getBondedModeNumber(),
+                                                                                                       hbNetworkMap.getBondedModeName())
+            elif ((distroRelease.getDistroName() == "RHEL") and (distroRelease.getMajorVersion() >= 6) and
+                  (distroRelease.getMinorVersion() in range(4,5)) and (bondingModeNumber > 2)):
                     # RHEL 6.4 or higher and not modes 0,1,2.
-                    description += "The heartbeat network(%s) is currently using bonding mode %s(%s).\n" %(hbNetworkMap.getInterface(),
-                                                                                                           hbNetworkMap.getBondedModeNumber(),
-                                                                                                           hbNetworkMap.getBondedModeName())
-            else:
+                description += "The heartbeat network(%s) is currently using bonding mode %s(%s).\n" %(hbNetworkMap.getInterface(),
+                                                                                                       hbNetworkMap.getBondedModeNumber(),
+                                                                                                       hbNetworkMap.getBondedModeName())
+            elif ((distroRelease.getDistroName() == "RHEL") and (distroRelease.getMajorVersion() >= 6) and
+                  (distroRelease.getMinorVersion() in range(0,3))):
                 # Bonding mode detected is not mode 1 and not RHEL 6.4 or higher.
                 description += "The heartbeat network(%s) is currently using bonding mode %s(%s).\n" %(hbNetworkMap.getInterface(),
                                                                                                        hbNetworkMap.getBondedModeNumber(),
