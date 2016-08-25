@@ -18,6 +18,7 @@ from xml.etree.ElementTree import Element
 
 import sx
 from sx.tools import FileUtil
+from sx.tools import StringUtil
 from sx.plugins.lib.storage.filesysparser import FilesysMount
 
 # Elemtree throws different exception in python 2.6(pyexpat.error)
@@ -87,6 +88,12 @@ class Quorumd:
         if (not len(quorumdOption) > 0):
             quorumdOption = (self.__clusternodesCount - 1)
         return quorumdOption
+
+    def isVotesSet(self):
+        quorumdOption = self.__getAttribute("votes")
+        if (quorumdOption):
+            return True
+        return False
 
     def getLabel(self):
         return self.__getAttribute("label")
@@ -1374,6 +1381,20 @@ class ClusterHAConfAnalyzer :
     def getQuorumdSummary(self):
         quorumd = self.getQuorumd()
         if (not quorumd == None):
-            return str(quorumd)
+            rstring = str(quorumd)
+            master_wins_mode = ""
+            if (not quorumd.isVotesSet() and (not self.isCmanTwoNodeEnabled())):
+                description =  "The cluster is using master-wins mode since there are no votes set and "
+                description += "this is not a 2 node cluster. The quorum disk is providing %d votes to " %(quorumd.getVotes())
+                description += "each cluster node of a %d node cluster." %(len(self.getClusterNodeNames()))
+                urls = ["https://access.redhat.com/solutions/24037"]
+                master_wins_mode = "\n\n%s\n" %(StringUtil.formatBulletString(description, urls))
+            elif (int(quorumd.getVotes() > 1)):
+                description =  "The cluster is POSSIBILY using master-wins mode since the votes were "
+                description += "greater than 1. The quorum disk is providing %d votes to each " %(quorumd.getVotes())
+                description += "cluster node of a %d node cluster." %(len(self.getClusterNodeNames()))
+                urls = ["https://access.redhat.com/solutions/24037"]
+                master_wins_mode = "\n\n%s\n" %(StringUtil.formatBulletString(description, urls))
+            return "%s%s\n" %(rstring.rstrip(), master_wins_mode)
         else:
             return ""

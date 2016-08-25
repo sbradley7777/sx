@@ -358,12 +358,11 @@ class ClusterEvaluator():
 
         # cman/@two_node: Must be set to 0 when qiskd is in use with one EXCEPTION and
         # that is if quorumd/@votes is set to 0, two_node is allowed.
-        if ((int(quorumd.getVotes()) > 0) and (cca.isCmanTwoNodeEnabled())):
+        if ((quorumd.isVotesSet()) and (cca.isCmanTwoNodeEnabled())):
             description =  "The cluster has the option \"cman/@two_nodes\" enabled and also "
             description += "has set the option \"quorumd/@votes\" greater than 0 which is unsupported."
             urls = []
             rString += StringUtil.formatBulletString(description, urls)
-
         # In previous version of ClusterHA scsi timeouts could cause a problem
         # with qdisk and it was recommened to increase totem/token and
         # cman/quorum_dev_poll to account for this. These high values will cause
