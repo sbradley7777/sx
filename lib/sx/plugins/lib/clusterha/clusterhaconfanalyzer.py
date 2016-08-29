@@ -1385,13 +1385,13 @@ class ClusterHAConfAnalyzer :
             master_wins_mode = ""
             if (not quorumd.isVotesSet() and (not self.isCmanTwoNodeEnabled())):
                 description =  "The cluster is using master-wins mode since there are no votes set and "
-                description += "this is not a 2 node cluster. The quorum disk is providing %d votes to " %(quorumd.getVotes())
+                description += "this is not a 2 node cluster. The quorum disk is providing %s votes to " %(quorumd.getVotes())
                 description += "each cluster node of a %d node cluster." %(len(self.getClusterNodeNames()))
                 urls = ["https://access.redhat.com/solutions/24037"]
                 master_wins_mode = "\n\n%s\n" %(StringUtil.formatBulletString(description, urls))
             elif (int(quorumd.getVotes() > 1)):
                 description =  "The cluster is POSSIBILY using master-wins mode since the votes were "
-                description += "greater than 1. The quorum disk is providing %d votes to each " %(quorumd.getVotes())
+                description += "greater than 1. The quorum disk is providing %s votes to each " %(quorumd.getVotes())
                 description += "cluster node of a %d node cluster." %(len(self.getClusterNodeNames()))
                 urls = ["https://access.redhat.com/solutions/24037"]
                 master_wins_mode = "\n\n%s\n" %(StringUtil.formatBulletString(description, urls))
