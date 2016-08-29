@@ -27,7 +27,7 @@ from sx.tools import ConsoleUtil
 @cvar VERSION_NUMBER: The current version number of sxconsole.
 @type VERSION_NUMBER: String
 """
-VERSION_NUMBER = "2.17-2"
+VERSION_NUMBER = "2.17-3"
 SXC_LOGGER_NAME = "sxconsole"
 
 def moveNonReportFiles(nonReportFilesPath, filePathArray) :
