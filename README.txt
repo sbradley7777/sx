@@ -1,0 +1,4 @@
+`sxconsole` is a tool used to extract various report types and then analyze those extracted reports with plugins. The tool also provides an archiving structure so that all the compressed and extracted reports are saved to a directory. This tool was developed for `sysreport`/`sosreports` but has been expanded to include any report that has a class defined.
+
+`sxconsole` is the command-line interface to the `sx` library. The sx library contains the classes and functions to extract and then analyze the reports. The python script sxconsole takes a collection of "REPORTS" which are files and then will extract those reports to a unique directory. It will archive the compressed reports and the extracted reports. After the reports are extracted then all the enabled plugins will be ran against all the reports.
+
