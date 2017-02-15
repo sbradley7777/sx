@@ -1,3 +1,4 @@
+
 #!/usr/bin/env python
 """
 This is a collection of classes that contain data for files from a
@@ -23,13 +24,13 @@ class RPMSParser:
             "-(?P<majorVersion>\d)" + \
             ".(?P<minorVersion>\d)" + \
             "-(?P<releaseVersion>\d.*)" + \
-            ".(?P<distroVersion>el4|el5|el6)" + \
+            ".(?P<distroVersion>el4|el5|el6|el7)" + \
             ".(?P<arch>noarch|i386|i586|i686|ia64|ppc|s390|s390x|x86_64)"
         """
         # In distroVersion leave empty one for rpms with no distroVersion
         regex = "^(?P<name>[a-zA-Z_0-9+]*)-.*" + \
             "-(?P<majorVersion>[0-9.]*).*" + \
-            ".(?P<distroVersion>fc[0-9]*|el4|el5|el6|)" + \
+            ".(?P<distroVersion>fc[0-9]*|el4|el5|el6|el7|)" + \
             ".(?P<arch>noarch|i386|i586|i686|ia64|ppc|s390|s390x|x86_64)"
         rem = re.compile(r"%s" %(regex))
         for line in installedRPMSData:
