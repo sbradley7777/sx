@@ -20,14 +20,15 @@ The python script sxconsole will extract different report types to an archived d
 - Create a report file that checks for configuration issues related to the cluster.
 - Create a report file that compares various information in the sosreports against other sosreports.
 
-#####What is the prerequisites for sx?
+##### What is the prerequisites for sx?
 All these prereqs will be pulled in from your distro `yum` repo when installing the `sx` package. The package requires `python` >= 2.6.5.
 
-#####How to install SX with the binary rpms?
+##### How to install SX with the binary rpms?
 Add later
 
 ##### How do you get the source code for this project?
-
+```
 $ mkdir ~/github; cd ~/github
 $ git clone https://github.com/sbradley7777/sx.git
 $ cd ~/github/sx
+```
