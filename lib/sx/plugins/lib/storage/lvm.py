@@ -187,6 +187,8 @@ class LVM:
     def getVolumeListValues(self):
         volumelistValues = []
         volumelistLine = ""
+        if (self.__lvmConfData == None):
+            return volumelistValues
         for line in self.__lvmConfData:
             currentLine = line.strip().rstrip()
             if (currentLine.startswith("volume_list")):
@@ -209,6 +211,8 @@ class LVM:
 
     def getLockingTypeValue(self):
         lockingTypeLine = ""
+        if (self.__lvmConfData == None):
+            return ""
         for line in self.__lvmConfData:
             currentLine = line.strip().rstrip()
             if (currentLine.startswith("locking_type")):
