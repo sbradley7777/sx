@@ -15,6 +15,7 @@ import os.path
 from optparse import OptionParser, Option
 import logging
 import shutil
+import glob
 
 import sx
 from sx.logwriter import LogWriter
@@ -54,6 +55,36 @@ def moveNonReportFiles(nonReportFilesPath, filePathArray) :
                 message = "Cannot move the file %s to %s " %(src, dst_filename)
                 logging.getLogger(SXC_LOGGER_NAME).error(message)
     return filePathsAdded
+
+def create_insights_missing_dependencies(path_to_extracted_sosreport):
+    # Create the directory /var/lib/pacemaker/cib if it does not exist.
+    var_lib_pacemaker_cib = "var/lib/pacemaker/cib"
+    if (not os.path.exists(os.path.join(path_to_extracted_sosreport, var_lib_pacemaker_cib))):
+        try:
+            os.makedirs(os.path.join(path_to_extracted_sosreport, var_lib_pacemaker_cib))
+        except (IOError, os.error):
+            message = "Could not create the directory: %s" %(os.path.join(path_to_extracted_sosreport, var_lib_pacemaker_cib))
+            logging.getLogger(SXC_LOGGER_NAME).error(message)
+
+    # If the file /var/lib/pacemaker/cib/cib.xml does not exist then create a
+    # symlink to the one in sos_commands/pacemaker/crm_report/*/cib.xml.
+    dst = os.path.join(path_to_extracted_sosreport, "var/lib/pacemaker/cib/cib.xml")
+    if (not os.path.exists(dst)):
+        path_matches = glob.glob(os.path.join(path_to_extracted_sosreport, "sos_commands/pacemaker/crm_report/*/cib.xml"))
+        if not path_matches:
+            message = "The src file does not exist to the file: %s" % (os.path.join(path_to_extracted_sosreport, "sos_commands/pacemaker/crm_report/*/cib.xml"))
+            logging.getLogger(SXC_LOGGER_NAME).error(message)
+        else:
+            # Assume only one match.
+            src = path_matches[0]
+            try:
+                os.symlink(src, dst)
+            except (IOError, os.error):
+                message = "Could not create the symlink from %s to %s" %(src, dst)
+                logging.getLogger(SXC_LOGGER_NAME).error(message)
+        if (not os.path.exists(dst)):
+            message = "The symlink was not created for some reason for %s" %(dst)
+            logging.getLogger(SXC_LOGGER_NAME).error(message)
 
 # ###############################################################################
 # Prints the files that were created.
@@ -109,6 +140,7 @@ def printToConsole(pathToCompressedReports, pathToExtractedReports, mapOfPluginR
             if (not directory.startswith(".") and
                 not directory.startswith("reports")):
                 venv_insights.append("venv-insights-run.sh -p %s" %(os.path.join(pathToExtractedReports, directory)))
+                create_insights_missing_dependencies(os.path.join(pathToExtractedReports, directory))
         if (venv_insights):
             print "\n%s" %(ConsoleUtil.colorText("Commands for analyzing with insights-rules:","lcyan"))
             print ConsoleUtil.colorText("venv-insights-run.sh -p %s" %(pathToExtractedReports),"lgreen")
