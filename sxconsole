@@ -104,6 +104,17 @@ def printToConsole(pathToCompressedReports, pathToExtractedReports, mapOfPluginR
         print "%s%s" %(ConsoleUtil.colorText("Compressed Reports Directory: ","lgreen"), pathToCompressedReports.replace(homeDirectory, "~"))
         print "%s%s" %(ConsoleUtil.colorText("Extracted Reports Directory:  ","lgreen"), pathToExtractedReports.replace(homeDirectory, "~"))
 
+        venv_insights = []
+        for directory in os.listdir(pathToExtractedReports):
+            if (not directory.startswith(".") and
+                not directory.startswith("reports")):
+                venv_insights.append("venv-insights-run.sh -p %s" %(os.path.join(pathToExtractedReports, directory)))
+        if (venv_insights):
+            print "\n%s" %(ConsoleUtil.colorText("Commands for analyzing with insights-rules:","lcyan"))
+            print ConsoleUtil.colorText("venv-insights-run.sh -p %s" %(pathToExtractedReports),"lgreen")
+            for line in venv_insights:
+                print "%s" %(ConsoleUtil.colorText(line,"lgreen"))
+        print ""
     if (not wasInformationPrintedToConsole):
         message = "There was zero reports extracted and zero non-report files added."
         logging.getLogger(SXC_LOGGER_NAME).warning(message)
