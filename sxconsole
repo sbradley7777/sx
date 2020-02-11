@@ -73,7 +73,7 @@ def create_insights_missing_dependencies(path_to_extracted_sosreport):
         path_matches = glob.glob(os.path.join(path_to_extracted_sosreport, "sos_commands/pacemaker/crm_report/*/cib.xml"))
         if not path_matches:
             message = "The src file does not exist to the file: %s" % (os.path.join(path_to_extracted_sosreport, "sos_commands/pacemaker/crm_report/*/cib.xml"))
-            logging.getLogger(SXC_LOGGER_NAME).error(message)
+            logging.getLogger(SXC_LOGGER_NAME).debug(message)
         else:
             # Assume only one match.
             src = path_matches[0]
@@ -82,9 +82,9 @@ def create_insights_missing_dependencies(path_to_extracted_sosreport):
             except (IOError, os.error):
                 message = "Could not create the symlink from %s to %s" %(src, dst)
                 logging.getLogger(SXC_LOGGER_NAME).error(message)
-        if (not os.path.exists(dst)):
-            message = "The symlink was not created for some reason for %s" %(dst)
-            logging.getLogger(SXC_LOGGER_NAME).error(message)
+            if (not os.path.exists(dst)):
+                message = "The symlink was not created for some reason for %s" %(dst)
+                logging.getLogger(SXC_LOGGER_NAME).error(message)
 
 # ###############################################################################
 # Prints the files that were created.
