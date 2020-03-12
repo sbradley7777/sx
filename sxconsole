@@ -142,6 +142,7 @@ def printToConsole(pathToCompressedReports, pathToExtractedReports, mapOfPluginR
                 venv_insights.append("venv-insights-run.sh -p %s -I -G " %(os.path.join(pathToExtractedReports, directory)))
                 create_insights_missing_dependencies(os.path.join(pathToExtractedReports, directory))
         if (venv_insights):
+            venv_insights.append("venv-insights-run.sh -p %s -c " %(pathToExtractedReports))
             print "\n%s" %(ConsoleUtil.colorText("Commands for analyzing with insights-rules:","lcyan"))
             print ConsoleUtil.colorText("venv-insights-run.sh -p %s " %(pathToExtractedReports),"lgreen")
             for line in venv_insights:
