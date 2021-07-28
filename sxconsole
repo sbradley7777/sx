@@ -67,7 +67,7 @@ def create_insights_missing_dependencies(path_to_extracted_sosreport):
             logging.getLogger(SXC_LOGGER_NAME).error(message)
 
     # If the file /var/lib/pacemaker/cib/cib.xml does not exist then create a
-    # symlink to the one in sos_commands/pacemaker/crm_report/*/cib.xml.
+    # copy to the one in sos_commands/pacemaker/crm_report/*/cib.xml.
     dst = os.path.join(path_to_extracted_sosreport, "var/lib/pacemaker/cib/cib.xml")
     if (not os.path.exists(dst)):
         path_matches = glob.glob(os.path.join(path_to_extracted_sosreport, "sos_commands/pacemaker/crm_report/*/cib.xml"))
@@ -78,17 +78,17 @@ def create_insights_missing_dependencies(path_to_extracted_sosreport):
             if not path_matches:
                 message = "The src file does not exist for the file: %s" % (os.path.join(path_to_extracted_sosreport, "sos_commands/cluster/crm_report/*/cib.xml"))
                 logging.getLogger(SXC_LOGGER_NAME).debug(message)
-        # Found match, so copy file. 
+        # Found match, so copy file.
         if path_matches:
             # Assume only one match.
             src = path_matches[0]
             try:
-                os.symlink(src, dst)
+                shutil.copyfile(src, dst)
             except (IOError, os.error):
                 message = "Could not create the symlink from %s to %s" %(src, dst)
                 logging.getLogger(SXC_LOGGER_NAME).error(message)
             if (not os.path.exists(dst)):
-                message = "The symlink was not created for some reason for %s" %(dst)
+                message = "The file was not copied for some reason %s to %s" %(src, dst)
                 logging.getLogger(SXC_LOGGER_NAME).error(message)
 
 # ###############################################################################
@@ -144,12 +144,13 @@ def printToConsole(pathToCompressedReports, pathToExtractedReports, mapOfPluginR
         for directory in os.listdir(pathToExtractedReports):
             if (not directory.startswith(".") and
                 not directory.startswith("reports")):
-                venv_insights.append("venv-insights-run.sh -p %s -I -G " %(os.path.join(pathToExtractedReports, directory)))
+                venv_insights.append("venv-insights-run.sh -p %s -I -G " %(os.path.join(pathToExtractedReports, directory).replace(homeDirectory, "~")))
                 create_insights_missing_dependencies(os.path.join(pathToExtractedReports, directory))
         if (venv_insights):
-            venv_insights.append("venv-insights-run.sh -p %s -c " %(pathToExtractedReports))
-            venv_insights.append("venv-insights-run.sh -p %s -j" %(pathToExtractedReports))
-            venv_insights.append("venv-insights-run.sh -p %s -c; venv-insights-run.sh -p %s -j" %(pathToExtractedReports, pathToExtractedReports))
+            venv_insights.append("venv-insights-run.sh -p %s -c " %(pathToExtractedReports.replace(homeDirectory, "~")))
+            venv_insights.append("venv-insights-run.sh -p %s -j" %(pathToExtractedReports.replace(homeDirectory, "~")))
+            venv_insights.append("venv-insights-run.sh -p %s -c; venv-insights-run.sh -p %s -j" %(pathToExtractedReports.replace(homeDirectory, "~"),
+                                                                                                  pathToExtractedReports.replace(homeDirectory, "~")))
             print "\n%s" %(ConsoleUtil.colorText("Commands for analyzing with insights-rules:","lcyan"))
             for line in venv_insights:
                 print "%s" %(ConsoleUtil.colorText(line,"lgreen"))
