@@ -42,6 +42,10 @@ def moveNonReportFiles(nonReportFilesPath, filePathArray) :
             logging.getLogger(SXC_LOGGER_NAME).error(message)
             return filePathsAdded
 
+    if filePathArray:
+        message = "All non-sosreports files will be moved to the directory: %s" % (nonReportFilesPath)
+        logging.getLogger(SXC_LOGGER_NAME).info(message)
+
     for src in filePathArray:
         if (os.path.exists(src)):
             (head, tail) = os.path.split(src)
