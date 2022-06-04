@@ -279,7 +279,10 @@ class SXConfigurationFiles:
     """
     REPORT_USER_IMPORT="sxreports"
     PLUGIN_USER_IMPORT="sxplugins"
-    CONFIGURATION_DIR = os.path.join(os.environ['HOME'],".sx")
+    if os.environ['SX_CONFIGURATION_DIR'] is not None:
+        CONFIGURATION_DIR = os.environ['SX_CONFIGURATION_DIR']
+    else:
+        CONFIGURATION_DIR = os.path.join(os.environ['HOME'],".sx")
 
     def generateDefaultConfigurationDirectories(self):
         """
