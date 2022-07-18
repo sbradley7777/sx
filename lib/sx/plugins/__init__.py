@@ -12,6 +12,7 @@ import time
 import os
 import os.path
 import logging
+import json
 
 import sx
 from sx.logwriter import LogWriter
@@ -579,6 +580,54 @@ class PluginBase:
         else:
             data = "DISABLED:* %s" %(message)
             self.write(filename, data)
+
+    def dump(self, filename, data, appendToFile=False):
+        """
+        This function will dump json data to the filename. The
+        filename is a relative path. The function will append the
+        plugin report directory path to the start of the filename to
+        create the fullpath.
+
+        @param filename: The filename is a relative path. The function
+        will append the plugin report directory path to the start of
+        the filename to create the fullpath.
+        @type filename: String
+        @param data: The python object that will be written to the
+        file.
+        @type data: Dictionary
+        @param appendToFile: This will append the string to the file
+        if True. If False then string will override the contents of
+        the file.
+        @type appendToFile: Boolean
+        """
+        try:
+            if not os.access(self.getPathToPluginReportDir(), os.F_OK):
+                os.makedirs(self.getPathToPluginReportDir())
+        except (IOError, os.error):
+            if (not len(self.getPathToPluginReportDir()) > 0):
+                message =  "The base directory for plugin reports was empty or not set before running report function. The directory cannot be created."
+                logging.getLogger(sx.MAIN_LOGGER_NAME).error(message)
+            else:
+                message =  "Cannot create directory: %s" %(self.getPathToPluginReportDir())
+                logging.getLogger(sx.MAIN_LOGGER_NAME).error(message)
+            return
+        try:
+            pathToFilename = os.path.join(self.getPathToPluginReportDir(),filename)
+            filemode = "w"
+            if (appendToFile):
+                filemode = "a"
+            fout = open(pathToFilename, filemode)
+            json.dump(data, fout)
+            fout.close()
+        except UnicodeEncodeError, e:
+            # Python 2.6 has "as", 2.5 does not  except UnicodeEncodeError as e:
+            message = "There was a unicode encode error on file: %s." %(filename)
+            logging.getLogger(sx.MAIN_LOGGER_NAME).error(message)
+            print e
+        except IOError:
+            message = "There was an error writing the file: %s." %(filename)
+            logging.getLogger(sx.MAIN_LOGGER_NAME).error(message)
+
 
     # #######################################################################
     # Functions that should be overwritten in the plugin
