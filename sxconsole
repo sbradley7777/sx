@@ -148,14 +148,15 @@ def printToConsole(pathToCompressedReports, pathToExtractedReports, mapOfPluginR
         for directory in os.listdir(pathToExtractedReports):
             if (not directory.startswith(".") and
                 not directory.startswith("reports")):
-                venv_insights.append("venv-insights-run.sh -p %s -I -G " %(os.path.join(pathToExtractedReports, directory).replace(homeDirectory, "~")))
+                # venv_insights.append("venv-insights-run.sh -p %s -I -G " %(os.path.join(pathToExtractedReports, directory).replace(homeDirectory, "~")))
                 create_insights_missing_dependencies(os.path.join(pathToExtractedReports, directory))
-        if (venv_insights):
-            venv_insights.append("venv-insights-run.sh -p %s -c | tee ./insights-cluster.txt " %(pathToExtractedReports.replace(homeDirectory, "~")))
-            venv_insights.append("venv-insights-run.sh -p %s -j | tee ./insights-hosts.txt" %(pathToExtractedReports.replace(homeDirectory, "~")))
-            venv_insights.append("cd %s; venv-insights-run.sh -p %s -J | tee ./insights-hosts.txt; venv-insights-run.sh -p %s -c | tee ./insights-cluster.txt; " %(pathToExtractedReports.replace(homeDirectory, "~"),
-                                                                                                                                                                   pathToExtractedReports.replace(homeDirectory, "~"),
-                                                                                                                                                                   pathToExtractedReports.replace(homeDirectory, "~")))
+
+        if (len(os.listdir(pathToExtractedReports))):
+            # venv_insights.append("venv-insights-run.sh -p %s -c | tee ./insights-cluster.txt " %(pathToExtractedReports.replace(homeDirectory, "~")))
+            # venv_insights.append("venv-insights-run.sh -p %s -J" %(pathToExtractedReports.replace(homeDirectory, "~")))
+            venv_insights.append("cd %s; venv-insights-run.sh -p %s -J; venv-insights-run.sh -p %s -c | tee ./insights-cluster.txt; " %(pathToExtractedReports.replace(homeDirectory, "~"),
+                                                                                                                                        pathToExtractedReports.replace(homeDirectory, "~"),
+                                                                                                                                        pathToExtractedReports.replace(homeDirectory, "~")))
             print "\n%s" %(ConsoleUtil.colorText("Commands for analyzing with insights-rules:","lcyan"))
             for line in venv_insights:
                 print "%s" %(ConsoleUtil.colorText(line,"lgreen"))
