@@ -147,7 +147,7 @@ def printToConsole(pathToCompressedReports, pathToExtractedReports, mapOfPluginR
         venv_insights = []
         for directory in os.listdir(pathToExtractedReports):
             if (not directory.startswith(".") and
-                not directory.startswith("reports")):
+                not directory.startswith("reports") and os.path.isdir(os.path.join(pathToExtractedReports, directory))):
                 # venv_insights.append("venv-insights-run.sh -p %s -I -G " %(os.path.join(pathToExtractedReports, directory).replace(homeDirectory, "~")))
                 create_insights_missing_dependencies(os.path.join(pathToExtractedReports, directory))
 
